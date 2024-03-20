@@ -1,5 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@200;400;600&display=swap');
 
+html {
+    overflow-y: hidden;
+}
+
 body {
     font-family: "Poppins", sans-serif;
     background-color: #faf8ef;
@@ -8,6 +12,7 @@ body {
     align-items: center;
     min-height: 100vh;
     margin: 0;
+    overflow-y: hidden;
 }
 
 #gameContainer {
