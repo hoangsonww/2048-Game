@@ -1,0 +1,150 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@200;400;600&display=swap');
+
+body {
+    font-family: "Poppins", sans-serif;
+    background-color: #faf8ef;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
+
+#gameContainer {
+    width: 500px;
+    margin: auto;
+    padding: 20px;
+    border-radius: 10px;
+    background-color: #bbada0;
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+}
+
+#title {
+    font-size: 60px;
+    font-weight: bold;
+    color: #655b56;
+}
+
+#subtitle {
+    font-size: 24px;
+    color: #655b56;
+    margin: 10px 0;
+}
+
+#scoreContainer {
+    margin: 20px 0;
+    display: flex;
+    justify-content: space-around;
+    font-size: 24px;
+    color: #fff;
+}
+
+#gridContainer {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    background-color: #bbada0;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+#gridContainer div {
+    background-color: #cdc1b4;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 36px;
+    font-weight: bold;
+    color: #776e65;
+    height: 100px;
+    border-radius: 5px;
+}
+
+#gridContainer div:empty {
+    background-color: #bbada0;
+}
+
+#gridContainer div:not(:empty) {
+    background-color: #eee4da;
+}
+
+#gridContainer div:empty {
+    color: #bbada0;
+}
+
+.cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #e2e2e2;
+    transition: background-color 0.15s ease;
+}
+
+.cell.placeholder {
+    background-color: #a9a9a9;
+}
+
+.cell.pop {
+    animation: pop 0.15s ease;
+}
+
+@keyframes pop {
+    0% {
+        transform: scale(0.75);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.cell {
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.cell.placeholder {
+    background-color: #cdc1b4 !important;
+    color: transparent;
+}
+
+.buttons {
+    background-color: #8f7a66;
+    color: #f9f6f2;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    font-family: "Poppins", sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.buttons:hover {
+    background-color: #9e8b77;
+    transform: scale(1.05);
+}
+
+.buttons:active {
+    transform: scale(0.95);
+}
+
+#gridContainer div[data-value="2"] { background-color: #eee4da; color: #776e65; }
+#gridContainer div[data-value="4"] { background-color: #ede0c8; color: #776e65; }
+#gridContainer div[data-value="8"] { background-color: #f2b179; color: #f9f6f2; }
+#gridContainer div[data-value="16"] { background-color: #f59563; color: #f9f6f2; }
+#gridContainer div[data-value="32"] { background-color: #f67c5f; color: #f9f6f2; }
+#gridContainer div[data-value="64"] { background-color: #f65e3b; color: #f9f6f2; }
+#gridContainer div[data-value="128"] { background-color: #edcf72; color: #f9f6f2; }
+#gridContainer div[data-value="256"] { background-color: #edcc61; color: #f9f6f2; }
+#gridContainer div[data-value="512"] { background-color: #edc850; color: #f9f6f2; }
+#gridContainer div[data-value="1024"] { background-color: #edc53f; color: #f9f6f2; }
+#gridContainer div[data-value="2048"] { background-color: #edc22e; color: #f9f6f2; }
+#gridContainer div[data-value="4096"] { background-color: red; color: #f9f6f2; }
+#gridContainer div[data-value="8192"] { background-color: darkred; color: #f9f6f2; }
+#gridContainer div[data-value="0"] { background-color: #cdc1b4; }

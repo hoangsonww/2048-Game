@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>About 2048 Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: "Poppins", sans-serif;
+            background-color: #faf8ef;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            width: 500px;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: #bbada0;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            font-size: 60px;
+            font-weight: bold;
+            color: #655b56;
+        }
+
+        p {
+            font-size: 20px;
+            color: #655b56;
+        }
+
+        a {
+            color: #776e65;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .buttons {
+            background-color: #8f7a66;
+            color: #f9f6f2;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-family: "Poppins", sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        .buttons:hover {
+            background-color: #9e8b77;
+            transform: scale(1.05);
+        }
+
+        .buttons:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+<div class="container" style="text-align: center">
+    <h1>About 2048</h1>
+    <p>
+        <strong>What is 2048?</strong><br>
+        2048 is a single-player sliding block puzzle game. The game's objective is to slide numbered tiles on a grid to combine them and create a tile with the number 2048. However, you can continue to play the game after reaching the goal to create higher numbers.
+    </p>
+    <p>
+        <strong>How to play:</strong><br>
+        Use the arrow keys on your keyboard or swipe on your device to move the tiles. When two tiles with the same number touch, they merge into one!
+    </p>
+    <p>
+        <strong>About the Creator:</strong><br>
+        Visit my GitHub: <a href="https://github.com/hoangsonww">GitHub Profile</a><br>
+        Check out the MovieVerse app: <a href="https://movie-verse.com">MovieVerse</a><br>
+        Check out the StickyNotes app: <a href="https://hoangsonww.github.io/The-StickyNotes-App/">StickyNotes</a><br>
+        Check out the RecipeGenie app: <a href="https://hoangsonww.github.io/RecipeGenie-App/">RecipeGenie</a><br>
+        Check out the WeatherMate app: <a href="https://hoangsonww.github.io/WeatherMate-App/">WeatherMate</a><br>
+    </p>
+    <button class="buttons" onclick="window.location.href='../index.html'">Back to Game</button>
+</div>
+</body>
+</html>

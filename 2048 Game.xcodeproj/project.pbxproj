@@ -8,12 +8,13 @@
 
 /* Begin PBXBuildFile section */
 		F4CCBAFF2BA9F89F007AA07E /* Game_2048App.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBAFE2BA9F89F007AA07E /* Game_2048App.swift */; };
-		F4CCBB012BA9F89F007AA07E /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB002BA9F89F007AA07E /* ContentView.swift */; };
 		F4CCBB032BA9F8A0007AA07E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F4CCBB022BA9F8A0007AA07E /* Assets.xcassets */; };
 		F4CCBB072BA9F8A0007AA07E /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F4CCBB062BA9F8A0007AA07E /* Preview Assets.xcassets */; };
 		F4CCBB112BA9F8A0007AA07E /* Game_2048Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB102BA9F8A0007AA07E /* Game_2048Tests.swift */; };
 		F4CCBB1B2BA9F8A1007AA07E /* Game_2048UITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB1A2BA9F8A1007AA07E /* Game_2048UITests.swift */; };
 		F4CCBB1D2BA9F8A1007AA07E /* Game_2048UITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB1C2BA9F8A1007AA07E /* Game_2048UITestsLaunchTests.swift */; };
+		F4CCBB322BA9FA64007AA07E /* GameViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB312BA9FA64007AA07E /* GameViewModel.swift */; };
+		F4CCBB342BA9FA79007AA07E /* GameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB332BA9FA79007AA07E /* GameView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -36,7 +37,6 @@
 /* Begin PBXFileReference section */
 		F4CCBAFB2BA9F89F007AA07E /* Game-2048.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Game-2048.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		F4CCBAFE2BA9F89F007AA07E /* Game_2048App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Game_2048App.swift; sourceTree = "<group>"; };
-		F4CCBB002BA9F89F007AA07E /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		F4CCBB022BA9F8A0007AA07E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F4CCBB042BA9F8A0007AA07E /* Game_2048.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Game_2048.entitlements; sourceTree = "<group>"; };
 		F4CCBB062BA9F8A0007AA07E /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
@@ -45,6 +45,8 @@
 		F4CCBB162BA9F8A1007AA07E /* Game-2048UITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Game-2048UITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		F4CCBB1A2BA9F8A1007AA07E /* Game_2048UITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Game_2048UITests.swift; sourceTree = "<group>"; };
 		F4CCBB1C2BA9F8A1007AA07E /* Game_2048UITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Game_2048UITestsLaunchTests.swift; sourceTree = "<group>"; };
+		F4CCBB312BA9FA64007AA07E /* GameViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameViewModel.swift; sourceTree = "<group>"; };
+		F4CCBB332BA9FA79007AA07E /* GameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -96,10 +98,11 @@
 			isa = PBXGroup;
 			children = (
 				F4CCBAFE2BA9F89F007AA07E /* Game_2048App.swift */,
-				F4CCBB002BA9F89F007AA07E /* ContentView.swift */,
 				F4CCBB022BA9F8A0007AA07E /* Assets.xcassets */,
 				F4CCBB042BA9F8A0007AA07E /* Game_2048.entitlements */,
 				F4CCBB052BA9F8A0007AA07E /* Preview Content */,
+				F4CCBB312BA9FA64007AA07E /* GameViewModel.swift */,
+				F4CCBB332BA9FA79007AA07E /* GameView.swift */,
 			);
 			path = "Game-2048";
 			sourceTree = "<group>";
@@ -208,7 +211,7 @@
 					};
 				};
 			};
-			buildConfigurationList = F4CCBAF62BA9F89F007AA07E /* Build configuration list for PBXProject "Game-2048" */;
+			buildConfigurationList = F4CCBAF62BA9F89F007AA07E /* Build configuration list for PBXProject "2048 Game" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -259,7 +262,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F4CCBB012BA9F89F007AA07E /* ContentView.swift in Sources */,
+				F4CCBB322BA9FA64007AA07E /* GameViewModel.swift in Sources */,
+				F4CCBB342BA9FA79007AA07E /* GameView.swift in Sources */,
 				F4CCBAFF2BA9F89F007AA07E /* Game_2048App.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -349,10 +353,13 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.3;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.3;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx14.4;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -404,9 +411,12 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.3;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.3;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				SDKROOT = macosx14.4;
 				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
@@ -416,6 +426,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "Game-2048/Game_2048.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -424,22 +435,26 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "2048 Game";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.puzzle-games";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen.storyboard;
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
+				INFOPLIST_KEY_UIStatusBarStyle = "";
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.4;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.3;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "sonnguyen.Game-2048";
+				PRODUCT_BUNDLE_IDENTIFIER = "sonnguyen.2048-Game";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
@@ -454,6 +469,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "Game-2048/Game_2048.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -462,22 +478,26 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "2048 Game";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.puzzle-games";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen.storyboard;
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
+				INFOPLIST_KEY_UIStatusBarStyle = "";
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.4;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.3;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "sonnguyen.Game-2048";
+				PRODUCT_BUNDLE_IDENTIFIER = "sonnguyen.2048-Game";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
@@ -580,7 +600,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		F4CCBAF62BA9F89F007AA07E /* Build configuration list for PBXProject "Game-2048" */ = {
+		F4CCBAF62BA9F89F007AA07E /* Build configuration list for PBXProject "2048 Game" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				F4CCBB1E2BA9F8A1007AA07E /* Debug */,
