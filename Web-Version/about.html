@@ -6,6 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;400;600&display=swap" rel="stylesheet">
     <style>
+        html, body {
+            height: 100%;
+        }
+
         body {
             font-family: "Poppins", sans-serif;
             background-color: #faf8ef;
@@ -18,10 +22,32 @@
 
         .container {
             width: 500px;
+            max-width: 90%;
+            margin: auto;
             padding: 20px;
             border-radius: 10px;
             background-color: #bbada0;
             box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        @media (max-width: 700px) {
+            .container {
+                width: 90%;
+                padding: 10px;
+            }
+
+            #title {
+                font-size: 44px !important;
+            }
+
+            #subtitle {
+                font-size: 20px !important;
+            }
+
+            #scoreContainer {
+                font-size: 20px !important;
+            }
         }
 
         h1 {
@@ -71,25 +97,25 @@
     </style>
 </head>
 <body>
-<div class="container" style="text-align: center">
-    <a style="text-decoration: none" href="../index.html"><h1>About 2048</h1></a>
-    <p>
-        <strong>What is 2048?</strong><br>
-        2048 is a single-player sliding block puzzle game. The game's objective is to slide numbered tiles on a grid to combine them and create a tile with the number 2048. However, you can continue to play the game after reaching the goal to create higher numbers.
-    </p>
-    <p>
-        <strong>How to play:</strong><br>
-        Use the arrow keys on your keyboard or swipe on your device to move the tiles. When two tiles with the same number touch, they merge into one!
-    </p>
-    <p>
-        <strong>About the Creator:</strong><br>
-        Visit my GitHub: <a href="https://github.com/hoangsonww">GitHub Profile</a><br>
-        Check out the MovieVerse app: <a href="https://movie-verse.com">MovieVerse</a><br>
-        Check out the StickyNotes app: <a href="https://hoangsonww.github.io/The-StickyNotes-App/">StickyNotes</a><br>
-        Check out the RecipeGenie app: <a href="https://hoangsonww.github.io/RecipeGenie-App/">RecipeGenie</a><br>
-        Check out the WeatherMate app: <a href="https://hoangsonww.github.io/WeatherMate-App/">WeatherMate</a><br>
-    </p>
-    <button class="buttons" onclick="window.location.href='../index.html'">Back to Game</button>
-</div>
+    <div class="container" style="text-align: center">
+        <a id="title" style="text-decoration: none" href="../index.html"><h1>About 2048</h1></a>
+        <p>
+            <strong>What is 2048?</strong><br>
+            2048 is a single-player sliding block puzzle game. The game's objective is to slide numbered tiles on a grid to combine them and create a tile with the number 2048. However, you can continue to play the game after reaching the goal to create higher numbers.
+        </p>
+        <p>
+            <strong>How to play:</strong><br>
+            Use the arrow keys on your keyboard or swipe on your device to move the tiles. When two tiles with the same number touch, they merge into one!
+        </p>
+        <p>
+            <strong>About the Creator:</strong><br>
+            Visit my GitHub: <a href="https://github.com/hoangsonww">GitHub Profile</a><br>
+            Check out the MovieVerse app: <a href="https://movie-verse.com">MovieVerse</a><br>
+            Check out the StickyNotes app: <a href="https://hoangsonww.github.io/The-StickyNotes-App/">StickyNotes</a><br>
+            Check out the RecipeGenie app: <a href="https://hoangsonww.github.io/RecipeGenie-App/">RecipeGenie</a><br>
+            Check out the WeatherMate app: <a href="https://hoangsonww.github.io/WeatherMate-App/">WeatherMate</a><br>
+        </p>
+        <button class="buttons" onclick="window.location.href='../index.html'">Back to Game</button>
+    </div>
 </body>
 </html>
