@@ -17,7 +17,9 @@ The Swift version of the 2048 game is designed for iOS devices. It provides a sm
 
 ## User Interface
 
-![Game UI](../images/IOS-UI.png)
+<div style="display: flex; justify-content: center;">
+  <img src="../images/IOS-UI.png" alt="Game UI" style="width: 250px; height: 550px;">
+</div>
 
 ### Project Structure
 
@@ -52,7 +54,9 @@ The web application version of the 2048 game is built by simply using HTML, CSS,
 
 ### User Interface
 
-![Game UI](../images/web-version-UI.png)
+<div style="display: flex; justify-content: center;">
+  <img src="../images/web-version-UI.png" alt="Game UI" style="width: 310px; height: 450px;">
+</div>
 
 ### Project Structure
 
@@ -76,7 +80,9 @@ The Android version of the 2048 game is designed for Android devices. It provide
 
 ### User Interface
 
-![Game UI](../images/android-ui.png)
+<div style="display: flex; justify-content: center;">
+  <img src="../images/android-ui.png" alt="Game UI" style="width: 230px; height: 390px;">
+</div>
 
 ### Project Structure
 
