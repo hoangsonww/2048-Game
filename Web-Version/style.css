@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@200;400;600&display=swap');
 
-html {
-    overflow-y: hidden;
+html, body {
+    height: 100%;
 }
 
 body {
@@ -12,16 +12,24 @@ body {
     align-items: center;
     min-height: 100vh;
     margin: 0;
-    overflow-y: hidden;
 }
 
 #gameContainer {
     width: 500px;
+    max-width: 90%;
     margin: auto;
     padding: 20px;
     border-radius: 10px;
     background-color: #bbada0;
     box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    overflow: hidden;
+}
+
+@media (max-width: 600px) {
+    #gameContainer {
+        width: 90%;
+        padding: 10px;
+    }
 }
 
 #title {
