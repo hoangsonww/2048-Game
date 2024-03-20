@@ -25,10 +25,22 @@ body {
     overflow: hidden;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 700px) {
     #gameContainer {
         width: 90%;
         padding: 10px;
+    }
+
+    #title {
+        font-size: 44px !important;
+    }
+
+    #subtitle {
+        font-size: 20px !important;
+    }
+
+    #scoreContainer {
+        font-size: 20px !important;
     }
 }
 
@@ -39,7 +51,7 @@ body {
 }
 
 #subtitle {
-    font-size: 24px;
+    font-size: 22px;
     color: #655b56;
     margin: 10px 0;
 }
