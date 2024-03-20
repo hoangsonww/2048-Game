@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <title>2048 Game</title>
@@ -8,19 +7,16 @@
     <link rel="icon" type="image/x-icon" href="images/favicon.ico">
     <link rel="manifest" href="manifest.json">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-B01ML0VLV1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-B01ML0VLV1');
+    </script>
 </head>
-
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-B01ML0VLV1"></script>
-<script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'G-B01ML0VLV1');
-</script>
-
 <body>
-    <div id="gameContainer" style="text-align: center">
+    <div id="gameContainer" style="text-align: center" onselectstart="return false" ondragstart="return false">
         <div id="title" style="text-align: center">2048</div>
         <div id="subtitle" style="text-align: center">Join the numbers and get to the 2048 tile!</div>
         <div id="scoreContainer">
@@ -31,5 +27,10 @@
         <button class="buttons" onclick="window.location.href='Web-Version/about.html'">About</button>
     </div>
     <script src="Web-Version/script.js"></script>
+    <script>
+        document.getElementById('gameContainer').addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+    </script>
 </body>
 </html>
