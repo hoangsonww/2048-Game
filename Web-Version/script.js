@@ -213,10 +213,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         else {
             if (yDiff > 0) {
-                moveDown();
+                moveUp();
             }
             else {
-                moveUp();
+                moveDown();
             }
         }
         generateRandom();
