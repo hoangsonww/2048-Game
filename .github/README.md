@@ -1,6 +1,6 @@
 # The 2048 Game
 
-This project consists of three versions of the popular 2048 game: a web application version, a Swift version for iOS, and an Kotlin version for Android. The game's objective is to slide numbered tiles on a grid to combine them and create a tile with the number 2048. Created by [Son Nguyen](https://github.com/hoangsonww) in 2024.
+This project consists of three versions of the popular 2048 game: a **web** application version, a **Swift** version for iOS, and an **Kotlin** version for Android. The game's objective is to slide numbered tiles on a grid to combine them and create a tile with the number 2048. Created by [Son Nguyen](https://github.com/hoangsonww) in 2024.
 
 ## Table of Contents
 
@@ -109,8 +109,11 @@ Requirements:
 - Kotlin 1.3 or later
 - Android 5.0 (API level 21) or later
 - Gradle 6.1.1 or later
+- Android SDK 29 or later
 
 Note that depending on your Android Studio and/or Gradle configuration, you may see different files and directories in your project structure, leading to differing user interfaces that might not look the same as mine. However, the game logic and functionality should remain the same across different configurations.
+
+So, if you see any differences in the project structure or user interface, don't worry! It's just a matter of different configurations.
 
 ---
 
@@ -128,4 +131,4 @@ This project was created by [Son Nguyen](https://github.com/hoangsonww) in Sprin
 
 --- 
 
-This project is still in development. More features and improvements will be added in the future. Thank you for your interest in this project!
+**Note:** This project is still in development. More features and improvements will be added in the future. Thank you for your interest in this project!
