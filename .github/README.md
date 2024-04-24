@@ -1,6 +1,6 @@
-# The 2048 Game
+# The 2048 Game 🎮
 
-This project consists of three versions of the popular 2048 game: a **web** application version, a **Swift** version for iOS, and an **Kotlin** version for Android. The game's objective is to slide numbered tiles on a grid to combine them and create a tile with the number 2048. Created by [Son Nguyen](https://github.com/hoangsonww) in 2024.
+This project consists of three versions of the popular 2048 game: a **web** application version, a **Swift** version for iOS, and an **Kotlin** version for Android. The game's objective is to slide numbered tiles on a grid to combine them and create a tile with the number 2048. Created with ❤️ by [Son Nguyen](https://github.com/hoangsonww) in 2024.
 
 ## Table of Contents
 
@@ -10,6 +10,8 @@ This project consists of three versions of the popular 2048 game: a **web** appl
 - [Contributing](#contributing)
 - [License](#license)
 - [About the Creator](#creator)
+
+---
 
 ## Swift Version
 
@@ -132,3 +134,5 @@ This project was created by [Son Nguyen](https://github.com/hoangsonww) in Sprin
 --- 
 
 **Note:** This project is still in development. More features and improvements will be added in the future. Thank you for your interest in this project!
+
+Created with ❤️ by [Son Nguyen](https://github.com/hoangsonww) in 2024.
