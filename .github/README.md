@@ -131,8 +131,8 @@ This project is licensed under the terms of the MIT license. See the [LICENSE](.
 
 This project was created by [Son Nguyen](https://github.com/hoangsonww) in Spring 2024. If you have any questions, you can reach out to me with the contact information provided in my GitHub profile.
 
---- 
-
 **Note:** This project is still in development. More features and improvements will be added in the future. Thank you for your interest in this project!
+
+---
 
 Created with ❤️ by [Son Nguyen](https://github.com/hoangsonww) in 2024.
