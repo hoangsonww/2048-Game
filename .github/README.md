@@ -83,7 +83,7 @@ The Android version of the 2048 game is designed for Android devices. It provide
 ### User Interface
 
 <p align="center">
-  <img src="../images/android-ui.png" alt="Game UI" style="width: 230px; height: 390px;">
+  <img src="../images/android-ui.png" alt="Game UI" style="width: 230px; height: 390px; border-radius: 8px">
 </p>
 
 ### Project Structure
