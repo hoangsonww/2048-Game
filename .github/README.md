@@ -57,7 +57,7 @@ The web application version of the 2048 game is built by simply using HTML, CSS,
 ### User Interface
 
 <p align="center">
-  <img src="../images/web-version-UI.png" alt="Game UI" style="width: 310px; height: 450px;">
+  <img src="../images/web-version-UI.png" alt="Game UI" style="width: 310px; height: 450px; border-radius: 8px">
 </p>
 
 ### Project Structure
