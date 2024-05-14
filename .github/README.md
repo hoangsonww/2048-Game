@@ -20,7 +20,7 @@ The Swift version of the 2048 game is designed for iOS devices. It provides a sm
 ## User Interface
 
 <p align="center">
-  <img src="../images/IOS-UI.png" alt="Game UI" style="width: 250px; height: 550px;">
+  <img src="../images/IOS-UI.png" alt="Game UI" style="width: 250px; height: 550px; border-radius: 8px">
 </p>
 
 ### Project Structure
