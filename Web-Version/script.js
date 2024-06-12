@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const scoreDisplay = document.getElementById('score');
     const highScoreDisplay = document.getElementById('highScore');
     const size = 4;
+
     let squares = [];
     let score = 0;
     let highScore = parseInt(localStorage.getItem('highScore')) || 0;
