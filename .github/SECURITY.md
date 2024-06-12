@@ -1,9 +1,9 @@
 # The 2048 Game - Security Policies
 
 ## Introduction
-The 2048 Game is a dynamic web application designed to provide users with an engaging platform to explore and learn about various movies, directors, actors, and more. Ensuring the security of our users and the application is of paramount importance. This document outlines the security measures, policies, and best practices implemented in The 2048 Game.
+The 2048 Game is a dynamic multi-platform application designed to provide users with an engaging platform to explore and learn about various movies, directors, actors, and more. Ensuring the security of our users and the application is of paramount importance. This document outlines the security measures, policies, and best practices implemented in The 2048 Game.
 
-Current MovieVerse Version: `1.1.2`
+Current Version: `1.1.2`
 
 ## Security Measures
 
