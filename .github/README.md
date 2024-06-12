@@ -1,4 +1,4 @@
-# The 2048 Game 🎮
+# The 2048 Multi-Platform Game 🎮
 
 This project consists of three versions of the popular 2048 game: a **web** application version, a **Swift** version for iOS, and an **Kotlin** version for Android. The game's objective is to slide numbered tiles on a grid to combine them and create a tile with the number 2048. Created with ❤️ by [Son Nguyen](https://github.com/hoangsonww) in 2024.
 
@@ -10,8 +10,6 @@ This project consists of three versions of the popular 2048 game: a **web** appl
 - [Contributing](#contributing)
 - [License](#license)
 - [About the Creator](#creator)
-
----
 
 ## Swift Version
 
