@@ -1,7 +1,7 @@
 # The 2048 Game - Security Policies
 
 ## Introduction
-The 2048 Game is a dynamic multi-platform application designed to provide users with an engaging platform to explore and learn about various movies, directors, actors, and more. Ensuring the security of our users and the application is of paramount importance. This document outlines the security measures, policies, and best practices implemented in The 2048 Game.
+The 2048 Game is a dynamic multi-platform application that provides an engaging gaming experience to users. Security is a top priority for us, and we are committed to ensuring the confidentiality, integrity, and availability of user data. This document outlines the security measures implemented in the 2048 Game to protect user information and maintain a secure environment.
 
 Current Version: `1.1.2`
 
