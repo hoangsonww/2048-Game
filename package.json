@@ -37,12 +37,13 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hoangsonww/The-Maze-Game.git"
+    "url": "git+https://github.com/hoangsonww/2048-Game.git"
   },
   "bugs": {
-    "url": "https://github.com/hoangsonww/The-Maze-Game/issues"
+    "url": "https://github.com/hoangsonww/2048-Game/issues"
   },
-  "homepage": "https://movie-verse.com",
+  "homepage": "https://hoangsonww.github.io/2048-Game/",
   "dependencies": {
+    "http-server": "^14.1.1"
   }
 }
