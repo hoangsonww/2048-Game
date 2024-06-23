@@ -4,7 +4,7 @@
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#faf8ef",
-  "theme_color": "#faf8ef",
+  "theme_color": "#bbada0",
   "author": "Son Nguyen Hoang",
   "description": "Join the numbers and get to the 2048 tile!",
   "icons": [
