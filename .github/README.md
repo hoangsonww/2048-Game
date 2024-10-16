@@ -46,6 +46,10 @@ Requirements:
 - iOS 14.0 or later
 - macOS 11.0 or later
 
+### Testing
+
+There are also unit testing files for the Swift app, located under the `Game-2048Test` and `Game-2048UITest` directories. You can run these files to perform unit testing of the app.
+
 ---
 
 ## Web Application Version
