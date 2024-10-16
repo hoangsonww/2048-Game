@@ -50,8 +50,6 @@ Requirements:
 
 There are also unit testing files for the Swift app, located under the `Game-2048Test` and `Game-2048UITest` directories. You can run these files to perform unit testing of the app.
 
----
-
 ## Web Application Version
 
 The web application version of the 2048 game is built by simply using HTML, CSS, and JavaScript. It is a simple and responsive game that can be played on any device with a web browser. It can be found in the `Web-Version` subdirectory at [this link](../Web-Version).
@@ -75,8 +73,6 @@ The project structure for the web application version is as follows:
 ### How to Run
 
 To run the web application version of the game, simply open the `index.html` file in a web browser.
-
----
 
 ## Android Version
 
@@ -118,8 +114,6 @@ Requirements:
 Note that depending on your Android Studio and/or Gradle configuration, you may see different files and directories in your project structure, leading to differing user interfaces that might not look the same as mine. However, the game logic and functionality should remain the same across different configurations.
 
 So, if you see any differences in the project structure or user interface, don't worry! It's just a matter of different configurations.
-
----
 
 ## Contributing
 
