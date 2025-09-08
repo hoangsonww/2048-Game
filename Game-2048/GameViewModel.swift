@@ -7,9 +7,9 @@ class GameViewModel: ObservableObject {
     let gridSize: Int = 4
     @Published var hasWon: Bool = false
     
-    var lastGrid: [[Int]]?
-    var lastScore: Int?
-    var isHighScoreSaved: Bool = false
+    var prevGrid: [[Int]]?
+    var prevScore: Int?
+    var prevHighScore: Int?
     
     init() {
         grid = Array(repeating: Array(repeating: 0, count: gridSize), count: gridSize)
@@ -89,8 +89,8 @@ class GameViewModel: ObservableObject {
         }
         
         if score > highScore {
+            prevHighScore = highScore
             highScore = score
-            isHighScoreSaved = true
             UserDefaults.standard.set(highScore, forKey: "highScore")
         }
         
@@ -102,24 +102,24 @@ class GameViewModel: ObservableObject {
     }
     
     func setLastStateOfGame(grid: [[Int]], score: Int) {
-        lastGrid = grid
-        lastScore = score
+        prevGrid = grid
+        prevScore = score
     }
     
     func undo() {
-        guard let lastGrid = lastGrid,
-              let lastScore = lastScore else { return }
-        grid = lastGrid
-        score = lastScore
+        guard let prevGrid = prevGrid,
+              let prevScore = prevScore else { return }
+        grid = prevGrid
+        score = prevScore
         
-        if isHighScoreSaved {
-            self.highScore = lastScore
+        if let prevHighScore = prevHighScore {
+            self.highScore = prevHighScore
             UserDefaults.standard.set(highScore, forKey: "highScore")
-            isHighScoreSaved = false
         }
         
-        self.lastGrid = nil
-        self.lastScore = nil
+        self.prevGrid = nil
+        self.prevScore = nil
+        self.prevHighScore = nil
     }
     
     func isGameOver() -> Bool {
