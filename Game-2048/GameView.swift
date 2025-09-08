@@ -44,7 +44,11 @@ struct GameView: View {
                 .shadow(radius: 5)
             }
             .padding()
-
+            
+            Button("Undo") {
+                viewModel.undo()
+            }
+            
             Spacer()
             Spacer()
         }
@@ -71,10 +75,14 @@ struct GameView: View {
             Alert(
                 title: Text("Game Over"),
                 message: Text("Your score: \(viewModel.score)"),
-                dismissButton: .default(Text("Restart")) {
+                primaryButton: .default(Text("Restart")) {
                     restartGame()
+                },
+                secondaryButton: .default(Text("Undo")) {
+                    viewModel.undo()
                 }
             )
+            
         }
         .alert("Congratulations!", isPresented: $showingWinAlert) {
                Button("Continue", role: .cancel) { showingWinAlert = false }

@@ -6,7 +6,11 @@ class GameViewModel: ObservableObject {
     @Published var highScore: Int = UserDefaults.standard.integer(forKey: "highScore")
     let gridSize: Int = 4
     @Published var hasWon: Bool = false
-
+    
+    var lastGrid: [[Int]]?
+    var lastScore: Int?
+    var isHighScoreSaved: Bool = false
+    
     init() {
         grid = Array(repeating: Array(repeating: 0, count: gridSize), count: gridSize)
         addNewNumber()
@@ -18,7 +22,7 @@ class GameViewModel: ObservableObject {
             hasWon = true
         }
     }
-
+    
     func addNewNumber() {
         var emptyPositions = [(Int, Int)]()
         for i in 0..<gridSize {
@@ -32,12 +36,12 @@ class GameViewModel: ObservableObject {
             grid[position.0][position.1] = Int.random(in: 1...2) * 2
         }
     }
-
+    
     private func moveAndMergeRow(_ row: [Int]) -> [Int] {
         let nonZero = row.filter { $0 != 0 }
         var merged = [Int]()
         var index = 0
-
+        
         while index < nonZero.count {
             if index + 1 < nonZero.count && nonZero[index] == nonZero[index + 1] {
                 merged.append(nonZero[index] * 2)
@@ -48,12 +52,13 @@ class GameViewModel: ObservableObject {
                 index += 1
             }
         }
-
+        
         return merged + Array(repeating: 0, count: gridSize - merged.count)
     }
-
+    
     func swipe(direction: Direction) {
         var oldGrid = grid
+        let oldScore = score
         switch direction {
         case .up:
             for i in 0..<gridSize {
@@ -76,21 +81,45 @@ class GameViewModel: ObservableObject {
         case .right:
             grid = grid.map { moveAndMergeRow($0.reversed()).reversed() }
         }
-
+        
         if oldGrid != grid {
+            setLastStateOfGame(grid: oldGrid, score: oldScore)
+            
             addNewNumber()
         }
-
+        
         if score > highScore {
             highScore = score
+            isHighScoreSaved = true
             UserDefaults.standard.set(highScore, forKey: "highScore")
         }
         
         updateGameStatus()
     }
-
+    
     enum Direction {
         case up, down, left, right
+    }
+    
+    func setLastStateOfGame(grid: [[Int]], score: Int) {
+        lastGrid = grid
+        lastScore = score
+    }
+    
+    func undo() {
+        guard let lastGrid = lastGrid,
+              let lastScore = lastScore else { return }
+        grid = lastGrid
+        score = lastScore
+        
+        if isHighScoreSaved {
+            self.highScore = lastScore
+            UserDefaults.standard.set(highScore, forKey: "highScore")
+            isHighScoreSaved = false
+        }
+        
+        self.lastGrid = nil
+        self.lastScore = nil
     }
     
     func isGameOver() -> Bool {
