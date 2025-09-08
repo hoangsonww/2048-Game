@@ -24,6 +24,7 @@ struct GameView: View {
                     Text("Score: \(viewModel.score)")
                         .font(.title)
                         .bold()
+                        .accessibilityIdentifier("scoreLabel")
                     Text("High Score: \(viewModel.highScore)")
                         .font(.title2)
                 }
@@ -42,6 +43,8 @@ struct GameView: View {
                 .padding()
                 .background(RoundedRectangle(cornerRadius: 10).fill(Color(.systemGray6)))
                 .shadow(radius: 5)
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("GameBoard")
             }
             .padding()
             

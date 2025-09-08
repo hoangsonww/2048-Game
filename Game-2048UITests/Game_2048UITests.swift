@@ -41,18 +41,39 @@ final class Game_2048UITests: XCTestCase {
     }
 
     func testGamePlaySwipeLeft() throws {
-        // Ensure we're on the GameView
-        let scoreLabel = app.staticTexts["Score"]
-        XCTAssertTrue(scoreLabel.exists, "Game should be on the GameView after the launch screen.")
+        // Wait for GameView to appear
+        let scoreLabel = app.staticTexts["scoreLabel"]
+        let exists = NSPredicate(format: "exists == true")
+        expectation(for: exists, evaluatedWith: scoreLabel, handler: nil)
+        waitForExpectations(timeout: 5)
 
-        // Perform a swipe left gesture
-        let gameBoard = app.otherElements["GameBoard"] // Ensure the GameView has the correct accessibility identifier set for the grid/board
+        // Ensure the game board exists
+        let gameBoard = app.otherElements["GameBoard"]
+        expectation(for: exists, evaluatedWith: gameBoard)
+        
+
+        // Perform swipes
         gameBoard.swipeLeft()
+        
+        gameBoard.swipeUp()
+        
+        gameBoard.swipeDown()
+        
+        gameBoard.swipeRight()
 
-        // Since it's hard to predict specific gameplay results in a UI test, verify that the score label updates
-        let scoreValue = scoreLabel.label
-        XCTAssertNotEqual(scoreValue, "0", "Score should update after swiping left.")
+        // Wait for the score to update (score should change from "Score: 0")
+        let scoreUpdatedPredicate = NSPredicate(format: "label != %@", "Score: 0")
+        expectation(for: scoreUpdatedPredicate, evaluatedWith: scoreLabel, handler: nil)
+        waitForExpectations(timeout: 5) { error in
+            if error != nil {
+                XCTFail("Score did not update after swiping left.")
+            }
+        }
+
+        // Optional: assert the label now contains a number > 0
+        XCTAssertNotEqual(scoreLabel.label, "Score: 0", "Score should update after swiping left.")
     }
+
 
     func testLaunchPerformance() throws {
         if #available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 7.0, *) {

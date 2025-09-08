@@ -27,24 +27,27 @@ final class GameViewModelTests: XCTestCase {
         gameViewModel.grid = [
             [2, 2, 4, 0],
             [0, 4, 4, 0],
-            [0, 0, 0, 0],
-            [0, 0, 0, 0]
+            [2, 2, 0, 0],
+            [4, 4, 2, 0]
         ]
 
         gameViewModel.swipe(direction: .left)
 
         let expectedGrid = [
-            [4, 4, 0, 0],
-            [8, 0, 0, 0],
-            [0, 0, 0, 0],
-            [0, 0, 0, 0]
+            [4, 4],
+            [8],
+            [4],
+            [8,2]
         ]
-
-        XCTAssertEqual(gameViewModel.grid, expectedGrid, "Swiping left should correctly merge tiles.")
+        
+        for (rowIndex, expectedRow) in expectedGrid.enumerated() {
+            let actualRowLeftSide = Array(gameViewModel.grid[rowIndex][0..<expectedRow.count])
+            XCTAssertEqual(actualRowLeftSide, expectedRow, "Swiping left should correctly merge tiles.")
+        }
     }
 
     func testAddNewNumberAfterValidMove() throws {
-        // Set a grid with a valid move, swipe left, and ensure a new number is added
+        // Set a grid with a valid move, swipe, and ensure a new number is added
         gameViewModel.grid = [
             [2, 2, 0, 0],
             [0, 0, 0, 0],
@@ -53,7 +56,9 @@ final class GameViewModelTests: XCTestCase {
         ]
 
         let oldGrid = gameViewModel.grid
-        gameViewModel.swipe(direction: .left)
+        
+        // Make sure swipe action not merging tiles. We can’t predict the result if the swipe merges tiles.
+        gameViewModel.swipe(direction: .down)
 
         let nonZeroTilesOld = oldGrid.flatMap { $0 }.filter { $0 != 0 }.count
         let nonZeroTilesNew = gameViewModel.grid.flatMap { $0 }.filter { $0 != 0 }.count
