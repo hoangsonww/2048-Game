@@ -86,6 +86,55 @@ final class GameViewModelTests: XCTestCase {
 
         XCTAssertTrue(gameViewModel.hasWon, "The game should detect a win when a 2048 tile appears.")
     }
+    
+    func testGameUndoRestoresPreviousGridAfterValidMove() throws {
+        // Set a grid
+        gameViewModel.grid = [
+            [2, 2, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0]
+        ]
+        
+
+        let oldGrid = gameViewModel.grid
+        
+        // Valid move
+        gameViewModel.swipe(direction: .left)
+
+        let newGrid = gameViewModel.grid
+        
+        // Undo the move
+        gameViewModel.undo()
+        
+        let undoGrid = gameViewModel.grid
+
+        // Check
+        XCTAssertTrue(undoGrid == oldGrid && newGrid != undoGrid, "Undo should restore the grid to its previous state after a valid move.")
+    }
+    
+    func testGameUndoRevertsHighScoreAfterValidMove() throws {
+        UserDefaults.standard.set(0, forKey: "highScore")
+        gameViewModel.highScore = 0
+        gameViewModel.grid = [
+            [2, 2, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0]
+        ]
+        
+        // Perform a valid move (2 + 2 = 4 points)
+        gameViewModel.swipe(direction: .left)
+        
+        // Move should add 4 points to the score
+        let highScore = gameViewModel.highScore
+        
+        // Undo the move
+        gameViewModel.undo()
+        let undoHighScore = gameViewModel.highScore
+        
+        XCTAssertTrue(highScore == 4 && undoHighScore == 0, "Undo should revert high score to its previous value if it changed due to the undone move.")
+    }
 
     func testPerformanceExample() throws {
         // Performance test case example
