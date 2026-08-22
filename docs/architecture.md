@@ -32,6 +32,15 @@ That is a deliberate trade. A shared core would guarantee parity mechanically bu
 
 The cost of this approach is that a rules change must be made three times. That is accepted, and it is why the invariant list below is written to be unambiguous.
 
+## The same contract, three presentations
+
+Each client renders the same board, score pair, and action bar with native idioms. Pixel identity is not the goal; equivalent capability, hierarchy, and feedback are.
+
+| Web | iOS | Android |
+| :---: | :---: | :---: |
+| ![The web client's board, score cards, and action bar](../images/web-version-UI.png) | ![The SwiftUI client showing the same layout on iPhone](../images/IOS-UI.png) | ![The Compose client showing the same layout on a Pixel](../images/android-ui.png) |
+| Inline SVG icons | SF Symbols | Material vectors |
+
 ## Runtime boundaries
 
 | Concern | Web | iOS | Android |

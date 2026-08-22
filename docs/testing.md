@@ -134,7 +134,17 @@ Tests may also drive state through launch arguments (iOS) or launch state (Andro
 
 ## Manual UI review
 
-Automated coverage does not replace looking at the screen. For every changed surface, inspect normal gameplay, help/about, restart confirmation, win, and game-over states where applicable, and check:
+Automated coverage does not replace looking at the screen. `make screenshots-web` captures these five states at desktop and mobile widths deterministically, so a diff against them is a fast way to spot an unintended visual change:
+
+| Gameplay | Restart confirmation | Win |
+| :---: | :---: | :---: |
+| ![Normal gameplay with a partially filled board](../images/web-version-UI.png) | ![The confirmation dialog shown before replacing an active round](../images/web-restart-dialog.png) | ![The win overlay after reaching 2048](../images/web-win.png) |
+
+| Game over | Mobile layout | About |
+| :---: | :---: | :---: |
+| ![The game-over overlay on a locked board](../images/web-loss.png) | ![The mobile layout with on-screen direction controls](../images/web-mobile-gameplay.png) | ![The rules and strategy page](../images/web-about.png) |
+
+For every changed surface, inspect normal gameplay, help/about, restart confirmation, win, and game-over states where applicable, and check:
 
 - Compact and large breakpoints
 - Icon centering, at every icon, by geometry rather than font metrics

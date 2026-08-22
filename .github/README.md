@@ -97,9 +97,23 @@ The result is a codebase where you can read one platform's implementation in iso
 
 ## Screenshots
 
+The same round, mid-game, on all three clients. Each is a real capture from the current build — the web shots are produced deterministically by `make screenshots-web`, and the native shots come from a simulator and an emulator.
+
 | Web | iOS | Android |
 | :---: | :---: | :---: |
-| ![2048 web app showing the editorial layout, score panel, and game board](../images/web-version-UI.png) | ![2048 SwiftUI app running on an iPhone simulator](../images/IOS-UI.png) | ![2048 Jetpack Compose app running on a Pixel emulator](../images/android-ui.png) |
+| ![2048 web app showing the editorial layout, score panel, and 4×4 game board](../images/web-version-UI.png) | ![2048 SwiftUI app on an iPhone 17 Pro simulator, showing the board and score cards](../images/IOS-UI.png) | ![2048 Jetpack Compose app on a Pixel 6 emulator, showing the board and score cards](../images/android-ui.png) |
+
+### Web states
+
+| Mobile layout | Win | Game over |
+| :---: | :---: | :---: |
+| ![The web game at a 390px mobile width with on-screen direction controls](../images/web-mobile-gameplay.png) | ![The win overlay after reaching 2048, offering a new game or continued play](../images/web-win.png) | ![The game-over overlay on a full board with no available merges](../images/web-loss.png) |
+
+| New-game confirmation | Rules and strategy |
+| :---: | :---: |
+| ![The restart confirmation dialog warning that the current round will be replaced](../images/web-restart-dialog.png) | ![The About page describing the rules, strategy, and project details](../images/web-about.png) |
+
+Regenerate every web capture with `make screenshots-web`; output lands in the gitignored `output/playwright/latest/`.
 
 ---
 

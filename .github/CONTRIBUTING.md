@@ -94,6 +94,12 @@ There is no autoformatter enforced in CI, so match the surrounding code rather t
 
 ## UI and accessibility changes
 
+This is the visual target. Match its density, iconography, and hierarchy rather than introducing a new style:
+
+| Web | iOS | Android |
+| :---: | :---: | :---: |
+| ![The web client's board and controls](../images/web-version-UI.png) | ![The iOS client's board and controls](../images/IOS-UI.png) | ![The Android client's board and controls](../images/android-ui.png) |
+
 Use SVG on web, SF Symbols on iOS, and Material vectors on Android. **Never use Unicode arrows, emoji, or text glyphs as interface icons** — they depend on fonts that may not load and they cannot be centered reliably.
 
 Icons must be centered by geometry and layout, not by font metrics, and the enclosing control must carry an accessible name.

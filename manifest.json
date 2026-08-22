@@ -32,7 +32,7 @@
   "screenshots": [
     {
       "src": "images/web-version-UI.png",
-      "sizes": "1440x1526",
+      "sizes": "1440x1566",
       "type": "image/png",
       "label": "2048 game board, scores, and controls"
     }
