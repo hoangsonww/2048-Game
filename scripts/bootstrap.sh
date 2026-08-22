@@ -16,7 +16,12 @@ done
 
 require_command node
 require_command npm
-use_java_17
+
+# A local JDK 17 is preferred but not required: Gradle provisions its own from
+# gradle/gradle-daemon-jvm.properties, so a missing JDK must not fail setup.
+if ! use_java_17 2>/dev/null; then
+    printf 'No local JDK 17 found. Gradle will download one on the first Android build.\n'
+fi
 
 section "Installing locked JavaScript dependencies"
 if [[ "${skip_hooks}" == true ]]; then
@@ -31,7 +36,7 @@ if [[ "${with_browser}" == true ]]; then
 fi
 
 section "Warming the Gradle wrapper"
-printf 'Using Java %s from %s\n' "$(java_major_version)" "${JAVA_HOME:-$(command -v java)}"
+printf 'This downloads the Gradle distribution, and a JDK 17 if none is present.\n'
 (cd "${ANDROID_ROOT}" && ./gradlew --version >/dev/null)
 
 section "Environment ready"

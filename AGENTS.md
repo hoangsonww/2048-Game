@@ -18,12 +18,20 @@ Read [docs/architecture.md](docs/architecture.md) before changing state, persist
 
 - `make help`: list supported workflows.
 - `make check`: fast syntax, repository, shell, SEO, and discovery checks.
+- `make serve`: serve the web app at `http://localhost:8080`.
 - `make test-web`: complete deterministic and browser web suite.
+- `make android-run`: build, install, and launch on a device or emulator.
+- `make android-build` / `android-install` / `android-devices` / `android-tasks` / `android-clean`.
+- `make gradle ARGS="<task>"`: run any other Gradle task with a correct JDK.
 - `make test-android`: Android unit tests, lint, and debug APK.
 - `make test-android-device`: include Compose tests on a connected device.
+- `make ios-run`: build, install, and launch on a simulator.
+- `make ios-build` / `ios-boot` / `ios-devices`.
 - `make test-ios`: iOS unit and UI tests on an available simulator.
 - `make test`: run every suite supported by the current host.
 - `make screenshots-web`: capture deterministic desktop/mobile UI states.
+
+Never call `adb`, `xcrun`, or `./gradlew` bare from a script or Make target. Use `scripts/android.sh` and `scripts/ios.sh`, which resolve a JDK 17, an `adb` binary, and a simulator UDID. Bare `adb` is not on `PATH` on a default Android Studio install.
 
 Run the smallest relevant checks while iterating and the complete affected-platform suite before handoff. Do not claim an unavailable native runtime passed.
 

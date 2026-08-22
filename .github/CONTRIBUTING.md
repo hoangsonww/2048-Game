@@ -21,11 +21,21 @@ The one thing this project asks above all else: **keep the three clients behavin
 
 ## Quick start
 
-1. Install Node.js 22 and JDK 17. Xcode is needed only for iOS work.
+1. Install Node.js 22. Android work additionally needs the Android SDK 34; iOS work needs Xcode on macOS.
 2. Run `make setup`, or reopen the repository in its dev container.
 3. Run `make doctor` to see which platform toolchains this machine supports.
 4. Run `make help` for the full command list.
 5. Create a branch and make the smallest coherent change.
+
+**You do not need to install or configure a JDK.** Gradle provisions its own JDK 17 from the committed daemon JVM criteria, and `scripts/android.sh` resolves one up front, so Android builds work even when your default `java` is a different version.
+
+Every platform has one-command entry points:
+
+```bash
+make serve          # web app at localhost:8080
+make android-run    # build, install, and launch on a device or emulator
+make ios-run        # build, install, and launch on a simulator
+```
 
 On Linux, iOS is reported as unavailable rather than silently skipped or emulated — that is intentional. Never report a suite as passing when its toolchain was not present.
 

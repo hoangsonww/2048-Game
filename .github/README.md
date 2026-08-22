@@ -29,7 +29,7 @@ A polished, accessible, offline-first 2048 puzzle shipped as **three independent
 ![Android](https://img.shields.io/badge/Android%20SDK%2034-3DDC84?style=for-the-badge&logo=android&logoColor=white)
 ![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)
 ![Material Design 3](https://img.shields.io/badge/Material%20Design%203-757575?style=for-the-badge&logo=materialdesign&logoColor=white)
-![Gradle](https://img.shields.io/badge/Gradle%208.4-02303A?style=for-the-badge&logo=gradle&logoColor=white)
+![Gradle](https://img.shields.io/badge/Gradle%208.13-02303A?style=for-the-badge&logo=gradle&logoColor=white)
 ![JUnit](https://img.shields.io/badge/JUnit-25A162?style=for-the-badge&logo=junit5&logoColor=white)
 ![Espresso](https://img.shields.io/badge/Espresso-8BC34A?style=for-the-badge&logo=android&logoColor=white)
 ![Android Studio](https://img.shields.io/badge/Android%20Studio-3DDC84?style=for-the-badge&logo=androidstudio&logoColor=white)
@@ -267,7 +267,9 @@ Deeper detail lives in [`docs/architecture.md`](../docs/architecture.md).
 | Web | Node.js 22+, npm | macOS, Linux, Windows, dev container |
 | Web browser tests | The above, plus Chromium via `npx playwright install chromium` | macOS, Linux, dev container |
 | iOS | Xcode 15.3+, iOS 17.4+ simulator or device | macOS only |
-| Android | JDK 17, Android SDK 34, API 24+ emulator or device | macOS, Linux, Windows, dev container |
+| Android | Android SDK 34, API 24+ emulator or device. **No JDK setup needed** — Gradle downloads its own JDK 17. | macOS, Linux, Windows, dev container |
+
+**You do not need to configure a JDK for Android.** Gradle 8.13 daemon JVM criteria are committed in `Android-Version/Game2048/gradle/gradle-daemon-jvm.properties`, so the first `./gradlew` invocation downloads a matching Adoptium JDK 17 for your OS and architecture and runs on it — even if your machine's default `java` is a different version, and even if you have no JDK at all. This is the single most common Android onboarding failure, and it is designed out rather than documented around.
 
 Clone and bootstrap:
 
@@ -281,7 +283,18 @@ make help      # lists every supported workflow
 
 `make doctor` is the fastest way to find out what you can run locally. It reports the status of Git, Node, npm, the JDK, ShellCheck, `xcodebuild`, `xcrun`, and `ANDROID_HOME`, so you know up front whether the iOS or Android suites are available before you try them.
 
-**Dev container.** `.devcontainer/` provisions Node.js 22, JDK 17, Android SDK 34 with build-tools, Gradle, ShellCheck, GNU Make, the GitHub CLI, and Chromium for Playwright. It covers the complete web and Android JVM workflows out of the box. iOS builds require Xcode and therefore macOS — they cannot run in the container.
+**Dev container.** `.devcontainer/` provisions Node.js 22, JDK 17, Android SDK 34 with build-tools 34.0.0, ShellCheck, GNU Make, the GitHub CLI, and Chromium for Playwright, on top of the Microsoft Java 17 Bookworm base image. Open the repository in VS Code and choose **Reopen in Container**, or use GitHub Codespaces.
+
+It covers the complete web and Android JVM workflows out of the box. **iOS cannot be containerized** — Xcode is macOS-only and its license forbids redistribution, so iOS builds always require a macOS host. That is a platform constraint, not a gap in this setup.
+
+To verify the container yourself:
+
+```bash
+make verify-devcontainer               # build the image and check every tool
+./scripts/verify-devcontainer.sh --build   # additionally build the Android client inside it
+```
+
+The `--build` form uses an isolated `git archive` copy rather than mounting your working tree, so a container build never contends with a host build over the same Gradle output directory.
 
 **Git hooks.** Husky activates during `npm install`: `pre-commit` runs the fast repository checks and `pre-push` runs the full web suite. Contributors who prefer the Python framework can install the equivalent hooks from `.pre-commit-config.yaml` with `pre-commit install --install-hooks`.
 
@@ -317,50 +330,67 @@ Output lands in `output/playwright/` (gitignored) covering gameplay, the restart
 
 Requirements: Xcode 15.3 or newer, targeting iOS 17.4+. The app builds for both iPhone and iPad.
 
+The fastest path needs no Xcode UI and no device UDID — one command builds, installs, and launches on an automatically selected simulator:
+
+```bash
+make ios-run
+```
+
+Other entry points:
+
+```bash
+make ios-devices   # list available iPhone simulators
+make ios-boot      # boot a simulator and open Simulator.app
+make ios-build     # build only
+make test-ios      # full model + UI test run with coverage
+```
+
+Every one of these resolves a simulator for you. To pin a specific device, set `IOS_SIMULATOR_ID` to a UDID from `make ios-devices`.
+
+To work in Xcode instead:
+
 1. Open `2048 Game.xcodeproj`.
 2. Select the **Game-2048** scheme and any iPhone or iPad simulator.
 3. Run with `⌘R`. Run the unit and UI tests with `⌘U`.
-
-From the command line:
-
-```bash
-# Build only
-xcodebuild -project "2048 Game.xcodeproj" -scheme "Game-2048" \
-  -sdk iphonesimulator \
-  -destination "platform=iOS Simulator,name=iPhone 17 Pro" \
-  build CODE_SIGNING_ALLOWED=NO
-
-# Full test run (model + UI) with coverage
-make test-ios
-```
-
-`make test-ios` picks an available iPhone simulator automatically. To pin a specific one, set `IOS_SIMULATOR_ID` to a UDID from `xcrun simctl list devices available`.
 
 ---
 
 ## Run the Android app
 
-Requirements: JDK 17, Android SDK 34, and an API 24 or newer emulator or device. `minSdk` is 24; `compileSdk` and `targetSdk` are 34.
+Requirements: Android SDK 34 and an API 24 or newer emulator or device. `minSdk` is 24; `compileSdk` and `targetSdk` are 34. **A JDK is not a prerequisite** — Gradle provisions its own.
 
-1. Open `Android-Version/Game2048` in Android Studio.
-2. Let the Gradle sync finish.
-3. Select a device and run the `app` configuration.
+Build, install, and launch on a connected device or emulator in one command:
 
-From the command line:
+```bash
+make android-run
+```
+
+Other entry points, all from the repository root:
+
+```bash
+make android-build          # debug APK
+make android-install        # build and install
+make android-tasks          # list every available Gradle task
+make android-clean          # remove build output
+make test-android           # unit tests, lint, and APK assembly
+make test-android-device    # adds the Compose suite on a connected device
+make gradle ARGS="assembleRelease"   # any other Gradle task
+```
+
+Every one of these routes through `scripts/android.sh`, which guarantees a correct JDK before invoking Gradle.
+
+Raw Gradle also works, thanks to the committed daemon JVM criteria:
 
 ```bash
 cd Android-Version/Game2048
-
-./gradlew testDebugUnitTest      # deterministic ViewModel tests
-./gradlew lintDebug              # Android lint
-./gradlew assembleDebug          # debug APK
-./gradlew installDebug           # build and install on a connected device
-./gradlew connectedDebugAndroidTest   # Compose UI tests (needs a device)
+./gradlew assembleDebug
 ```
 
-Or from the repository root: `make test-android`, and `make test-android-device` to include the on-device Compose suite.
+The first run downloads a matching JDK 17 (roughly 180 MB, cached in `~/.gradle/jdks/`) and every run after that is fast.
 
-The debug APK is written to `Android-Version/Game2048/app/build/outputs/apk/debug/app-debug.apk`.
+To work in Android Studio instead, open `Android-Version/Game2048`, let the Gradle sync finish, then run the `app` configuration.
+
+The debug APK is written to `Android-Version/Game2048/app/build/outputs/apk/debug/app-debug.apk`. If you only want to *play* the Android app, download the prebuilt APK from the [latest release](https://github.com/hoangsonww/2048-Game/releases/latest) instead — no toolchain required.
 
 ---
 
@@ -376,8 +406,18 @@ Every workflow has a stable `make` entry point. Prefer these over ad-hoc command
 | `make serve` | Serves the web app at `http://localhost:8080` | Node 22+ |
 | `make check` | Fast syntax, repository, shell, SEO, and discovery checks | Node 22+ |
 | `make test-web` | Complete deterministic and browser web suite | Node 22+, Chromium |
-| `make test-android` | Android unit tests, lint, and debug APK | JDK 17, SDK 34 |
+| `make android-build` | Builds the Android debug APK | SDK 34 |
+| `make android-install` | Builds and installs on a connected device | SDK 34 + device |
+| `make android-run` | Installs and launches on a connected device | SDK 34 + device |
+| `make android-tasks` | Lists every available Gradle task | SDK 34 |
+| `make android-clean` | Removes Android build output | SDK 34 |
+| `make gradle ARGS="…"` | Runs any Gradle task with a correct JDK | SDK 34 |
+| `make test-android` | Android unit tests, lint, and debug APK | SDK 34 |
 | `make test-android-device` | Adds Compose tests on a connected device | Above + emulator/device |
+| `make ios-build` | Builds the iOS app for a simulator | macOS, Xcode |
+| `make ios-run` | Builds, installs, and launches on a simulator | macOS, Xcode |
+| `make ios-boot` | Boots a simulator and opens Simulator.app | macOS, Xcode |
+| `make ios-devices` | Lists available iPhone simulators | macOS, Xcode |
 | `make test-ios` | iOS unit and UI tests on an available simulator | macOS, Xcode |
 | `make test` | Every suite this host can support | Varies |
 | `make screenshots-web` | Deterministic desktop and mobile UI captures | Node 22+, Chromium |
@@ -488,6 +528,9 @@ Skills are task routers, not blanket permission — an agent must still respect 
 | `npm test` fails on the browser step | Chromium is not installed. Run `npx playwright install chromium`. |
 | `make test-ios` reports no simulator | No available iPhone runtime. Check `xcrun simctl list devices available`, then pin one with `IOS_SIMULATOR_ID=<udid>`. |
 | Gradle cannot find the Android SDK | `ANDROID_HOME` is unset, or `local.properties` is missing. `local.properties` is machine-local and intentionally not committed — Android Studio regenerates it on first sync. |
+| `Android Gradle plugin requires Java 17` on a raw `./gradlew` | Your default JDK is older and the daemon JVM criteria were not picked up. Use `make android-build`, which resolves a JDK 17 explicitly, and confirm `Android-Version/Game2048/gradle/gradle-daemon-jvm.properties` is present. |
+| First Android build is slow | Gradle is downloading its own JDK 17 (~180 MB) and the Gradle distribution. Both are cached; later builds take seconds. |
+| `adb: command not found` | `platform-tools` is not on `PATH`. The `make` targets resolve `adb` from `ANDROID_HOME` automatically — use `make android-run` rather than calling `adb` directly. |
 | `connectedDebugAndroidTest` hangs or loses the hierarchy | An emulator/ADB harness failure rather than an app defect. Check `adb logcat`, restart the emulator without wiping data, and rerun the exact failing test before filing a bug. |
 | Port 8080 already in use | Another server is bound. Stop it, or run the static server on a different port. |
 | The web page looks stale after an edit | The dev server disables caching, but a service-worker-style hard cache in the browser can persist. Hard-reload with `⌘⇧R` / `Ctrl+Shift+R`. |
