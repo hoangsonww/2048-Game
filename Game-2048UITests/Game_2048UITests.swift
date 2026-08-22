@@ -40,6 +40,47 @@ final class Game_2048UITests: XCTestCase {
         assertScore(32, in: app)
     }
 
+    /// A vertical board swipe must reach the game rather than the surrounding
+    /// container.
+    ///
+    /// The layout used to ask for ~887pt inside an 874pt viewport. That 13pt
+    /// overflow selected a scrolling layout, and a ScrollView's pan is a UIKit
+    /// recogniser that outranks the board's SwiftUI DragGesture, so every
+    /// vertical swipe scrolled the page and never moved a tile. Guard all three
+    /// facts: no scrolling container, nothing moves, and the swipe registers.
+    func testVerticalBoardSwipeReachesTheBoardAndDoesNotMoveTheScreen() {
+        let app = launch(state: "merge")
+        let board = app.otherElements["GameBoard"]
+        XCTAssertTrue(board.waitForExistence(timeout: 15))
+
+        XCTAssertFalse(app.scrollViews.firstMatch.exists,
+                       "the board must not sit inside a scrolling container")
+
+        // Anchor on chrome outside the board: if the container scrolls, this
+        // moves even when the board's own frame does not.
+        let title = app.staticTexts["Make space."]
+        XCTAssertTrue(title.exists)
+        let titleBefore = title.frame
+        let boardBefore = board.frame
+
+        // The fixture is [2, 2, 0, 0] on the top row, so up is legitimately an
+        // ineffective move: it must change nothing and record no undo.
+        board.swipeUp()
+        XCTAssertEqual(title.frame.origin.y, titleBefore.origin.y, accuracy: 1.0,
+                       "a board swipe must not move the surrounding screen")
+        XCTAssertEqual(board.frame.origin.y, boardBefore.origin.y, accuracy: 1.0,
+                       "the board must stay anchored during a swipe")
+        XCTAssertFalse(app.buttons["Undo"].isEnabled,
+                       "an ineffective move must not create undo history")
+
+        // Down is a valid move for this fixture, so it must register.
+        board.swipeDown()
+        XCTAssertEqual(title.frame.origin.y, titleBefore.origin.y, accuracy: 1.0,
+                       "a downward board swipe must not drag the page either")
+        XCTAssertTrue(app.buttons["Undo"].isEnabled,
+                      "a valid vertical swipe must reach the board")
+    }
+
     func testNewGameConfirmationSupportsCancelAndReset() {
         let app = launch(state: "merge")
         app.buttons["New game"].tap()

@@ -29,22 +29,27 @@ struct GameView: View {
             }
             .ignoresSafeArea()
 
-            ScrollView {
-                VStack(spacing: 22) {
-                    header
-                    titleBlock
-                    scoreBar
-                    board
-                    actionBar
-                    Text("Swipe anywhere on the board to move")
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
-                        .foregroundStyle(muted)
+            // The board must not sit inside a scrolling container. A ScrollView
+            // pan is a UIKit gesture recogniser, so it beats the board's SwiftUI
+            // DragGesture outright: every vertical swipe scrolled the page and
+            // never reached the game, which measured as the whole screen
+            // shifting 13pt with no move registered. `.highPriorityGesture` and
+            // `.scrollBounceBehavior` both fail to change that, because the
+            // content genuinely overflowed and the recogniser genuinely won.
+            //
+            // The layout does not need to scroll: the board already sizes with
+            // `.aspectRatio(1, contentMode: .fit)`, so given a fixed height it
+            // absorbs the difference instead of overflowing. ViewThatFits keeps
+            // a scrolling fallback for the cases that truly cannot fit — very
+            // small devices, or the largest accessibility text sizes — where
+            // being able to reach the controls matters more than swipe purity.
+            ViewThatFits(in: .vertical) {
+                content
+                ScrollView {
+                    content
                 }
-                .padding(.horizontal, 18)
-                .padding(.top, 12)
-                .padding(.bottom, 28)
+                .scrollIndicators(.hidden)
             }
-            .scrollIndicators(.hidden)
         }
         .sheet(isPresented: $showingHelp) { HelpView() }
         .confirmationDialog("Start a fresh board?", isPresented: $confirmingNewGame, titleVisibility: .visible) {
@@ -52,6 +57,27 @@ struct GameView: View {
             Button("Keep playing") { confirmingNewGame = false }
         } message: { Text("Your best score stays safe, but this round will be replaced.") }
         .onChange(of: viewModel.hasWon) { _, hasWon in if hasWon { showingWin = true } }
+    }
+
+    // Sized to fit an iPhone viewport without scrolling. The previous spacing
+    // asked for ~887pt inside an 874pt screen, and that 13pt overflow was the
+    // whole bug: it forced the scrolling branch, whose pan recogniser then ate
+    // every vertical swipe. Keep the total under the viewport so the static
+    // branch is chosen and the board receives its own gestures.
+    private var content: some View {
+        VStack(spacing: 18) {
+            header
+            titleBlock
+            scoreBar
+            board
+            actionBar
+            Text("Swipe anywhere on the board to move")
+                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .foregroundStyle(muted)
+        }
+        .padding(.horizontal, 18)
+        .padding(.top, 8)
+        .padding(.bottom, 10)
     }
 
     private var header: some View {
@@ -101,9 +127,11 @@ struct GameView: View {
                 else if showingWin { EndPanel(kicker: "Goal reached", title: "You made 2048", detail: "Keep building, or start with a clean board.", primary: "New game", secondary: "Keep playing", primaryAction: restart, secondaryAction: { showingWin = false }) }
             }
             .contentShape(Rectangle())
-            // High priority so the board wins against the enclosing ScrollView's
-            // pan. With a plain .gesture the scroll view claims the drag and a
-            // board swipe scrolls the page instead of moving tiles.
+            // High priority so the board's drag is preferred over gestures in
+            // the view hierarchy. This alone does not stop the enclosing
+            // ScrollView from panning — a UIScrollView's own recogniser is not
+            // a SwiftUI gesture — which is why the ScrollView also pins its
+            // bounce to content size.
             .highPriorityGesture(DragGesture(minimumDistance: 22).onEnded(handleDrag))
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("GameBoard")
