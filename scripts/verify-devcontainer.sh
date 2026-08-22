@@ -34,6 +34,10 @@ docker build --platform=linux/amd64 \
     "${PROJECT_ROOT}"
 
 section "Verifying the toolchain inside the container"
+# Deliberately a login shell (-l): /etc/profile resets PATH and discards the
+# Dockerfile's ENV PATH, so a non-login shell would pass while the shell a
+# contributor actually gets in the container fails. The Dockerfile symlinks
+# adb, sdkmanager, and avdmanager into /usr/local/bin for this reason.
 docker run --rm --platform=linux/amd64 "${IMAGE_TAG}" bash -lc '
 set -e
 fail=0
