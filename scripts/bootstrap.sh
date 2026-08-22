@@ -41,3 +41,12 @@ printf 'This downloads the Gradle distribution, and a JDK 17 if none is present.
 
 section "Environment ready"
 printf 'Run make help for the available project commands.\n'
+
+# The browser suite needs a Chromium download that this script only performs
+# with --with-browser. Say so here rather than letting `make test-web` run the
+# whole suite and fail on its last step.
+if [[ "${with_browser}" == false ]] && ! browser_runtime_installed; then
+    printf '\nBrowser tests need a one-time Chromium download:\n'
+    printf '  npx playwright install chromium\n'
+    printf 'Or re-run this script as: ./scripts/bootstrap.sh --with-browser\n'
+fi

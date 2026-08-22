@@ -43,6 +43,14 @@ resolve_adb() {
     return 1
 }
 
+# True when a Playwright browser has been downloaded. The browser suite needs
+# this; `npm ci` alone does not provide it.
+browser_runtime_installed() {
+    local cache="${PLAYWRIGHT_BROWSERS_PATH:-${HOME}/Library/Caches/ms-playwright}"
+    [[ "$(uname -s)" == "Darwin" ]] || cache="${PLAYWRIGHT_BROWSERS_PATH:-${HOME}/.cache/ms-playwright}"
+    compgen -G "${cache}/chromium*" >/dev/null 2>&1
+}
+
 require_macos() {
     if [[ "$(uname -s)" != "Darwin" ]]; then
         printf 'This workflow requires macOS and Xcode.\n' >&2

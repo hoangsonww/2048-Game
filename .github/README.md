@@ -281,7 +281,23 @@ make doctor    # reports which platform toolchains this machine can build
 make help      # lists every supported workflow
 ```
 
-`make doctor` is the fastest way to find out what you can run locally. It reports the status of Git, Node, npm, the JDK, ShellCheck, `xcodebuild`, `xcrun`, and `ANDROID_HOME`, so you know up front whether the iOS or Android suites are available before you try them.
+`make doctor` is the fastest way to find out what you can run locally. It reports the status of Git, Node, npm, the JDK, ShellCheck, Docker, `xcodebuild`, `xcrun`, `ANDROID_HOME`, and `adb`, so you know up front whether the iOS or Android suites are available before you try them.
+
+To include the Chromium download that the browser tests need, run setup as:
+
+```bash
+./scripts/bootstrap.sh --with-browser
+```
+
+Plain `make setup` skips it to keep first-run setup light, and prints the one-line command to add it later.
+
+Then run any client with a single command:
+
+```bash
+make serve         # web app at http://localhost:8080
+make android-run   # build, install, and launch on a device or emulator
+make ios-run       # build, install, and launch on a simulator
+```
 
 **Dev container.** `.devcontainer/` provisions Node.js 22, JDK 17, Android SDK 34 with build-tools 34.0.0, ShellCheck, GNU Make, the GitHub CLI, and Chromium for Playwright, on top of the Microsoft Java 17 Bookworm base image. Open the repository in VS Code and choose **Reopen in Container**, or use GitHub Codespaces.
 
