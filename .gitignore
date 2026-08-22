@@ -1,1 +1,128 @@
-node_modules
+# ---------------------------------------------------------------------------
+# Operating system noise
+# ---------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ---------------------------------------------------------------------------
+# Editor and IDE state
+#
+# The shared IntelliJ module descriptors (.idea/Game-2048.iml, modules.xml,
+# vcs.xml) are intentionally tracked. Everything else under .idea/ is
+# per-developer state and must stay local.
+# ---------------------------------------------------------------------------
+.idea/*
+!.idea/.gitignore
+!.idea/Game-2048.iml
+!.idea/modules.xml
+!.idea/vcs.xml
+*.iws
+*.ipr
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
+*.swp
+*.swo
+*~
+.fleet/
+.zed/
+
+# ---------------------------------------------------------------------------
+# JavaScript and Node tooling
+# ---------------------------------------------------------------------------
+node_modules/
+coverage/
+.nyc_output/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm/
+.eslintcache
+
+# ---------------------------------------------------------------------------
+# Local environment and secrets
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.p8
+*.mobileprovision
+*.keystore
+*.jks
+
+# ---------------------------------------------------------------------------
+# Android, Gradle, and machine-local SDK paths
+# ---------------------------------------------------------------------------
+.gradle/
+Android-Version/Game2048/.gradle/
+Android-Version/Game2048/build/
+Android-Version/Game2048/app/build/
+Android-Version/Game2048/local.properties
+local.properties
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+captures/
+.externalNativeBuild/
+.cxx/
+lint-results*.html
+lint-results*.xml
+
+# ---------------------------------------------------------------------------
+# Xcode, Swift, and simulator state
+# ---------------------------------------------------------------------------
+DerivedData/
+build/
+*.xcuserstate
+*.xcuserdatad
+xcuserdata/
+*.xcresult
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+Packages/
+.swiftpm/
+.build/
+Pods/
+
+# ---------------------------------------------------------------------------
+# Test caches, browser harnesses, and local QA artifacts
+#
+# output/ holds local verification evidence (simulator/emulator captures,
+# Playwright runs, Lighthouse reports). It is reproducible via `make test`
+# and `make screenshots-web`, so it is deliberately not versioned.
+# ---------------------------------------------------------------------------
+.cache/
+test-results/
+playwright-report/
+blob-report/
+.playwright-mcp/
+output/
+*.tmp
+*.log
+
+# ---------------------------------------------------------------------------
+# Scratch working notes and ad-hoc capture files
+# ---------------------------------------------------------------------------
+progress.md
+scratch/
+tmp/
+*-check.png
+*-scratch.*

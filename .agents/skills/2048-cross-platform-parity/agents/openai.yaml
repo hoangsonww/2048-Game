@@ -1,0 +1,6 @@
+interface:
+  display_name: "2048 Cross-platform Parity"
+  short_description: "Keep all three clients behaviorally aligned"
+  default_prompt: "Use $2048-cross-platform-parity to coordinate this behavior across every client."
+policy:
+  allow_implicit_invocation: true

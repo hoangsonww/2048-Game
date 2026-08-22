@@ -1,0 +1,53 @@
+{
+  "name": "2048 Web and Android",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "remoteUser": "vscode",
+  "containerEnv": {
+    "ANDROID_HOME": "/opt/android-sdk",
+    "ANDROID_SDK_ROOT": "/opt/android-sdk"
+  },
+  "mounts": [
+    "source=game2048-gradle,target=/home/vscode/.gradle,type=volume",
+    "source=game2048-npm,target=/home/vscode/.npm,type=volume"
+  ],
+  "forwardPorts": [8080],
+  "portsAttributes": {
+    "8080": {
+      "label": "2048 web app",
+      "onAutoForward": "notify"
+    }
+  },
+  "postCreateCommand": "./scripts/bootstrap.sh --with-browser --skip-hooks",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "eamodio.gitlens",
+        "ms-azuretools.vscode-docker",
+        "ms-playwright.playwright",
+        "redhat.java",
+        "streetsidesoftware.code-spell-checker",
+        "vscjava.vscode-gradle"
+      ],
+      "settings": {
+        "editor.formatOnSave": false,
+        "files.eol": "\n",
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "8gb",
+    "storage": "24gb"
+  }
+}

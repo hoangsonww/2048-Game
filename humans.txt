@@ -1,0 +1,9 @@
+/* TEAM */
+Creator and maintainer: Son Nguyen
+Repository: https://github.com/hoangsonww/2048-Game
+
+/* SITE */
+Language: English
+Standards: HTML5, CSS, JavaScript, Web App Manifest, JSON-LD
+Software: Static web application with native SwiftUI and Jetpack Compose counterparts
+Privacy: No accounts, analytics, advertising, or project-operated backend

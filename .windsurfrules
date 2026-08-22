@@ -1,0 +1,1 @@
+Read AGENTS.md before changing this repository. Preserve cross-platform 2048 behavior, use the checked-in Make and script entry points, use proper vector or platform-native icons, and run the affected tests before reporting completion.

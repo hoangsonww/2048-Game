@@ -1,0 +1,12 @@
+.git
+.idea
+.vscode
+Android-Version/Game2048/.gradle
+Android-Version/Game2048/app/build
+coverage
+DerivedData
+node_modules
+output
+playwright-report
+test-results
+*.xcresult

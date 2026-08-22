@@ -1,0 +1,15 @@
+web:
+  - changed-files:
+      - any-glob-to-any-file: ["index.html", "manifest.json", "robots.txt", "sitemap.xml", "Web-Version/**", "tests/web/**"]
+ios:
+  - changed-files:
+      - any-glob-to-any-file: ["Game-2048/**", "Game-2048Tests/**", "Game-2048UITests/**", "*.xcodeproj/**"]
+android:
+  - changed-files:
+      - any-glob-to-any-file: ["Android-Version/**"]
+documentation:
+  - changed-files:
+      - any-glob-to-any-file: ["**/*.md", "llms*.txt"]
+developer-experience:
+  - changed-files:
+      - any-glob-to-any-file: [".devcontainer/**", ".github/**", ".husky/**", ".agents/**", "scripts/**", "Makefile"]

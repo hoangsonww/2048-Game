@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title">
+  <title id="title">2048 app icon</title>
+  <rect width="1024" height="1024" fill="#f5f0e6"/>
+  <rect x="174" y="174" width="676" height="676" rx="168" fill="#24231f"/>
+  <rect x="294" y="294" width="174" height="174" rx="24" fill="#fffdf8"/>
+  <rect x="556" y="294" width="174" height="174" rx="24" fill="#fffdf8"/>
+  <rect x="294" y="556" width="174" height="174" rx="24" fill="#fffdf8"/>
+  <rect x="556" y="556" width="174" height="174" rx="24" fill="#e96345"/>
+</svg>

@@ -1,0 +1,7 @@
+* text=auto eol=lf
+*.bat text eol=crlf
+*.png binary
+*.ico binary
+*.jar binary
+*.xcassets/** linguist-generated=false
+output/** linguist-generated=true

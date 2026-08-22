@@ -1,0 +1,65 @@
+name: Bug report
+description: Report reproducible incorrect behavior in one or more 2048 clients.
+title: "[Bug]: "
+labels: [bug, needs-triage]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping improve the project. Please avoid including private data or signing credentials.
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Web — desktop
+        - Web — mobile
+        - iOS / iPadOS
+        - Android
+        - Repository tooling or CI
+        - Multiple platforms
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser and version, device model, OS version, or CI run link.
+      placeholder: Safari 18 on iPhone 16 / Android 14 Pixel 7 / Node 22
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Start a new game
+        2. Swipe left
+        3. …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshots, logs, or saved-state details
+      description: Drag files here. Remove tokens, personal data, and local absolute paths first.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues for this problem.
+          required: true
+        - label: I can reproduce this on the latest default branch.
+          required: true
