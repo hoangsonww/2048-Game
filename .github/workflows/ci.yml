@@ -25,11 +25,14 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install locked dependencies
         run: npm ci
+
+      - name: Audit JavaScript dependencies
+        run: npm audit --audit-level=high
 
       - name: Install Chromium and system dependencies
         run: npx playwright install --with-deps chromium
@@ -37,8 +40,17 @@ jobs:
       - name: Validate JavaScript syntax
         run: npm run check:syntax
 
+      - name: Validate repository and discovery metadata
+        run: npm run check:repo
+
+      - name: Lint project shell utilities
+        run: shellcheck -x -P scripts scripts/*.sh .husky/pre-commit .husky/pre-push
+
       - name: Run rules, SEO, asset, and coverage tests
         run: npm run test:unit
+
+      - name: Run repository tooling tests
+        run: npm run test:tooling
 
       - name: Run browser interaction tests
         run: npm run test:browser

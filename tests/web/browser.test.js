@@ -63,6 +63,8 @@ test("fresh game renders two valid tiles and accessible vector controls", async 
     assert.equal(snapshot.board.flat().filter(Boolean).length, 2);
     assert.equal(snapshot.board.flat().every(value => value === 0 || value === 2 || value === 4), true);
     assert.equal(await page.locator("#gridContainer .cell").count(), 16);
+    assert.equal(await page.locator('#gridContainer > [role="row"]').count(), 4);
+    assert.equal(await page.locator('#gridContainer > [role="row"] > [role="gridcell"]').count(), 16);
     assert.equal(await page.locator("#undoButton svg, #newGameButton svg").count(), 2);
     assert.equal(await page.locator("#undoButton").isDisabled(), true);
     assert.deepEqual(errors, []);

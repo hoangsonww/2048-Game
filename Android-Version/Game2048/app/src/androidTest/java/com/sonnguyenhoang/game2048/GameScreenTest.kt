@@ -1,7 +1,5 @@
 package com.sonnguyenhoang.game2048
 
-import androidx.compose.ui.test.assertDoesNotExist
-import androidx.compose.ui.test.assertExists
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -40,9 +38,9 @@ class GameScreenTest {
         game.setGameForTesting(listOf(listOf(2, 2, 0, 0), zeros, zeros, zeros), 32)
         show(game)
         compose.onNodeWithContentDescription("2048 game board").performTouchInput { swipeLeft() }
-        compose.onNodeWithText("36").assertExists()
+        compose.onNodeWithContentDescription("Score: 36").assertExists()
         compose.onNodeWithText("Undo").assertIsEnabled().performClick()
-        compose.onNodeWithText("32").assertExists()
+        compose.onNodeWithContentDescription("Score: 32").assertExists()
         compose.onNodeWithText("Undo").assertIsNotEnabled()
     }
 
@@ -55,15 +53,15 @@ class GameScreenTest {
         compose.onNodeWithText("Start a fresh board?").assertExists()
         compose.onNodeWithText("Keep playing").performClick()
         compose.onNodeWithText("Start a fresh board?").assertDoesNotExist()
-        compose.onNodeWithText("32").assertExists()
+        compose.onNodeWithContentDescription("Score: 32").assertExists()
         compose.onNodeWithText("New game").performClick()
         compose.onAllNodesWithText("New game")[1].performClick()
-        compose.onNodeWithText("0").assertExists()
+        compose.onNodeWithContentDescription("Score: 0").assertExists()
         compose.onNodeWithText("Undo").assertIsNotEnabled()
     }
 
     @Test
-    fun winAndGameOverOverlaysProvideCompleteRecoveryFlows() {
+    fun winOverlayCanContinuePlaying() {
         val won = GameViewModel(randomIndex = { 0 }, randomUnit = { 0.0 })
         won.setGameForTesting(listOf(listOf(2048, 4, 2, 0), zeros, zeros, zeros), 4096, true)
         show(won)
@@ -71,13 +69,17 @@ class GameScreenTest {
         compose.onNodeWithText("Keep playing").performClick()
         compose.onNodeWithText("You made 2048").assertDoesNotExist()
 
+    }
+
+    @Test
+    fun gameOverOverlayCanStartFreshRound() {
         val lost = GameViewModel(randomIndex = { 0 }, randomUnit = { 0.0 })
         lost.setGameForTesting(listOf(listOf(2, 4, 2, 4), listOf(4, 2, 4, 2), listOf(2, 4, 2, 4), listOf(4, 2, 4, 2)), 512)
         show(lost)
         compose.onNodeWithText("No more moves").assertExists()
         compose.onNodeWithText("Try again").performClick()
         compose.onNodeWithText("No more moves").assertDoesNotExist()
-        compose.onNodeWithText("0").assertExists()
+        compose.onNodeWithContentDescription("Score: 0").assertExists()
     }
 
     private val zeros = listOf(0, 0, 0, 0)

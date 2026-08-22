@@ -61,6 +61,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation("androidx.compose.material3:material3:1.2.1")
     implementation("androidx.compose.animation:animation:1.0.5")
+    implementation("androidx.compose.material:material-icons-extended")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

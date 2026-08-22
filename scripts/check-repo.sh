@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -Eeuo pipefail
+# shellcheck source=common.sh
 source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/common.sh"
 
 if [[ "${1:-}" == "--staged" ]]; then
@@ -19,7 +20,7 @@ section "Validating repository structure and web discovery metadata"
 
 if command -v shellcheck >/dev/null 2>&1; then
     section "Checking shell scripts"
-    (cd "${PROJECT_ROOT}" && shellcheck scripts/*.sh .husky/pre-commit .husky/pre-push)
+    (cd "${PROJECT_ROOT}" && shellcheck -x -P scripts scripts/*.sh .husky/pre-commit .husky/pre-push)
 else
     printf '\nNote: shellcheck is unavailable; shell validation was skipped.\n'
 fi

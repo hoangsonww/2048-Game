@@ -52,8 +52,8 @@ test("calculateMove handles all four directions without mutating input", () => {
     assert.deepEqual(calculateMove(board, "right"), {
         board: [0, 0, 2, 4, 0, 0, 0, 8, 0, 0, 0, 4, 0, 0, 0, 0], gained: 16
     });
-    assert.deepEqual(calculateMove(board, "up").board, [2, 4, 4, 2, 4, 0, 2, 0, 2, 0, 0, 0, 0, 0, 0, 0]);
-    assert.deepEqual(calculateMove(board, "down").board, [0, 0, 0, 0, 2, 0, 0, 0, 4, 0, 2, 0, 2, 4, 4, 2]);
+    assert.deepEqual(calculateMove(board, "up").board, [2, 4, 4, 2, 4, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0]);
+    assert.deepEqual(calculateMove(board, "down").board, [0, 0, 0, 0, 2, 0, 0, 0, 4, 0, 0, 0, 2, 4, 4, 2]);
     assert.deepEqual(board, copy);
     assert.throws(() => calculateMove(board, "diagonal"), TypeError);
     assert.throws(() => calculateMove([2], "left"), TypeError);

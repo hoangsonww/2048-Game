@@ -11,8 +11,8 @@
 ## Project resources
 
 - [Source repository](https://github.com/hoangsonww/2048-Game): Web, iOS, Android, tests, automation, and documentation.
-- [Contribution guide](https://github.com/hoangsonww/2048-Game/blob/master/.github/CONTRIBUTING.md): Setup, behavior contract, validation, and pull-request expectations.
-- [Security policy](https://github.com/hoangsonww/2048-Game/blob/master/.github/SECURITY.md): Supported versions, local-data architecture, and private reporting.
+- [Contribution guide](https://github.com/hoangsonww/2048-Game/blob/main/.github/CONTRIBUTING.md): Setup, behavior contract, validation, and pull-request expectations.
+- [Security policy](https://github.com/hoangsonww/2048-Game/blob/main/.github/SECURITY.md): Supported versions, local-data architecture, and private reporting.
 
 ## Optional
 

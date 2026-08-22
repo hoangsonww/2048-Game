@@ -1,65 +1,95 @@
-//
-//  Game_2048UITests.swift
-//  Game-2048UITests
-//
-//  Created by Dav Nguyen on 3/19/24.
-//
-
 import XCTest
 
 final class Game_2048UITests: XCTestCase {
-
-    var app: XCUIApplication!
-
-    override func setUpWithError() throws {
-        // Initialize the app before each test method
-        app = XCUIApplication()
+    override func setUp() {
+        super.setUp()
         continueAfterFailure = false
+    }
+
+    func testGameOpensReadyToPlayWithAccessibleControls() {
+        let app = launch()
+        XCTAssertTrue(app.otherElements["GameBoard"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts["Make space."].exists)
+        XCTAssertTrue(app.buttons["New game"].exists)
+        XCTAssertTrue(app.buttons["How to play"].exists)
+        XCTAssertFalse(app.buttons["Undo"].isEnabled)
+        XCTAssertTrue(element(identifier: "ScoreCard", in: app).exists)
+        XCTAssertTrue(element(identifier: "BestCard", in: app).exists)
+    }
+
+    func testHelpSheetShowsCompleteRulesAndDismisses() {
+        let app = launch()
+        app.buttons["How to play"].tap()
+        XCTAssertTrue(app.navigationBars["How to play"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Slide"].exists)
+        XCTAssertTrue(app.staticTexts["Match"].exists)
+        XCTAssertTrue(app.staticTexts["Protect space"].exists)
+        app.buttons["Done"].tap()
+        XCTAssertFalse(app.navigationBars["How to play"].waitForExistence(timeout: 2))
+    }
+
+    func testSwipeEnablesUndoAndUndoRestoresRound() {
+        let app = launch(state: "merge")
+        let board = app.otherElements["GameBoard"]
+        XCTAssertTrue(board.waitForExistence(timeout: 15))
+        board.swipeLeft()
+        XCTAssertTrue(app.buttons["Undo"].isEnabled)
+        assertScore(36, in: app)
+        app.buttons["Undo"].tap()
+        XCTAssertFalse(app.buttons["Undo"].isEnabled)
+        assertScore(32, in: app)
+    }
+
+    func testNewGameConfirmationSupportsCancelAndReset() {
+        let app = launch(state: "merge")
+        app.buttons["New game"].tap()
+        XCTAssertTrue(app.staticTexts["Start a fresh board?"].waitForExistence(timeout: 5))
+        app.buttons["Keep playing"].tap()
+        XCTAssertFalse(app.staticTexts["Start a fresh board?"].exists)
+        assertScore(32, in: app)
+        app.buttons["New game"].tap()
+        XCTAssertTrue(app.staticTexts["Start a fresh board?"].waitForExistence(timeout: 5))
+        app.buttons.matching(identifier: "New game").element(boundBy: 1).tap()
+        assertScore(0, in: app)
+        XCTAssertFalse(app.buttons["Undo"].isEnabled)
+    }
+
+    func testWinOverlayCanContinuePlaying() {
+        let app = launch(state: "won")
+        XCTAssertTrue(app.staticTexts["You made 2048"].waitForExistence(timeout: 15))
+        app.buttons["Keep playing"].tap()
+        XCTAssertFalse(app.staticTexts["You made 2048"].exists)
+        XCTAssertTrue(app.otherElements["GameBoard"].exists)
+    }
+
+    func testGameOverOverlayCanStartFreshRound() {
+        let app = launch(state: "game-over")
+        XCTAssertTrue(app.staticTexts["No more moves"].waitForExistence(timeout: 15))
+        app.buttons["Try again"].tap()
+        XCTAssertFalse(app.staticTexts["No more moves"].exists)
+        assertScore(0, in: app)
+    }
+
+    func testLaunchPerformance() {
+        let app = XCUIApplication()
+        measure(metrics: [XCTApplicationLaunchMetric()]) { app.launch() }
+    }
+
+    @discardableResult
+    private func launch(state: String? = nil) -> XCUIApplication {
+        let app = XCUIApplication()
+        if let state { app.launchEnvironment["GAME2048_UI_TEST_STATE"] = state }
         app.launch()
+        return app
     }
 
-    override func tearDownWithError() throws {
-        // Clean up after each test method
-        app = nil
+    private func assertScore(_ expected: Int, in app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        let card = element(identifier: "ScoreCard", in: app)
+        XCTAssertTrue(card.waitForExistence(timeout: 5), file: file, line: line)
+        XCTAssertTrue(card.label.contains(expected.formatted()), "Expected score card to contain \(expected), got \(card.label)", file: file, line: line)
     }
 
-    func testLaunchScreenAndTransitionToGameView() throws {
-        // Verify the app starts on the LaunchScreen
-        let titleText = app.staticTexts["2048"]
-        XCTAssertTrue(titleText.exists, "The 2048 title should be visible on the launch screen.")
-
-        // Verify the transition to the GameView after 2 seconds
-        let exists = NSPredicate(format: "exists == 1")
-        let gameViewText = app.staticTexts["Score"] // Assuming 'Score' is visible in GameView
-        expectation(for: exists, evaluatedWith: gameViewText, handler: nil)
-
-        waitForExpectations(timeout: 3) { error in
-            if error != nil {
-                XCTFail("GameView did not appear after the launch screen.")
-            }
-        }
-    }
-
-    func testGamePlaySwipeLeft() throws {
-        // Ensure we're on the GameView
-        let scoreLabel = app.staticTexts["Score"]
-        XCTAssertTrue(scoreLabel.exists, "Game should be on the GameView after the launch screen.")
-
-        // Perform a swipe left gesture
-        let gameBoard = app.otherElements["GameBoard"] // Ensure the GameView has the correct accessibility identifier set for the grid/board
-        gameBoard.swipeLeft()
-
-        // Since it's hard to predict specific gameplay results in a UI test, verify that the score label updates
-        let scoreValue = scoreLabel.label
-        XCTAssertNotEqual(scoreValue, "0", "Score should update after swiping left.")
-    }
-
-    func testLaunchPerformance() throws {
-        if #available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 7.0, *) {
-            // Measures how long it takes to launch the app.
-            measure(metrics: [XCTApplicationLaunchMetric()]) {
-                app.launch()
-            }
-        }
+    private func element(identifier: String, in app: XCUIApplication) -> XCUIElement {
+        app.descendants(matching: .any).matching(identifier: identifier).firstMatch
     }
 }

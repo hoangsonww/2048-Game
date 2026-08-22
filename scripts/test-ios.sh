@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -Eeuo pipefail
+# shellcheck source=common.sh
 source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/common.sh"
 
 if [[ "$(uname -s)" != "Darwin" ]]; then
@@ -10,6 +11,7 @@ fi
 
 require_command xcodebuild
 require_command xcrun
+require_command node
 
 device_id="${IOS_SIMULATOR_ID:-}"
 if [[ -z "${device_id}" ]]; then

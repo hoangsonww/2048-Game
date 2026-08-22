@@ -2,7 +2,8 @@
   "name": "2048 Web and Android",
   "build": {
     "dockerfile": "Dockerfile",
-    "context": ".."
+    "context": "..",
+    "options": ["--platform=linux/amd64"]
   },
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
@@ -26,7 +27,7 @@
       "onAutoForward": "notify"
     }
   },
-  "postCreateCommand": "./scripts/bootstrap.sh --with-browser --skip-hooks",
+  "postCreateCommand": "./scripts/bootstrap.sh --with-browser",
   "customizations": {
     "vscode": {
       "extensions": [

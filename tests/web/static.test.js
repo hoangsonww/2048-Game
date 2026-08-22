@@ -12,9 +12,15 @@ test("web entry contains complete SEO and social metadata", () => {
     const html = read("index.html");
     for (const required of [
         "<title>", 'name="description"', 'rel="canonical"', 'property="og:title"',
-        'property="og:image"', 'name="twitter:card"', 'application/ld+json', 'rel="manifest"'
+        'property="og:image"', 'property="og:image:width"', 'name="twitter:card"',
+        'name="twitter:image:alt"', 'application/ld+json', 'rel="manifest"', 'hreflang="x-default"'
     ]) assert.match(html, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     assert.match(html, /Web-Version\/game-engine\.js[\s\S]*Web-Version\/script\.js/);
+    const structuredData = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
+        .map(match => JSON.parse(match[1]));
+    assert.equal(structuredData.length > 0, true);
+    assert.match(JSON.stringify(structuredData), /"VideoGame"/);
+    assert.match(JSON.stringify(structuredData), /"HowTo"/);
 });
 
 test("manifest, sitemap, robots, and referenced icon assets are valid", () => {
@@ -22,12 +28,27 @@ test("manifest, sitemap, robots, and referenced icon assets are valid", () => {
     assert.equal(manifest.name.length > 0, true);
     assert.equal(manifest.icons.some(icon => icon.sizes === "192x192"), true);
     assert.equal(manifest.icons.some(icon => icon.sizes === "512x512"), true);
+    assert.equal(manifest.shortcuts.length >= 2, true);
+    assert.equal(manifest.screenshots.some(screenshot => screenshot.sizes === "1440x1526"), true);
     assert.match(read("robots.txt"), /Sitemap: https:\/\//);
     assert.match(read("sitemap.xml"), /<urlset/);
     for (const asset of [
         "images/favicon.svg", "images/favicon.ico", "images/brand-mark.svg",
         "images/share-card.png", "images/2048-192x192.png", "images/2048-512x512.png"
     ]) assert.ok(fs.statSync(path.join(root, asset)).size > 0, `${asset} should exist`);
+});
+
+test("About page, LLM discovery, error page, and contributor metadata are complete", () => {
+    const about = read("Web-Version/about.html");
+    for (const required of ['rel="canonical"', 'property="og:title"', 'name="twitter:card"', 'application/ld+json']) {
+        assert.match(about, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    }
+    const llms = read("llms.txt");
+    assert.match(llms, /^# 2048/m);
+    assert.match(llms, /llms-full\.txt/);
+    assert.match(read("llms-full.txt"), /## Interface map/);
+    assert.match(read("404.html"), /noindex, follow/);
+    assert.match(read("humans.txt"), /No accounts, analytics/);
 });
 
 test("interactive controls use vector SVG icons instead of text glyphs", () => {

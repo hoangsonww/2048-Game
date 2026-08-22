@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -Eeuo pipefail
+# shellcheck source=common.sh
 source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/common.sh"
 
 with_browser=false
@@ -15,7 +16,7 @@ done
 
 require_command node
 require_command npm
-require_command java
+use_java_17
 
 section "Installing locked JavaScript dependencies"
 if [[ "${skip_hooks}" == true ]]; then
@@ -30,6 +31,7 @@ if [[ "${with_browser}" == true ]]; then
 fi
 
 section "Warming the Gradle wrapper"
+printf 'Using Java %s from %s\n' "$(java_major_version)" "${JAVA_HOME:-$(command -v java)}"
 (cd "${ANDROID_ROOT}" && ./gradlew --version >/dev/null)
 
 section "Environment ready"

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -Eeuo pipefail
+# shellcheck source=common.sh
 source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/common.sh"
 
 device_tests=false
@@ -11,8 +12,9 @@ elif [[ $# -gt 0 ]]; then
     exit 2
 fi
 
-require_command java
+use_java_17
 section "Android unit tests, lint, and debug APK"
+printf 'Using Java %s from %s\n' "$(java_major_version)" "${JAVA_HOME:-$(command -v java)}"
 (cd "${ANDROID_ROOT}" && ./gradlew testDebugUnitTest lintDebug assembleDebug --stacktrace)
 
 if [[ "${device_tests}" == true ]]; then

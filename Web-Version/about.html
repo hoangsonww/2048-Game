@@ -1,121 +1,61 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>About 2048 Game</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;400;600&display=swap" rel="stylesheet">
-    <style>
-        html, body {
-            height: 100%;
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>How to Play 2048 — Rules, Tips, and Project Details</title>
+    <meta name="description" content="Learn how to play 2048, understand every merge rule, get practical strategy tips, and explore the open-source web, iOS, and Android apps.">
+    <meta name="author" content="Son Nguyen"><meta name="color-scheme" content="light">
+    <meta name="robots" content="index, follow, max-image-preview:large"><meta name="theme-color" content="#f5f0e6">
+    <link rel="canonical" href="https://hoangsonww.github.io/2048-Game/Web-Version/about.html">
+    <link rel="alternate" hreflang="en" href="https://hoangsonww.github.io/2048-Game/Web-Version/about.html">
+    <link rel="alternate" hreflang="x-default" href="https://hoangsonww.github.io/2048-Game/Web-Version/about.html">
+    <link rel="alternate" type="text/plain" href="../llms.txt" title="2048 project summary for language models">
+    <link rel="icon" href="../images/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="../images/2048-192x192.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@500&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css">
+    <meta property="og:type" content="article"><meta property="og:locale" content="en_US"><meta property="og:site_name" content="2048">
+    <meta property="og:title" content="How to Play 2048 — Rules and Strategy"><meta property="og:description" content="Learn every rule, build a stronger opening, and explore the three open-source versions of 2048.">
+    <meta property="og:url" content="https://hoangsonww.github.io/2048-Game/Web-Version/about.html"><meta property="og:image" content="https://hoangsonww.github.io/2048-Game/images/share-card.png">
+    <meta property="og:image:type" content="image/png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="A warm ivory 2048 game board with colorful numbered tiles">
+    <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="How to Play 2048 — Rules and Strategy"><meta name="twitter:description" content="Learn the complete 2048 rules and practical strategy tips.">
+    <meta name="twitter:image" content="https://hoangsonww.github.io/2048-Game/images/share-card.png"><meta name="twitter:image:alt" content="A warm ivory 2048 game board with colorful numbered tiles">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Article",
+          "@id": "https://hoangsonww.github.io/2048-Game/Web-Version/about.html#article",
+          "headline": "How to Play 2048 — Rules, Tips, and Project Details",
+          "description": "A concise guide to 2048 rules and strategy, plus details about the open-source web, iOS, and Android clients.",
+          "image": "https://hoangsonww.github.io/2048-Game/images/share-card.png",
+          "inLanguage": "en",
+          "author": { "@type": "Person", "name": "Son Nguyen", "url": "https://github.com/hoangsonww" },
+          "mainEntityOfPage": "https://hoangsonww.github.io/2048-Game/Web-Version/about.html"
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Play 2048", "item": "https://hoangsonww.github.io/2048-Game/" },
+            { "@type": "ListItem", "position": 2, "name": "Rules and strategy", "item": "https://hoangsonww.github.io/2048-Game/Web-Version/about.html" }
+          ]
         }
-
-        body {
-            font-family: "Poppins", sans-serif;
-            background-color: #faf8ef;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-        }
-
-        .container {
-            width: 500px;
-            max-width: 90%;
-            margin: auto;
-            padding: 20px;
-            border-radius: 10px;
-            background-color: #bbada0;
-            box-shadow: 0 0 15px rgba(0,0,0,0.2);
-            overflow: hidden;
-        }
-
-        @media (max-width: 700px) {
-            .container {
-                width: 90%;
-                padding: 10px;
-            }
-
-            #title {
-                font-size: 44px !important;
-            }
-
-            #subtitle {
-                font-size: 20px !important;
-            }
-
-            #scoreContainer {
-                font-size: 20px !important;
-            }
-        }
-
-        h1 {
-            font-size: 60px;
-            font-weight: bold;
-            color: #655b56;
-        }
-
-        p {
-            font-size: 20px;
-            color: #655b56;
-        }
-
-        a {
-            color: #776e65;
-            text-decoration: none;
-        }
-
-        a:hover {
-            text-decoration: underline;
-        }
-
-        .buttons {
-            background-color: #8f7a66;
-            color: #f9f6f2;
-            border: none;
-            border-radius: 5px;
-            padding: 10px 20px;
-            font-family: "Poppins", sans-serif;
-            font-size: 18px;
-            font-weight: 600;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            cursor: pointer;
-            transition: background-color 0.3s, transform 0.2s;
-        }
-
-        .buttons:hover {
-            background-color: #9e8b77;
-            transform: scale(1.05);
-        }
-
-        .buttons:active {
-            transform: scale(0.95);
-        }
-    </style>
+      ]
+    }
+    </script>
 </head>
 <body>
-    <div class="container" style="text-align: center">
-        <a id="title" style="text-decoration: none" href="../index.html"><h1>About 2048</h1></a>
-        <p>
-            <strong>What is 2048?</strong><br>
-            2048 is a single-player sliding block puzzle game. The game's objective is to slide numbered tiles on a grid to combine them and create a tile with the number 2048. However, you can continue to play the game after reaching the goal to create higher numbers.
-        </p>
-        <p>
-            <strong>How to play:</strong><br>
-            Use the arrow keys on your keyboard or swipe on your device to move the tiles. When two tiles with the same number touch, they merge into one!
-        </p>
-        <p>
-            <strong>About the Creator:</strong><br>
-            Visit my GitHub: <a href="https://github.com/hoangsonww">GitHub Profile</a><br>
-            Check out the MovieVerse app: <a href="https://movie-verse.com">MovieVerse</a><br>
-            Check out the StickyNotes app: <a href="https://hoangsonww.github.io/The-StickyNotes-App/">StickyNotes</a><br>
-            Check out the RecipeGenie app: <a href="https://hoangsonww.github.io/RecipeGenie-App/">RecipeGenie</a><br>
-            Check out the WeatherMate app: <a href="https://hoangsonww.github.io/WeatherMate-App/">WeatherMate</a><br>
-        </p>
-        <button class="buttons" onclick="window.location.href='../index.html'">Back to Game</button>
-    </div>
+    <a class="skip-link" href="#content">Skip to content</a>
+    <header class="site-header"><a class="brand" href="../index.html"><img src="../images/brand-mark.svg" alt="" width="34" height="34"><span>2048</span></a><nav class="header-links"><a href="../index.html">Play game</a><a href="about.html" aria-current="page">About</a></nav></header>
+    <main class="about-page" id="content">
+        <section class="about-hero"><p class="eyebrow"><span aria-hidden="true">●</span> The original five-minute rabbit hole</p><h1>Easy to learn.<br><em>Hard to leave.</em></h1><p>2048 is a single-player number puzzle about managing space. Each move shifts the whole board, so one casual swipe can shape the next ten decisions.</p><a class="button button--primary" href="../index.html">Play 2048</a></section>
+        <section class="about-grid" aria-labelledby="rules-title">
+            <div><p class="eyebrow">Rules</p><h2 id="rules-title">How a round works</h2></div>
+            <div class="prose"><p>Use the arrow keys, WASD, the on-screen controls, or swipe. Every tile moves as far as it can in that direction. When two equal tiles meet, they merge and add their new value to your score.</p><p>A new 2 or 4 appears after each successful move. The round ends only when the board is full and no neighboring tiles match. Reach 2048 to win, then keep playing if you want a larger tile.</p></div>
+        </section>
+        <section class="tip-band" aria-labelledby="tips-title"><p class="eyebrow">A stronger opening</p><h2 id="tips-title">Keep your largest tile in one corner.</h2><p>Build along one edge, avoid random direction changes, and protect empty cells. Undo is available for one move when you need to recover from a slip.</p></section>
+        <section class="about-grid project-note"><div><p class="eyebrow">Open source</p><h2>One puzzle, three native experiences</h2></div><div class="prose"><p>This repository includes the browser game plus SwiftUI and Jetpack Compose editions. Each client shares the same visual language and familiar play flow while using platform-native controls and storage.</p><p>Created by <a href="https://github.com/hoangsonww">Son Nguyen</a>. Browse the implementation, report an issue, or contribute on <a href="https://github.com/hoangsonww/2048-Game">GitHub</a>.</p></div></section>
+    </main>
+    <footer><p>Designed for quick breaks and long strategies.</p><div><a href="../index.html">Play game</a><a href="https://github.com/hoangsonww/2048-Game">Source code</a></div></footer>
 </body>
 </html>

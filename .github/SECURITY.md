@@ -1,70 +1,19 @@
-# The 2048 Game - Security Policies
+# Security policy
 
-## Introduction
-The 2048 Game is a dynamic multi-platform application that provides an engaging gaming experience to users. Security is a top priority for us, and we are committed to ensuring the confidentiality, integrity, and availability of user data. This document outlines the security measures implemented in the 2048 Game to protect user information and maintain a secure environment.
+## Supported versions
 
-Current Version: `1.1.2`
+Security fixes target the latest commit on the default branch. Historical releases and forks are not actively maintained.
 
-## Security Measures
+## Architecture and data
 
-### 1. Data Protection and Privacy
-- **User Data**: All user data is handled in accordance with privacy laws and regulations. Personal information is encrypted and stored securely.
-- **Cookies and Sessions**: Sessions are managed securely. Cookies, if used, are encrypted and do not store sensitive information.
+The web client is a static application hosted on GitHub Pages. The web, iOS, and Android clients have no project-operated backend, authentication system, analytics pipeline, file upload, or payment flow. Game state and the best score remain in browser or device-local storage.
 
-### 2. Secure Communication
-- **HTTPS**: The 2048 Game enforces HTTPS to ensure secure communication over the internet, encrypting data in transit.
+## Report a vulnerability privately
 
-### 3. Input Validation and Sanitization
-- **Form Inputs**: All inputs from forms are validated and sanitized to prevent SQL injection, XSS attacks, and other forms of data tampering.
-- **API Requests**: Inputs via API requests are also validated and sanitized.
+Use [GitHub private vulnerability reporting](https://github.com/hoangsonww/2048-Game/security/advisories/new). Include the affected platform and revision, reproduction steps, impact, and a minimal proof of concept when safe. Do not open a public issue for an unpatched vulnerability or include credentials, signing keys, or personal data.
 
-### 4. Authentication and Authorization
-- **OAuth2**: For user authentication, The 2048 Game implements OAuth2 protocol, ensuring secure authorization.
-- **Role-Based Access Control**: Different levels of access are enforced depending on the user's role to prevent unauthorized access to sensitive data.
+The maintainer will acknowledge actionable reports when available, investigate impact, and coordinate disclosure after a fix. Please allow a reasonable remediation window before publishing details.
 
-### 5. Cross-Site Scripting (XSS) Protection
-- **Content Security Policy**: The application implements Content Security Policy (CSP) headers to prevent XSS attacks.
-- **Output Encoding**: Data output to the browser is encoded to prevent the execution of malicious scripts.
+## Scope
 
-### 6. Cross-Site Request Forgery (CSRF) Protection
-- **CSRF Tokens**: Forms include unique CSRF tokens to ensure that the requests are legitimate and originating from the application itself.
-
-### 7. API Security
-- **Rate Limiting**: To prevent abuse and potential DDoS attacks, API rate limiting is in place.
-- **API Key Protection**: API keys, if used, are kept confidential and not exposed to the client-side.
-
-### 8. Secure File Uploads
-- **File Type Restrictions**: Only specific file types are allowed for upload to prevent the execution of malicious scripts.
-- **File Scanning**: Uploaded files are scanned for malware.
-
-### 9. Error Handling and Logging
-- **Error Handling**: Proper error handling is implemented to prevent leakage of sensitive information through error messages.
-- **Logging**: System activities are logged for monitoring and auditing purposes. Logs do not contain sensitive user data.
-
-### 10. Dependency and Library Management
-- **Regular Updates**: Dependencies and libraries are regularly updated to their latest secure versions to mitigate known vulnerabilities.
-- **Vulnerability Scanning**: Regular scans are conducted to identify and address potential vulnerabilities in third-party libraries.
-
-### 11. Infrastructure Security
-- **Server Security**: Servers are hardened, and access is restricted to authorized personnel only.
-- **Firewalls and Intrusion Detection Systems**: Firewalls and IDS are in place to detect and prevent unauthorized access.
-
-## Incident Response Plan
-The 2048 Game has an incident response plan to quickly address and mitigate any security incidents. This includes:
-- Immediate identification and isolation of the incident.
-- Analysis and investigation of the breach.
-- Prompt resolution and recovery measures.
-- Communication with affected users and stakeholders.
-- Post-incident analysis and implementation of preventive measures.
-
-## Reporting Security Issues
-We encourage responsible disclosure of any security vulnerabilities. Please report any security concerns or vulnerabilities to us at [info@movie-verse.com](mailto:info@movie-verse.com). We are committed to working with security researchers and the community to resolve issues efficiently and responsibly.
-
-## Continuous Improvement
-Security is an ongoing process. The 2048 Game App is committed to continuously improving the security posture of the application by staying up-to-date with the latest security trends, threats, and mitigation techniques.
-
-## Contact Information
-
-For any queries or concerns regarding security, please contact us at [info@movie-verse.com](mailto:info@movie-verse.com).
-
----
+Useful reports include unsafe state handling, script injection in the web client, exposed credentials or signing material, malicious dependency behavior, and platform permission issues. Generic automated scan output without a reproducible impact may be closed as informational.

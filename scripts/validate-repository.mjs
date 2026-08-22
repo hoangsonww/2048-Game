@@ -7,7 +7,9 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const failures = [];
 const requiredFiles = [
+    ".dockerignore",
     ".devcontainer/devcontainer.json",
+    ".devcontainer/devcontainer-lock.json",
     ".github/PULL_REQUEST_TEMPLATE.md",
     ".github/dependabot.yml",
     ".pre-commit-config.yaml",
@@ -33,7 +35,7 @@ for (const relativePath of requiredFiles) {
     check(fs.existsSync(path.join(root, relativePath)), `Missing required file: ${relativePath}`);
 }
 
-for (const relativePath of ["package.json", "manifest.json", ".devcontainer/devcontainer.json"]) {
+for (const relativePath of ["package.json", "manifest.json", ".devcontainer/devcontainer.json", ".devcontainer/devcontainer-lock.json"]) {
     try {
         JSON.parse(read(relativePath));
     } catch (error) {
@@ -78,6 +80,27 @@ check(robots.includes("Sitemap: https://hoangsonww.github.io/2048-Game/sitemap.x
 const llms = read("llms.txt");
 for (const requiredLink of ["/2048-Game/", "/2048-Game/Web-Version/about.html", "/2048-Game/llms-full.txt"]) {
     check(llms.includes(requiredLink), `llms.txt is missing ${requiredLink}`);
+}
+
+const skillsRoot = path.join(root, ".agents/skills");
+const skillDirectories = fs.readdirSync(skillsRoot, { withFileTypes: true }).filter(entry => entry.isDirectory());
+check(skillDirectories.length >= 5, "Expected at least five focused repository skills");
+for (const entry of skillDirectories) {
+    const skillPath = path.join(skillsRoot, entry.name, "SKILL.md");
+    const metadataPath = path.join(skillsRoot, entry.name, "agents/openai.yaml");
+    check(fs.existsSync(skillPath), `Missing SKILL.md for ${entry.name}`);
+    check(fs.existsSync(metadataPath), `Missing OpenAI metadata for ${entry.name}`);
+    if (!fs.existsSync(skillPath)) continue;
+    const skill = fs.readFileSync(skillPath, "utf8");
+    check(skill.startsWith("---\n"), `${entry.name} must start with YAML frontmatter`);
+    check(skill.includes(`\nname: ${entry.name}\n`), `${entry.name} frontmatter name must match its folder`);
+    check(/\ndescription: .{30,}\n/.test(skill), `${entry.name} needs a discriminating description`);
+
+    const adapterPath = path.join(root, ".claude/skills", entry.name, "SKILL.md");
+    check(fs.existsSync(adapterPath), `Missing Claude adapter for ${entry.name}`);
+    if (fs.existsSync(adapterPath)) {
+        check(fs.readFileSync(adapterPath, "utf8").includes(`.agents/skills/${entry.name}/SKILL.md`), `Claude adapter for ${entry.name} must reference the canonical skill`);
+    }
 }
 
 if (failures.length > 0) {
