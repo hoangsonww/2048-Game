@@ -132,6 +132,57 @@ test("mobile direction control and touch swipe each perform one move", async () 
     await second.context.close();
 });
 
+test("a board swipe suppresses page scrolling without blocking it elsewhere", async () => {
+    const seeded = { board: [0, 2, 0, 0, ...Array(12).fill(0)], score: 0, best: 0, won: false };
+    const { context, page, errors } = await scenario({ state: seeded, viewport: { width: 390, height: 844 }, hasTouch: true });
+
+    const result = await page.evaluate(() => {
+        const board = document.getElementById("gridContainer");
+        const outside = document.querySelector("header") || document.body;
+        const touch = (target, x, y) => new Touch({ identifier: 1, target, clientX: x, clientY: y });
+        const fire = (target, type, x, y, withTouches = true) => {
+            const event = new TouchEvent(type, {
+                bubbles: true,
+                cancelable: true,
+                touches: withTouches ? [touch(target, x, y)] : [],
+                changedTouches: [touch(target, x, y)]
+            });
+            target.dispatchEvent(event);
+            return event;
+        };
+        const box = board.getBoundingClientRect();
+        const x = box.left + 30;
+        const y = box.top + 30;
+
+        fire(board, "touchstart", x, y);
+        const onBoard = fire(board, "touchmove", x, y + 60);
+
+        // A gesture that never touched the board must stay scrollable.
+        const offBoard = fire(outside, "touchmove", 20, 120);
+
+        // A cancelled gesture must release the suppression, or the next swipe
+        // is measured from a stale origin and the page stays locked.
+        fire(board, "touchcancel", x, y + 60, false);
+        const afterCancel = fire(board, "touchmove", x, y + 120);
+
+        return {
+            boardTouchAction: getComputedStyle(board).touchAction,
+            bodyOverscroll: getComputedStyle(document.body).overscrollBehavior,
+            onBoardPrevented: onBoard.defaultPrevented,
+            offBoardPrevented: offBoard.defaultPrevented,
+            afterCancelPrevented: afterCancel.defaultPrevented
+        };
+    });
+
+    assert.equal(result.boardTouchAction, "none");
+    assert.equal(result.bodyOverscroll, "none");
+    assert.equal(result.onBoardPrevented, true, "a board swipe must not scroll the page");
+    assert.equal(result.offBoardPrevented, false, "scrolling away from the board must still work");
+    assert.equal(result.afterCancelPrevented, false, "a cancelled gesture must release the suppression");
+    assert.deepEqual(errors, []);
+    await context.close();
+});
+
 test("new-game confirmation supports cancel and confirmed reset", async () => {
     const seeded = { board: [4, 2, 0, 0, ...Array(12).fill(0)], score: 64, best: 128, won: false };
     const { context, page, errors } = await scenario({ state: seeded });

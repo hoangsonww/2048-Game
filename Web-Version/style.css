@@ -7,9 +7,12 @@
 * { box-sizing: border-box; }
 .noscript-message { margin: 0; padding: .8rem 1.25rem; color: var(--white); background: var(--ink); text-align: center; }
 .noscript-message a { color: #ffb09d; }
-html { scroll-behavior: smooth; }
+/* overscroll-behavior stops a swipe that starts on the board from chaining into
+   the page's own scroll or the browser's pull-to-refresh and rubber-band. The
+   board itself sets touch-action: none; this covers the chained gesture. */
+html { scroll-behavior: smooth; overscroll-behavior: none; }
 body {
-    min-height: 100dvh; margin: 0; color: var(--ink);
+    min-height: 100dvh; margin: 0; color: var(--ink); overscroll-behavior: none;
     background: radial-gradient(circle at 15% 7%, rgba(233,99,69,.08), transparent 24rem), linear-gradient(rgba(113,101,83,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(113,101,83,.035) 1px, transparent 1px), var(--paper);
     background-size: auto, 3rem 3rem, 3rem 3rem, auto;
     font-family: "Outfit", "Avenir Next", sans-serif; -webkit-font-smoothing: antialiased;

@@ -101,7 +101,10 @@ struct GameView: View {
                 else if showingWin { EndPanel(kicker: "Goal reached", title: "You made 2048", detail: "Keep building, or start with a clean board.", primary: "New game", secondary: "Keep playing", primaryAction: restart, secondaryAction: { showingWin = false }) }
             }
             .contentShape(Rectangle())
-            .gesture(DragGesture(minimumDistance: 22).onEnded(handleDrag))
+            // High priority so the board wins against the enclosing ScrollView's
+            // pan. With a plain .gesture the scroll view claims the drag and a
+            // board swipe scrolls the page instead of moving tiles.
+            .highPriorityGesture(DragGesture(minimumDistance: 22).onEnded(handleDrag))
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("GameBoard")
             .accessibilityLabel("2048 game board")

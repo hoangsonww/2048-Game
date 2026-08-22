@@ -1,8 +1,20 @@
 package com.sonnguyenhoang.game2048
 
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -22,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -163,20 +176,99 @@ private fun GameBoard(grid: List<List<Int>>, gameOver: Boolean, showWin: Boolean
                 detectDragGestures(onDragStart = { drag = Offset.Zero }, onDragEnd = {
                     if (maxOf(abs(drag.x), abs(drag.y)) >= 36f) onSwipe(if (abs(drag.x) > abs(drag.y)) if (drag.x > 0) GameViewModel.Direction.RIGHT else GameViewModel.Direction.LEFT else if (drag.y > 0) GameViewModel.Direction.DOWN else GameViewModel.Direction.UP)
                     drag = Offset.Zero
-                }, onDragCancel = { drag = Offset.Zero }, onDrag = { _, amount -> drag += amount })
+                }, onDragCancel = { drag = Offset.Zero }, onDrag = { change, amount ->
+                    // Consume the change so the enclosing verticalScroll does not also
+                    // act on it. Without this a board swipe scrolls the whole screen.
+                    change.consume()
+                    drag += amount
+                })
             }.semantics { contentDescription = "2048 game board" }
     ) {
         val gap = 8.dp; val tile = (maxWidth - gap * 3) / 4
         Column(verticalArrangement = Arrangement.spacedBy(gap)) { grid.forEach { row -> Row(horizontalArrangement = Arrangement.spacedBy(gap)) { row.forEach { value -> Tile(value, Modifier.size(tile)) } } } }
-        if (gameOver) EndPanel("Round complete", "No more moves", "Final score: %,d".format(score), "Try again", null, onRestart, null)
-        else if (showWin) EndPanel("Goal reached", "You made 2048", "Keep building, or start with a clean board.", "New game", "Keep playing", onRestart, onContinue)
+        // Fades in like the web overlay's `fade-in .25s` keyframe.
+        val overlayFade = if (animationsEnabled()) tween<Float>(250) else snap()
+        AnimatedVisibility(visible = gameOver, enter = fadeIn(overlayFade), exit = fadeOut(overlayFade)) {
+            EndPanel("Round complete", "No more moves", "Final score: %,d".format(score), "Try again", null, onRestart, null)
+        }
+        AnimatedVisibility(visible = !gameOver && showWin, enter = fadeIn(overlayFade), exit = fadeOut(overlayFade)) {
+            EndPanel("Goal reached", "You made 2048", "Keep building, or start with a clean board.", "New game", "Keep playing", onRestart, onContinue)
+        }
     }
 }
 
+/**
+ * A tile that animates the way the web and iOS clients do: the background
+ * colour eases between values, and a tile that gains a value pops from 82% to
+ * full size on a spring. Matches the web `.cell` transition and `pop` keyframe.
+ *
+ * Both animations collapse to instant when the system animation scale is off,
+ * which is the Android equivalent of `prefers-reduced-motion`.
+ */
 @Composable
 private fun Tile(value: Int, modifier: Modifier = Modifier) {
-    Box(modifier.background(tileColor(value), RoundedCornerShape(11.dp)), contentAlignment = Alignment.Center) {
-        if (value > 0) Text("%,d".format(value), color = if (value >= 8) Color.White else TileInk, fontFamily = FontFamily.Monospace, fontSize = when { value >= 1024 -> 24.sp; value >= 128 -> 28.sp; else -> 34.sp }, fontWeight = FontWeight.Bold, letterSpacing = (-1.6).sp, maxLines = 1)
+    val animated = animationsEnabled()
+    val color by animateColorAsState(
+        targetValue = tileColor(value),
+        animationSpec = if (animated) tween(durationMillis = 180) else snap(),
+        label = "tileColor"
+    )
+    val scale = remember { Animatable(1f) }
+    var previous by remember { mutableIntStateOf(value) }
+
+    LaunchedEffect(value) {
+        if (value != previous && value > 0 && animated) {
+            scale.snapTo(0.82f)
+            scale.animateTo(1f, spring(dampingRatio = 0.52f, stiffness = 620f))
+        } else {
+            scale.snapTo(1f)
+        }
+        previous = value
+    }
+
+    Box(
+        modifier
+            .graphicsLayer { scaleX = scale.value; scaleY = scale.value }
+            .background(color, RoundedCornerShape(11.dp)),
+        contentAlignment = Alignment.Center
+    ) {
+        AnimatedContent(
+            targetState = value,
+            transitionSpec = {
+                if (animated) {
+                    (fadeIn(tween(140)) + scaleIn(tween(140), initialScale = 0.7f))
+                        .togetherWith(fadeOut(tween(90)))
+                } else {
+                    fadeIn(snap()).togetherWith(fadeOut(snap()))
+                }
+            },
+            label = "tileValue"
+        ) { shown ->
+            if (shown > 0) {
+                Text(
+                    "%,d".format(shown),
+                    color = if (shown >= 8) Color.White else TileInk,
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = when { shown >= 1024 -> 24.sp; shown >= 128 -> 28.sp; else -> 34.sp },
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = (-1.6).sp,
+                    maxLines = 1
+                )
+            }
+        }
+    }
+}
+
+/**
+ * False when the user has turned system animations off (Developer options, or
+ * the Remove animations accessibility setting). Compose has no direct
+ * equivalent of `prefers-reduced-motion`, so read the platform scale.
+ */
+@Composable
+private fun animationsEnabled(): Boolean {
+    val context = LocalContext.current
+    return remember(context) {
+        Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) != 0f
     }
 }
 

@@ -138,6 +138,17 @@
     gridElement.addEventListener("touchstart", event => {
         const touch = event.changedTouches[0]; touchStart = { x: touch.clientX, y: touch.clientY };
     }, { passive: true });
+    // The board sets touch-action: none, which is the primary defence. This
+    // non-passive handler is the fallback for engines that still scroll the
+    // page during a board swipe. Scoped to the board so page scrolling is
+    // unaffected everywhere else.
+    gridElement.addEventListener("touchmove", event => {
+        if (touchStart && event.cancelable) event.preventDefault();
+    }, { passive: false });
+    // A cancelled gesture — a system swipe, an incoming call — must clear the
+    // start point, or the board keeps suppressing scrolling until the next
+    // touchend and the following swipe is measured from a stale origin.
+    gridElement.addEventListener("touchcancel", () => { touchStart = null; }, { passive: true });
     gridElement.addEventListener("touchend", event => {
         if (!touchStart) return;
         const touch = event.changedTouches[0]; const dx = touch.clientX - touchStart.x; const dy = touch.clientY - touchStart.y;
