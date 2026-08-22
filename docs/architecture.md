@@ -117,6 +117,8 @@ Static files with no bundler, transpiler, or runtime dependencies. `game-engine.
 
 Input sources: arrow keys, WASD, `touchstart`/`touchend` swipe on `#gridContainer` with a 28 px threshold, and on-screen direction buttons. `F` toggles fullscreen.
 
+The board sets `touch-action: none`, `html`/`body` set `overscroll-behavior: none`, and a non-passive `touchmove` listener scoped to the board calls `preventDefault()`. The existing touch listeners are passive and cannot, so without that guard a board swipe chains into pull-to-refresh and rubber-band scrolling. A `touchcancel` handler clears the start point; otherwise a cancelled gesture leaves the board suppressing scrolling and measures the next swipe from a stale origin.
+
 The client exposes `window.render_game_to_text()`, a JSON debug snapshot of the coordinate system, board, score, best, undo availability, and available moves. Browser tests and manual verification both rely on it; keep it accurate when state shape changes.
 
 The local development server intentionally disables caching so UI work reloads predictably.
@@ -129,13 +131,21 @@ The board is exposed as an explicit accessibility container rather than a pile o
 
 Layout is size-responsive rather than fixed — do not reintroduce hard-coded board dimensions.
 
+**The board must never sit inside a scrolling container.** A `ScrollView`'s pan is a UIKit gesture recogniser, so it outranks the board's SwiftUI `DragGesture` outright: every vertical swipe reaches the scroll view and no tile ever moves. Neither `.highPriorityGesture` nor `.scrollBounceBehavior` changes that. The layout is therefore sized to fit the viewport, with `ViewThatFits(in: .vertical)` falling back to a scrolling layout only where the content genuinely cannot fit — very small devices, or the largest accessibility text sizes — where reaching the controls matters more than swipe fidelity. If you add vertical content here, keep the static branch fitting, and check `app.scrollViews` is empty in the UI tests.
+
 ## Android client
 
-Jetpack Compose with Material 3, `minSdk` 24 and `compileSdk`/`targetSdk` 34, Kotlin 1.9 with AGP 8.3.1 on Gradle 8.4. State lives in a `ViewModel`; persistence goes through `GameStorage.kt` over `SharedPreferences`.
+Jetpack Compose with Material 3, `minSdk` 24 and `compileSdk`/`targetSdk` 34, Kotlin 1.9 with AGP 8.3.1 on Gradle 8.13. State lives in a `ViewModel`; persistence goes through `GameStorage.kt` over `SharedPreferences`.
+
+No JDK needs to be installed. `gradle/gradle-daemon-jvm.properties` pins daemon JVM criteria, so Gradle downloads and runs on its own Adoptium JDK 17 matching the host OS and architecture; `scripts/android.sh` additionally prefers a local JDK 17 when one exists.
 
 Grid updates are **immutable** — produce a new board rather than mutating in place. In-place mutation previously broke Compose recomposition and reverse-direction merges simultaneously, and it is the single most important Android-specific constraint in this codebase.
 
 Iconography uses Material vector assets, including the adaptive launcher icon. Compose semantics back the instrumentation tests.
+
+The board's `detectDragGestures` **must consume each `PointerInputChange`**. The root column scrolls vertically, so an unconsumed change is delivered to the parent scroll as well and a board swipe drags the whole screen.
+
+Tile animation mirrors the other clients rather than inventing its own timing: the background colour eases over 180 ms (web's `.cell` transition), a tile that gains a value springs from 82 % to full size (web's `pop` keyframe), values cross-fade through `AnimatedContent` (iOS's `.contentTransition(.numericText())`), and the end panel fades over 250 ms (web's `fade-in`). All of it collapses to instant when the system animation scale is zero, which is Android's equivalent of `prefers-reduced-motion`.
 
 ## Web delivery and base paths
 

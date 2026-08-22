@@ -59,6 +59,7 @@ Run the smallest relevant checks while iterating and the complete affected-platf
 - Use SVG on web, SF Symbols on iOS, and Material vector icons on Android. Never use ASCII, emoji, or Unicode glyphs as button icons.
 - Keep icon artwork centered by geometry and layout, with an accessible name on the enclosing control.
 - Support keyboard and touch on web, native swipes on mobile, visible focus, reduced motion, and readable contrast.
+- A board swipe belongs to the board. It must never scroll, bounce, or pan the surrounding screen, and every direction must register a move. Each client enforces this differently: web sets `touch-action: none` plus a non-passive `touchmove` guard, iOS keeps the board out of any scrolling container, and Android consumes each pointer change so the parent scroll never sees it. All three are covered by tests; see [docs/testing.md](docs/testing.md#gesture-ownership).
 - Check compact and large layouts. UI changes require screenshots of affected states and manual visual inspection.
 
 ## Documentation and generated artifacts

@@ -445,18 +445,18 @@ Every workflow has a stable `make` entry point. Prefer these over ad-hoc command
 
 Coverage is layered deliberately: pure rules logic is tested exhaustively and cheaply, while the expensive browser, simulator, and emulator suites focus on real user flows that unit tests cannot reach.
 
-### Web — 20 tests
+### Web — 21 tests
 
 - **11 deterministic engine, metadata, and asset tests** against `game-engine.js`, covering all four directions, merge ordering and the single-merge rule, scoring, weighted spawning, ineffective moves, undo semantics, win and loss predicates, save validation and corrupt-state rejection, plus manifest, sitemap, `robots.txt`, JSON-LD, and referenced-icon integrity.
 - **2 repository-tooling tests** asserting the project structure, required files, and npm script surface stay intact.
-- **7 Chromium interaction scenarios** driving the real page: arrow-key play, WASD play, touch swipe, the on-screen direction pad, undo, persistence across reload, restart confirmation, fullscreen, the win overlay, the loss overlay, and recovery from a corrupt saved state.
+- **8 Chromium interaction scenarios** driving the real page: arrow-key play, WASD play, touch swipe, the on-screen direction pad, undo, persistence across reload, restart confirmation, fullscreen, the win overlay, the loss overlay, recovery from a corrupt saved state, and that a board swipe suppresses page scrolling without blocking it anywhere else.
 
 Coverage is **enforced** by `c8` and the build fails below the thresholds: 95 % statements, 95 % lines, 95 % functions, 90 % branches. The engine currently reaches **100 % statements, lines, and functions with 98.5 % branches**.
 
-### iOS — 20 tests
+### iOS — 21 tests
 
 - **12 deterministic model tests** covering every direction, merge ordering, scoring, spawn distribution, restart, undo, persistence round-trips, best-score retention, win and loss detection, and rejection of invalid saved state.
-- **8 XCUITest simulator tests** covering the help sheet, swipe gestures, the restart confirmation dialog, accessibility identifiers and labels, end-state recovery flows, and launch performance.
+- **9 XCUITest simulator tests** covering the help sheet, swipe gestures, the restart confirmation dialog, accessibility identifiers and labels, end-state recovery flows, launch performance, and that a vertical board swipe reaches the board without moving the screen. The suite reports ten executions because the launch test runs once per appearance mode.
 
 ### Android — 16 tests
 

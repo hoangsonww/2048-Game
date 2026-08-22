@@ -29,9 +29,11 @@ Two consequences follow, and both are deliberate:
 
 | Platform | Deterministic tests | UI / integration tests | Runner |
 | --- | --- | --- | --- |
-| Web | 11 engine, metadata, and asset tests + 2 tooling tests | 7 Chromium scenarios | Node test runner, Playwright |
-| iOS | 12 model tests | 8 XCUITest flows | XCTest |
+| Web | 11 engine, metadata, and asset tests + 2 tooling tests | 8 Chromium scenarios | Node test runner, Playwright |
+| iOS | 12 model tests | 9 XCUITest flows | XCTest |
 | Android | 11 ViewModel tests | 5 Compose instrumentation tests | JUnit 4, Compose UI Test |
+
+The iOS UI suite reports ten executions because the launch test runs once per appearance mode.
 
 All three deterministic suites prove the same behavioral contract from [`architecture.md`](architecture.md): every direction, merge ordering and the single-merge rule, scoring, weighted spawning, ineffective moves, undo semantics, restart, best-score retention, win and loss predicates, and rejection of invalid saved state.
 
@@ -62,7 +64,7 @@ make test-web                     # or: npm test
 
 **Coverage is a hard gate.** `c8` fails the build below 95 % statements, 95 % lines, 95 % functions, or 90 % branches, measured against `Web-Version/game-engine.js`. The engine currently reaches 100 % statements, lines, and functions with 98.5 % branches. If you add engine code, add the tests that keep it above the line — lowering the thresholds is not the fix.
 
-The seven Chromium scenarios cover arrow-key play, WASD play, touch swipe, the on-screen direction pad, undo, persistence across reload, restart confirmation, fullscreen, the win overlay, the loss overlay, and recovery from a corrupt saved state.
+The eight Chromium scenarios cover arrow-key play, WASD play, touch swipe, the on-screen direction pad, undo, persistence across reload, restart confirmation, fullscreen, the win overlay, the loss overlay, recovery from a corrupt saved state, and that a board swipe suppresses page scrolling without blocking it elsewhere.
 
 Browser tests drive the page through real input events and read state back through `window.render_game_to_text()`. Keep that hook accurate when the state shape changes, or the browser suite silently loses its assertions.
 
@@ -113,6 +115,16 @@ make verify-devcontainer                   # build the image, check every tool
 The `--build` form works on an isolated `git archive` copy rather than mounting the working tree. That matters: mounting the live repo means a container build and a host build write to the same `app/build/` directory at the same time, which produces confusing `packageDebug FAILED` errors that look like real defects but are pure contention. Never run both concurrently against the same tree.
 
 **iOS is not containerizable.** Xcode is macOS-only and its license forbids redistribution, so iOS builds and simulator tests always require a macOS host. `make doctor` reports this honestly rather than pretending the suite was skipped for another reason.
+
+## Gesture ownership
+
+Every client has now shipped a bug where a board swipe reached the surrounding container instead of the game, and each had a different cause. These are the guards:
+
+- **Web:** a browser test asserts the board sets `touch-action: none`, that a `touchmove` starting on the board is `defaultPrevented`, that one starting elsewhere is **not**, and that `touchcancel` releases the suppression.
+- **iOS:** a UI test asserts `app.scrollViews` is empty, that the `"Make space."` title's frame does not move during a swipe, and that a valid vertical swipe enables Undo. Anchor on chrome *outside* the board: the container can move while the board's own frame appears stable.
+- **Android:** the Compose suite drives real swipes; the board must consume each pointer change so the parent scroll never sees it.
+
+When a swipe bug is reported, measure before theorising. Frame coordinates and the enabled state of Undo tell you whether input reached the game at all — a swipe that scrolls the page and a swipe that silently does nothing look identical to a user, and the second is the more serious defect.
 
 ## Determinism
 
