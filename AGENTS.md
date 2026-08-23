@@ -12,7 +12,7 @@ This repository ships the same 2048 experience in three independent clients:
 
 The clients do not share runtime code. When game rules or user-facing behavior changes, inspect all three implementations and either preserve parity or document an intentional platform difference.
 
-Read [docs/architecture.md](docs/architecture.md) before changing state, persistence, or game rules. Read [docs/testing.md](docs/testing.md) before changing tests or CI.
+Read [ARCHITECTURE.md](ARCHITECTURE.md) for the whole-repository picture — the shared behavioural contract, the rules engine, and why there is no shared core. Read [docs/architecture.md](docs/architecture.md) for per-client implementation detail before changing state, persistence, or game rules. Read [docs/testing.md](docs/testing.md) before changing tests or CI.
 
 ## Commands
 

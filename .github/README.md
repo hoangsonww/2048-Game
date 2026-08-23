@@ -87,7 +87,7 @@ A polished, accessible, offline-first 2048 puzzle shipped as **three independent
 
 This repository is the worked answer. There is no React Native layer, no Kotlin Multiplatform module, no WebView wrapper. Each client is idiomatic for its platform — vanilla ES modules on the web, SwiftUI with `@Observable`-style view models on iOS, Compose with a `ViewModel` on Android — and parity is maintained by three deliberate mechanisms instead:
 
-1. **A written invariant contract.** [`AGENTS.md`](../AGENTS.md) and [`docs/architecture.md`](../docs/architecture.md) define the exact rules every client must satisfy, down to edge cases like "an ineffective move must not spawn a tile."
+1. **A written invariant contract.** [`ARCHITECTURE.md`](../ARCHITECTURE.md), [`AGENTS.md`](../AGENTS.md), and [`docs/architecture.md`](../docs/architecture.md) define the exact rules every client must satisfy, down to edge cases like "an ineffective move must not spawn a tile."
 2. **Per-client deterministic rules tests.** Each platform independently proves the same behavior list against its own engine, with randomness injected so results are reproducible.
 3. **A CI pipeline that runs all three toolchains on every pull request.** A parity regression in any one client fails the build.
 
@@ -215,7 +215,7 @@ Three clients, three runtimes, one contract. There is no backend, no shared libr
 
 **Web delivery** is static files served from `/2048-Game/` on GitHub Pages. Canonical URLs, manifest scope, sitemap entries, and crawler discovery links must all keep that base path. The local development server deliberately disables caching so UI edits reload predictably.
 
-Deeper detail lives in [`docs/architecture.md`](../docs/architecture.md).
+Deeper detail lives in [`ARCHITECTURE.md`](../ARCHITECTURE.md) for the whole system, and [`docs/architecture.md`](../docs/architecture.md) for per-client specifics.
 
 ---
 
