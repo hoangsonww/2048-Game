@@ -459,23 +459,29 @@ Every workflow has a stable `make` entry point. Prefer these over ad-hoc command
 
 Coverage is layered deliberately: pure rules logic is tested exhaustively and cheaply, while the expensive browser, simulator, and emulator suites focus on real user flows that unit tests cannot reach.
 
-### Web — 21 tests
+### Web — 75 tests, 100 % line coverage
 
-- **11 deterministic engine, metadata, and asset tests** against `game-engine.js`, covering all four directions, merge ordering and the single-merge rule, scoring, weighted spawning, ineffective moves, undo semantics, win and loss predicates, save validation and corrupt-state rejection, plus manifest, sitemap, `robots.txt`, JSON-LD, and referenced-icon integrity.
-- **2 repository-tooling tests** asserting the project structure, required files, and npm script surface stay intact.
+- **27 deterministic engine tests** against `game-engine.js`, covering all four directions, merge ordering and the single-merge rule, scoring, weighted spawning at its exact boundary, ineffective moves, undo semantics, win and loss predicates, and rejection of structurally invalid boards.
+- **38 controller tests** against `script.js`, run on a hand-written DOM so keyboard, touch, on-screen buttons, rendering, message states, and persistence are all covered without a browser. Includes the gesture-ownership contract: the `touchmove` listener must be non-passive, must suppress scrolling only during a board swipe, and must forget a cancelled gesture.
+- **Metadata and asset tests** for the manifest, sitemap, `robots.txt`, JSON-LD, and every referenced icon, plus **2 repository-tooling tests** asserting the project structure and npm script surface stay intact.
 - **8 Chromium interaction scenarios** driving the real page: arrow-key play, WASD play, touch swipe, the on-screen direction pad, undo, persistence across reload, restart confirmation, fullscreen, the win overlay, the loss overlay, recovery from a corrupt saved state, and that a board swipe suppresses page scrolling without blocking it anywhere else.
 
-Coverage is **enforced** by `c8` and the build fails below the thresholds: 95 % statements, 95 % lines, 95 % functions, 90 % branches. The engine currently reaches **100 % statements, lines, and functions with 98.5 % branches**.
+Coverage is **enforced** by `c8` across everything in `Web-Version/`, and the build fails below 100 % statements, 100 % lines, 100 % functions, or 95 % branches. Both files currently reach **100 % statements, lines, and functions with 98.8 % branches**.
 
-### iOS — 21 tests
+### iOS — 58 tests, 99.4 % line coverage
 
-- **12 deterministic model tests** covering every direction, merge ordering, scoring, spawn distribution, restart, undo, persistence round-trips, best-score retention, win and loss detection, and rejection of invalid saved state.
+- **49 deterministic model tests** covering every direction, merge ordering, scoring, spawn distribution and index clamping, restart, undo depth and win-state rewind, persistence round-trips, best-score retention, win and loss detection, and rejection of every shape of invalid saved state.
 - **9 XCUITest simulator tests** covering the help sheet, swipe gestures, the restart confirmation dialog, accessibility identifiers and labels, end-state recovery flows, launch performance, and that a vertical board swipe reaches the board without moving the screen. The suite reports ten executions because the launch test runs once per appearance mode.
 
-### Android — 16 tests
+Coverage is **enforced**: `scripts/test-ios.sh` reads the `.xcresult` with `xccov` and fails below 90 % line coverage of the app target, currently **99.4 %**.
 
-- **11 deterministic ViewModel tests** proving the same rules and persistence contract as the other two clients.
+### Android — 47 tests, 99.2 % domain line coverage
+
+- **33 deterministic ViewModel tests** proving the same rules and persistence contract as the other two clients.
+- **9 storage tests** covering `SharedPreferencesGameStorage` serialisation against an in-memory `SharedPreferences`, including truncated, non-numeric, and empty saved grids.
 - **5 Compose instrumentation tests** on an API 34 emulator covering the help sheet, swipe and undo, restart confirmation, and win/loss recovery.
+
+Coverage is **enforced** by JaCoCo: `make test-android` fails below 90 % line or 85 % branch coverage of the Kotlin rules engine and storage, currently **99.2 % lines and 91.3 % branches**. `MainActivity` is Compose and is measured by the device suite instead.
 
 ### Static and repository checks
 

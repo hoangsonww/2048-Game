@@ -15,7 +15,7 @@
     "check:repo": "node scripts/validate-repository.mjs",
     "check:syntax": "node --check Web-Version/game-engine.js && node --check Web-Version/script.js && node --check scripts/serve-web.mjs && node --check scripts/capture-web-screenshots.mjs && node --check scripts/validate-repository.mjs",
     "test": "npm run check && npm run test:unit && npm run test:tooling && npm run test:browser",
-    "test:unit": "c8 --check-coverage --lines 95 --functions 95 --branches 90 --statements 95 --include Web-Version/game-engine.js node --test tests/web/game-engine.test.js tests/web/static.test.js",
+    "test:unit": "c8 --check-coverage --lines 100 --functions 100 --branches 95 --statements 100 --include 'Web-Version/*.js' node --test tests/web/game-engine.test.js tests/web/game-engine-edges.test.js tests/web/game-controller.test.js tests/web/static.test.js",
     "test:tooling": "node --test tests/tooling/repository.test.js",
     "test:browser": "node --test tests/web/browser.test.js",
     "screenshots:web": "node scripts/capture-web-screenshots.mjs",

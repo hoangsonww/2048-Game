@@ -15,7 +15,7 @@ fi
 use_java_17
 section "Android unit tests, lint, and debug APK"
 printf 'Using Java %s from %s\n' "$(java_major_version)" "${JAVA_HOME:-$(command -v java)}"
-(cd "${ANDROID_ROOT}" && ./gradlew testDebugUnitTest lintDebug assembleDebug --stacktrace)
+(cd "${ANDROID_ROOT}" && ./gradlew testDebugUnitTest jacocoCoverageVerification lintDebug assembleDebug --stacktrace)
 
 if [[ "${device_tests}" == true ]]; then
     section "Android connected-device UI tests"

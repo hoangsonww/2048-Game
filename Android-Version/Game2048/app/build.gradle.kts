@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
+    jacoco
 }
 
 android {
@@ -21,6 +22,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            enableUnitTestCoverage = true
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -69,4 +73,77 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+}
+
+// MARK: - Coverage
+//
+// The rules engine and its storage are plain Kotlin and run on the JVM, so they
+// carry a hard coverage gate. `MainActivity` is Compose and can only be
+// exercised on a device, which `make test-android-device` does; holding the
+// whole module to a JVM-only threshold would either fail on every machine
+// without an emulator or push the number down to something meaningless.
+
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+/** Classes that are real logic rather than UI or generated scaffolding. */
+val domainClasses = listOf(
+    "com/sonnguyenhoang/game2048/GameViewModel*.class",
+    "com/sonnguyenhoang/game2048/GameStorage*.class",
+    "com/sonnguyenhoang/game2048/SavedGame*.class",
+    "com/sonnguyenhoang/game2048/SharedPreferencesGameStorage*.class"
+)
+
+// Scoped to the one directory AGP writes unit-test coverage into. A wider tree
+// over the whole build directory sweeps in other tasks' outputs, which Gradle
+// rejects as an undeclared dependency as soon as this runs alongside a build.
+val unitTestExecution = fileTree(layout.buildDirectory.dir("outputs/unit_test_code_coverage")) {
+    include("**/*.exec")
+}
+
+tasks.register<JacocoReport>("jacocoTestReport") {
+    group = "verification"
+    description = "Coverage for the Kotlin rules engine and storage."
+    dependsOn("testDebugUnitTest")
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+
+    sourceDirectories.setFrom(files("src/main/java"))
+    classDirectories.setFrom(
+        fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/debug")) { include(domainClasses) }
+    )
+    executionData.setFrom(unitTestExecution)
+}
+
+tasks.register<JacocoCoverageVerification>("jacocoCoverageVerification") {
+    group = "verification"
+    description = "Fails when the rules engine or storage drops below 90% line coverage."
+    dependsOn("jacocoTestReport")
+
+    classDirectories.setFrom(
+        fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/debug")) { include(domainClasses) }
+    )
+    sourceDirectories.setFrom(files("src/main/java"))
+    executionData.setFrom(unitTestExecution)
+
+    violationRules {
+        rule {
+            limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = "0.90".toBigDecimal()
+            }
+        }
+        rule {
+            limit {
+                counter = "BRANCH"
+                value = "COVEREDRATIO"
+                minimum = "0.85".toBigDecimal()
+            }
+        }
+    }
 }
