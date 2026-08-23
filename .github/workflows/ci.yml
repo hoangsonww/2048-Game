@@ -105,6 +105,15 @@ jobs:
             test-without-building -parallel-testing-enabled NO -only-testing:Game-2048UITests \
             -resultBundlePath "$RUNNER_TEMP/iOS-UI.xcresult" CODE_SIGNING_ALLOWED=NO
 
+      - name: Enforce app-target coverage
+        run: |
+          percent="$(xcrun xccov view --report --only-targets "$RUNNER_TEMP/iOS-Unit.xcresult" \
+            | awk '$2 == "Game-2048.app" { gsub(/%/, "", $(NF-1)); print $(NF-1); exit }')"
+          echo "Game-2048.app line coverage: ${percent}%"
+          awk -v value="$percent" 'BEGIN { exit !(value < 90) }' \
+            && { echo "::error::Coverage ${percent}% is below the required 90%."; exit 1; }
+          echo "Coverage ${percent}% meets the 90% floor."
+
       - name: Upload iOS result bundles
         if: always()
         uses: actions/upload-artifact@v4
@@ -135,8 +144,11 @@ jobs:
       - name: Set up and validate Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Run deterministic ViewModel tests
+      - name: Run deterministic ViewModel and storage tests
         run: ./gradlew testDebugUnitTest --stacktrace
+
+      - name: Enforce rules-engine coverage
+        run: ./gradlew jacocoCoverageVerification --stacktrace
 
       - name: Run Android lint
         run: ./gradlew lintDebug --stacktrace

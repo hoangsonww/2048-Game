@@ -461,9 +461,9 @@ Coverage is layered deliberately: pure rules logic is tested exhaustively and ch
 
 ### Web — 75 tests, 100 % line coverage
 
-- **27 deterministic engine tests** against `game-engine.js`, covering all four directions, merge ordering and the single-merge rule, scoring, weighted spawning at its exact boundary, ineffective moves, undo semantics, win and loss predicates, and rejection of structurally invalid boards.
+- **23 deterministic engine tests** against `game-engine.js`, covering all four directions, merge ordering and the single-merge rule, scoring, weighted spawning at its exact boundary, ineffective moves, undo semantics, win and loss predicates, and rejection of structurally invalid boards.
 - **38 controller tests** against `script.js`, run on a hand-written DOM so keyboard, touch, on-screen buttons, rendering, message states, and persistence are all covered without a browser. Includes the gesture-ownership contract: the `touchmove` listener must be non-passive, must suppress scrolling only during a board swipe, and must forget a cancelled gesture.
-- **Metadata and asset tests** for the manifest, sitemap, `robots.txt`, JSON-LD, and every referenced icon, plus **2 repository-tooling tests** asserting the project structure and npm script surface stay intact.
+- **4 metadata and asset tests** for the manifest, sitemap, `robots.txt`, JSON-LD, and every referenced icon, plus **2 repository-tooling tests** asserting the project structure and npm script surface stay intact.
 - **8 Chromium interaction scenarios** driving the real page: arrow-key play, WASD play, touch swipe, the on-screen direction pad, undo, persistence across reload, restart confirmation, fullscreen, the win overlay, the loss overlay, recovery from a corrupt saved state, and that a board swipe suppresses page scrolling without blocking it anywhere else.
 
 Coverage is **enforced** by `c8` across everything in `Web-Version/`, and the build fails below 100 % statements, 100 % lines, 100 % functions, or 95 % branches. Both files currently reach **100 % statements, lines, and functions with 98.8 % branches**.

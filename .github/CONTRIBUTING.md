@@ -126,7 +126,9 @@ Behavior changes need either a test or a clear manual verification note describi
 - User-flow behavior belongs in the platform UI suite, asserting a user-visible outcome rather than re-deriving the rules.
 - **Inject randomness.** Never write a test that depends on real random spawning.
 - Confirm your test fails before the fix and passes after. A test that never failed has proven nothing.
-- Web engine coverage is gated at 95 % statements/lines/functions and 90 % branches. If you add engine code, add the tests that keep it above the line — lowering the thresholds is not an acceptable fix.
+- **Every platform gates coverage, and all three currently sit above 99 %.** Web is gated by `c8` at 100 % statements/lines/functions and 95 % branches over all of `Web-Version/`; iOS at 90 % of the app target, read from the `.xcresult` by `scripts/test-ios.sh`; Android at 90 % lines and 85 % branches of the Kotlin engine and storage, enforced by JaCoCo. If you add code, add the tests that keep it above the line — lowering a threshold is not an acceptable fix.
+- Two invariants that catch people writing their first test here: a valid move **always spawns a tile**, so assert the cells the move produced rather than a whole row; and an ineffective move **persists nothing**, so assert the move was accepted before checking what was stored.
+- On iOS, add new test files to the `Game-2048Tests` target in the Xcode project. The project has no synchronised file groups, so a file only on disk never compiles and never runs.
 
 Full detail, including how to tell a real defect from a flaky emulator, is in [`docs/testing.md`](../docs/testing.md).
 

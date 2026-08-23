@@ -124,6 +124,8 @@ Input handling must guarantee **one move per discrete input**. A single continuo
 
 Static files with no bundler, transpiler, or runtime dependencies. `game-engine.js` is pure and dual-target (browser and Node), which keeps enforced coverage cheap and fast. `script.js` owns DOM wiring, input handling, persistence, and the accessibility live region.
 
+Both files are covered at 100 % of lines. `script.js` is an IIFE that reads the document once on load and then talks to the page only through the elements it captured, which is exactly what lets `tests/web/helpers/fake-dom.js` stand in for the browser and unit-test it. Keep that property: a controller that reaches back into `document` mid-flight is a controller that can only be tested in a real browser.
+
 Input sources: arrow keys, WASD, `touchstart`/`touchend` swipe on `#gridContainer` with a 28 px threshold, and on-screen direction buttons. `F` toggles fullscreen.
 
 The board sets `touch-action: none`, `html`/`body` set `overscroll-behavior: none`, and a non-passive `touchmove` listener scoped to the board calls `preventDefault()`. The existing touch listeners are passive and cannot, so without that guard a board swipe chains into pull-to-refresh and rubber-band scrolling. A `touchcancel` handler clears the start point; otherwise a cancelled gesture leaves the board suppressing scrolling and measures the next swipe from a stale origin.
