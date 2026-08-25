@@ -9,4 +9,6 @@ Read `AGENTS.md`, `docs/architecture.md`, and the relevant platform skills. Writ
 
 Preserve the shared rules contract while using native presentation patterns: SVG and browser semantics on web, SF Symbols and SwiftUI accessibility on iOS, Material icons and Compose semantics on Android. Pixel identity is not required; equivalent capability, hierarchy, and feedback are.
 
+Server-driven surfaces are a parity surface of their own. A node type must exist on both native clients before a payload uses it, the two bundled payloads stay byte-identical, and every call site keeps its native fallback. Surfaces describe content only — rules, styling, and behaviour stay in code.
+
 Add parallel deterministic cases for rule changes and platform-appropriate UI coverage for flow changes. Run `make check` and each affected `make test-*` target. Report any unavailable toolchain or intentional divergence explicitly instead of treating one passing client as proof for all three.

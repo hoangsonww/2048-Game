@@ -2,6 +2,7 @@
 
 A polished, accessible, offline-first 2048 puzzle shipped as **three independent native clients** — a dependency-free progressive web app, a SwiftUI iOS app, and a Jetpack Compose Android app. They share no runtime code, yet every one of them is held to the same documented set of behavioral invariants and verified by the same four-job continuous integration pipeline.
 
+![Server-Driven UI](https://img.shields.io/badge/Server--Driven%20UI-5A0FC8?style=for-the-badge&logo=json&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
 ![Swift](https://img.shields.io/badge/Swift-F05138?style=for-the-badge&logo=swift&logoColor=white)
 ![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)
@@ -61,6 +62,7 @@ A polished, accessible, offline-first 2048 puzzle shipped as **three independent
 - [Controls](#controls)
 - [Behavioral invariants](#behavioral-invariants)
 - [Architecture](#architecture)
+- [Server-driven surfaces](#server-driven-surfaces)
 - [Repository map](#repository-map)
 - [Getting started](#getting-started)
 - [Run the web app](#run-the-web-app)
@@ -132,6 +134,7 @@ Regenerate every web capture with `make screenshots-web`; output lands in the gi
 | Win state at 2048 with "keep playing" option | ✅ | ✅ | ✅ |
 | Game-over detection on a full board with no merge | ✅ | ✅ | ✅ |
 | In-app rules and strategy guide | ✅ | ✅ | ✅ |
+| Server-driven content surfaces, with a native fallback | — | ✅ | ✅ |
 | Swipe / drag gesture input | ✅ | ✅ | ✅ |
 | Physical keyboard input (arrows + WASD) | ✅ | — | — |
 | On-screen direction controls | ✅ | — | — |
@@ -199,6 +202,7 @@ Three clients, three runtimes, one contract. There is no backend, no shared libr
 | Rules engine | `Web-Version/game-engine.js` (pure, side-effect free) | `GameViewModel.swift` | `GameViewModel.kt` |
 | State orchestration | `Web-Version/script.js` | `GameViewModel.swift` | `GameViewModel.kt` |
 | Persistence | `localStorage`, key `game2048-state-v2` | `UserDefaults` | `GameStorage.kt` over `SharedPreferences` |
+| Server-driven content | — | `Game-2048/SDUI/` | `sdui/` package |
 | Unit tests | Node.js built-in test runner | XCTest | JUnit 4 |
 | UI / integration tests | Playwright (Chromium) | XCUITest | Compose UI Test + Espresso |
 | Language | JavaScript (ES modules) | Swift 5 | Kotlin 1.9 |
@@ -218,6 +222,29 @@ Three clients, three runtimes, one contract. There is no backend, no shared libr
 Deeper detail lives in [`ARCHITECTURE.md`](../ARCHITECTURE.md) for the whole system, and [`docs/architecture.md`](../docs/architecture.md) for per-client specifics.
 
 ---
+
+## Server-driven surfaces
+
+Both native clients ship a **server-driven UI runtime with no server.**
+
+Store review takes days. A typo in the help copy should not have to wait that long, and every mature store app solves this by describing the screen with data the app fetches rather than code it ships. This repository's invariant is that there is no backend and no network call — so the runtime is built and the transport deliberately is not. Surfaces are described by JSON, validated, and rendered natively from the app bundle. Adding a publisher later is one new `SurfaceSource` and one line of wiring; the renderer, validator, and every test stay untouched.
+
+**The game is never server-driven.** Board, merging, scoring, and undo are code, and no payload can reach them. What is describable is content — the help sheet today.
+
+| A payload may | A payload may not |
+| --- | --- |
+| Supply text, ordering, and structure | Supply colours, fonts, or spacing |
+| Name an action the host already implements | Describe behaviour, expressions, or scripts |
+| Introduce a node type this build skips | Touch the rules engine or persisted state |
+| Gate itself to a minimum app version | Force a screen to render nothing |
+
+Actions are **names**. A surface can ask for `newGame`; it cannot describe how to start one. That indirection is what keeps a data channel from becoming an execution channel.
+
+Every surface has a hand-written native fallback. Missing, unreadable, schema too new, app too old, or every node unknown all end at the shipped UI, and individual bad nodes are pruned while their siblings render. Delete every payload and both apps are exactly what they shipped with — the feature is additive, never load-bearing.
+
+The iOS and Android payloads are byte-identical and a test asserts they stay that way, for the same reason the rules have three parallel suites: two clients drifting apart is the failure mode this repository exists to prevent.
+
+Full detail in [`ARCHITECTURE.md`](../ARCHITECTURE.md#server-driven-surfaces).
 
 ## Repository map
 

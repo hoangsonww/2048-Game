@@ -66,6 +66,7 @@ The web app provides semantic headings, landmarks, navigation labels, a skip lin
 - `Game-2048/GameViewModel.swift`: iOS rules, state, and persistence.
 - `Game-2048/GameView.swift`: SwiftUI presentation.
 - `Android-Version/Game2048/app/src/main/`: Compose UI, ViewModel, storage, and theme.
+- `Game-2048/SDUI/` and `.../sdui/`: server-driven content surfaces on the native clients, rendered from bundled JSON with a native fallback. Game rules are never described by data, and no client makes a network request.
 - `tests/web/`: rules, metadata, assets, and browser flows.
 - `scripts/` and `Makefile`: stable setup, validation, test, server, and screenshot entry points.
 - `.agents/skills/`: repository-local workflows for coding agents.

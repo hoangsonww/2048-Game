@@ -14,6 +14,7 @@ This document is the authoritative description of how the three clients are buil
 - [Terminal states](#terminal-states)
 - [Persistence and state validation](#persistence-and-state-validation)
 - [Application lifecycle](#application-lifecycle)
+- [Server-driven surfaces](#server-driven-surfaces)
 - [Web client](#web-client)
 - [iOS client](#ios-client)
 - [Android client](#android-client)
@@ -49,6 +50,7 @@ Each client renders the same board, score pair, and action bar with native idiom
 | Rules engine | `Web-Version/game-engine.js` | `GameViewModel.swift` | `GameViewModel.kt` |
 | State orchestration | `Web-Version/script.js` | `GameViewModel.swift` | `GameViewModel.kt` |
 | Persistence | `localStorage`, key `game2048-state-v2` | `UserDefaults` | `GameStorage.kt` over `SharedPreferences` |
+| Server-driven content | — | `Game-2048/SDUI/` | `sdui/` package |
 | Unit tests | Node.js test runner | XCTest | JUnit 4 |
 | UI tests | Playwright (Chromium) | XCUITest | Compose UI Test |
 | Language | JavaScript (ES modules) | Swift 5 | Kotlin 1.9 |
@@ -119,6 +121,32 @@ This matters because saved state is user-writable on every platform — browser 
 5. Evaluate the win and game-over predicates and present the matching UI.
 
 Input handling must guarantee **one move per discrete input**. A single continuous drag produces exactly one move, not a stream of them — enforced with a gesture threshold plus a per-gesture latch on all three clients.
+
+## Server-driven surfaces
+
+Both native clients carry a server-driven UI runtime. The web client does not:
+it is a static page a maintainer can edit and redeploy in seconds, so the
+problem SDUI solves — waiting on store review to change a string — does not
+exist there.
+
+The runtime is described in full in
+[ARCHITECTURE.md](../ARCHITECTURE.md#server-driven-surfaces). What matters when
+changing this code:
+
+- **Rules are never data.** `GameViewModel` on both platforms is untouched by
+  the surface layer, and no payload can reach the board, scoring, merging, or
+  undo.
+- **Every surface needs a native fallback at the call site.** `SurfaceView`
+  takes one as a `@ViewBuilder`; on Android the caller renders its own content
+  when resolution is not `Render`. Adding a surface without a fallback is the
+  one way to make this feature able to break a screen.
+- **Node types are open.** Adding one is additive; changing the meaning of an
+  existing one is a `schemaVersion` bump.
+- **Both payloads must stay identical.** `Game-2048/Surfaces/help.json` and
+  `Android-Version/.../assets/surfaces/help.json` are byte-identical and a test
+  asserts it.
+- **New iOS surface files must be added to the Xcode target.** The project has
+  no synchronised groups, so a file only on disk never compiles.
 
 ## Web client
 
