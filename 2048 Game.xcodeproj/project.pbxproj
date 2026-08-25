@@ -16,6 +16,13 @@
 		F4CCBB1D2BA9F8A1007AA07E /* Game_2048UITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB1C2BA9F8A1007AA07E /* Game_2048UITestsLaunchTests.swift */; };
 		F4CCBB322BA9FA64007AA07E /* GameViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB312BA9FA64007AA07E /* GameViewModel.swift */; };
 		F4CCBB342BA9FA79007AA07E /* GameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB332BA9FA79007AA07E /* GameView.swift */; };
+		F4CCBB402BA9F8A0007AA07E /* Surface.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB412BA9F8A0007AA07E /* Surface.swift */; };
+		F4CCBB422BA9F8A0007AA07E /* SurfaceResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB432BA9F8A0007AA07E /* SurfaceResolver.swift */; };
+		F4CCBB442BA9F8A0007AA07E /* SurfaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB452BA9F8A0007AA07E /* SurfaceView.swift */; };
+		F4CCBB462BA9F8A0007AA07E /* SurfaceCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB472BA9F8A0007AA07E /* SurfaceCatalog.swift */; };
+		F4CCBB4B2BA9F8A0007AA07E /* help.json in Resources */ = {isa = PBXBuildFile; fileRef = F4CCBB4A2BA9F8A0007AA07E /* help.json */; };
+		F4CCBB4D2BA9F8A0007AA07E /* SurfaceSDUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB4C2BA9F8A0007AA07E /* SurfaceSDUITests.swift */; };
+		F4CCBB4F2BA9F8A0007AA07E /* SurfaceRenderingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB4E2BA9F8A0007AA07E /* SurfaceRenderingTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -49,6 +56,13 @@
 		F4CCBB1C2BA9F8A1007AA07E /* Game_2048UITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Game_2048UITestsLaunchTests.swift; sourceTree = "<group>"; };
 		F4CCBB312BA9FA64007AA07E /* GameViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameViewModel.swift; sourceTree = "<group>"; };
 		F4CCBB332BA9FA79007AA07E /* GameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameView.swift; sourceTree = "<group>"; };
+		F4CCBB412BA9F8A0007AA07E /* Surface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Surface.swift; sourceTree = "<group>"; };
+		F4CCBB432BA9F8A0007AA07E /* SurfaceResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurfaceResolver.swift; sourceTree = "<group>"; };
+		F4CCBB452BA9F8A0007AA07E /* SurfaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurfaceView.swift; sourceTree = "<group>"; };
+		F4CCBB472BA9F8A0007AA07E /* SurfaceCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurfaceCatalog.swift; sourceTree = "<group>"; };
+		F4CCBB4A2BA9F8A0007AA07E /* help.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = help.json; sourceTree = "<group>"; };
+		F4CCBB4C2BA9F8A0007AA07E /* SurfaceSDUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurfaceSDUITests.swift; sourceTree = "<group>"; };
+		F4CCBB4E2BA9F8A0007AA07E /* SurfaceRenderingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurfaceRenderingTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -105,8 +119,29 @@
 				F4CCBB052BA9F8A0007AA07E /* Preview Content */,
 				F4CCBB312BA9FA64007AA07E /* GameViewModel.swift */,
 				F4CCBB332BA9FA79007AA07E /* GameView.swift */,
+				F4CCBB482BA9F8A0007AA07E /* SDUI */,
+				F4CCBB492BA9F8A0007AA07E /* Surfaces */,
 			);
 			path = "Game-2048";
+			sourceTree = "<group>";
+		};
+		F4CCBB482BA9F8A0007AA07E /* SDUI */ = {
+			isa = PBXGroup;
+			children = (
+				F4CCBB412BA9F8A0007AA07E /* Surface.swift */,
+				F4CCBB432BA9F8A0007AA07E /* SurfaceResolver.swift */,
+				F4CCBB452BA9F8A0007AA07E /* SurfaceView.swift */,
+				F4CCBB472BA9F8A0007AA07E /* SurfaceCatalog.swift */,
+			);
+			path = SDUI;
+			sourceTree = "<group>";
+		};
+		F4CCBB492BA9F8A0007AA07E /* Surfaces */ = {
+			isa = PBXGroup;
+			children = (
+				F4CCBB4A2BA9F8A0007AA07E /* help.json */,
+			);
+			path = Surfaces;
 			sourceTree = "<group>";
 		};
 		F4CCBB052BA9F8A0007AA07E /* Preview Content */ = {
@@ -122,6 +157,8 @@
 			children = (
 				F4CCBB102BA9F8A0007AA07E /* Game_2048Tests.swift */,
 				F4CCBB2B2BA9F8A0007AA07E /* GameViewModelEdgeCaseTests.swift */,
+				F4CCBB4C2BA9F8A0007AA07E /* SurfaceSDUITests.swift */,
+				F4CCBB4E2BA9F8A0007AA07E /* SurfaceRenderingTests.swift */,
 			);
 			path = "Game-2048Tests";
 			sourceTree = "<group>";
@@ -241,6 +278,7 @@
 			files = (
 				F4CCBB072BA9F8A0007AA07E /* Preview Assets.xcassets in Resources */,
 				F4CCBB032BA9F8A0007AA07E /* Assets.xcassets in Resources */,
+				F4CCBB4B2BA9F8A0007AA07E /* help.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -267,6 +305,10 @@
 			files = (
 				F4CCBB322BA9FA64007AA07E /* GameViewModel.swift in Sources */,
 				F4CCBB342BA9FA79007AA07E /* GameView.swift in Sources */,
+				F4CCBB402BA9F8A0007AA07E /* Surface.swift in Sources */,
+				F4CCBB422BA9F8A0007AA07E /* SurfaceResolver.swift in Sources */,
+				F4CCBB442BA9F8A0007AA07E /* SurfaceView.swift in Sources */,
+				F4CCBB462BA9F8A0007AA07E /* SurfaceCatalog.swift in Sources */,
 				F4CCBAFF2BA9F89F007AA07E /* Game_2048App.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -277,6 +319,8 @@
 			files = (
 				F4CCBB112BA9F8A0007AA07E /* Game_2048Tests.swift in Sources */,
 				F4CCBB2A2BA9F8A0007AA07E /* GameViewModelEdgeCaseTests.swift in Sources */,
+				F4CCBB4D2BA9F8A0007AA07E /* SurfaceSDUITests.swift in Sources */,
+				F4CCBB4F2BA9F8A0007AA07E /* SurfaceRenderingTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

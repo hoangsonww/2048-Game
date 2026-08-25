@@ -13,7 +13,7 @@ New here? Read [The product in one page](#the-product-in-one-page), [Three clien
 | **Shape** | [Product](#the-product-in-one-page) · [Three clients, one contract](#three-clients-one-contract) · [Why no shared core](#why-there-is-no-shared-core) · [Repository map](#repository-map) · [Decision log](#decision-log) |
 | **Rules** | [The rules engine](#the-rules-engine) · [Board representation](#board-representation-and-indexing) · [Move algorithm](#the-move-algorithm) · [Merge ordering](#merge-ordering-the-rule-everyone-gets-wrong) · [A move traced end to end](#a-move-traced-end-to-end) · [Spawning](#tile-spawning-and-determinism) · [Win and loss](#win-and-loss-predicates) · [Complexity](#complexity-and-performance) |
 | **State** | [State machine](#game-state-machine) · [Undo](#undo) · [Score](#score-and-best-score) · [Persistence](#persistence-and-corrupt-state) · [State shape reference](#state-shape-reference) |
-| **Clients** | [Web](#web-client) · [iOS](#ios-client) · [Android](#android-client) · [Input pipeline](#input-pipeline) · [Gesture ownership](#gesture-ownership) · [Rendering](#rendering-pipelines) · [Design tokens](#design-tokens-shared-by-hand) · [Motion](#motion-architecture) |
+| **Clients** | [Web](#web-client) · [iOS](#ios-client) · [Android](#android-client) · [Server-driven surfaces](#server-driven-surfaces) · [Input pipeline](#input-pipeline) · [Gesture ownership](#gesture-ownership) · [Rendering](#rendering-pipelines) · [Design tokens](#design-tokens-shared-by-hand) · [Motion](#motion-architecture) |
 | **Web surface** | [PWA and discovery](#pwa-and-discovery-surface) |
 | **Quality** | [Test strategy](#test-strategy) · [Determinism seams](#determinism-seams) · [The fake DOM harness](#the-fake-dom-harness) · [Coverage gates](#coverage-gates) · [Failure modes](#failure-modes-and-how-each-is-caught) · [Accessibility](#accessibility) |
 | **Tooling** | [Command surface](#command-surface) · [Toolchain resolution](#toolchain-resolution) · [Build topology](#build-topology) · [Dev container](#dev-container) · [CI topology](#ci-topology) |
@@ -1446,6 +1446,92 @@ The only place the app consumes data it did not create is the saved round, and e
 
 ---
 
+## Server-driven surfaces
+
+The game is never server-driven. Rules, board, scoring, and undo are code, and
+no payload can reach them. What *is* describable by data is **content** — the
+help sheet today — the parts you would otherwise ship a build to change.
+
+This exists because store review is slow. A typo in the help copy should not
+wait days. It is built now rather than later because the expensive part is not
+the transport, it is the contract and the fallback semantics, and designing
+those under release pressure is how a bad contract ships.
+
+**Today there is no server.** The only source is the app bundle, and neither
+client makes a network request. See [Security and privacy](#security-and-privacy-posture).
+
+```mermaid
+flowchart TB
+    Source["SurfaceSource<br/>(bundled today)"] --> Resolve[SurfaceResolver]
+    Resolve --> Compat{Compatible?}
+    Compat -->|"schema too new"| FB[Native fallback]
+    Compat -->|"app too old"| FB
+    Compat -->|"empty"| FB
+    Compat -->|yes| Prune[Prune unrenderable nodes]
+    Prune --> Any{Any left?}
+    Any -->|no| FB
+    Any -->|yes| Render[Render with the app's design system]
+    Prune --> Problems[Report problems as diagnostics]
+```
+
+### The contract
+
+| Piece | Rule |
+| --- | --- |
+| `Surface` | A versioned tree of typed nodes, with an optional `minimumAppVersion` gate |
+| `SurfaceNode` | `id`, `type`, `properties`, `children`, optional `action` |
+| Node types | Open, not an enum — a build that has never heard of a type must still *parse* the payload and skip that node |
+| Properties | A closed union of string, number, boolean, list. Never `Any` |
+| Actions | **Names**, resolved by the host against a handler map. A payload can ask for `newGame`; it cannot describe how to start one |
+| Styling | Owned entirely by the renderer. A payload supplies content and order, never colours, fonts, or spacing |
+
+### Why it cannot break a screen
+
+Every failure mode ends at the app's own hand-written UI:
+
+| Failure | Result |
+| --- | --- |
+| No payload published | Native fallback |
+| Payload will not decode | Native fallback |
+| `schemaVersion` newer than the build | Native fallback, whole surface refused |
+| `minimumAppVersion` newer than the app | Native fallback, whole surface refused |
+| Every node unknown | Native fallback |
+| *Some* nodes unknown or missing a required property | Those nodes are pruned; siblings render |
+| Action with no registered handler | Renders, control disabled, problem reported |
+
+Deleting every published payload returns both apps to exactly the UI they ship
+with — which is what makes the feature additive rather than load-bearing.
+
+### Adding a remote publisher later
+
+One new `SurfaceSource` and one line in the catalog. The renderer, validator,
+resolver, and every test stay untouched. The *code* cost is small; the cost that
+matters is the rest:
+
+- Android gains an `INTERNET` permission, visible on the store listing.
+- The privacy disclosure changes.
+- A cache and staleness policy becomes necessary.
+- The payload becomes an untrusted remote input, not just an untrusted local one.
+
+That is a product decision, not a refactor, which is exactly why the seam exists
+and the transport does not.
+
+### Where it lives
+
+| | iOS | Android |
+| --- | --- | --- |
+| Model + decode | `Game-2048/SDUI/Surface.swift` | `sdui/Surface.kt` |
+| Validate + resolve | `Game-2048/SDUI/SurfaceResolver.swift` | `sdui/SurfaceResolver.kt` |
+| Render | `Game-2048/SDUI/SurfaceView.swift` | rendered by the Compose help sheet |
+| Wiring | `Game-2048/SDUI/SurfaceCatalog.swift` | `sdui/SurfaceCatalog.kt` |
+| Payload | `Game-2048/Surfaces/help.json` | `assets/surfaces/help.json` |
+
+Both payloads are byte-identical and a test asserts they stay that way, for the
+same reason the [design tokens](#design-tokens-shared-by-hand) are checked: two
+clients drifting apart is the failure mode this repository is built to prevent.
+
+---
+
 ## Architectural invariants
 
 These hold across all three clients. A change that breaks one is a bug regardless of what it enables.
@@ -1474,6 +1560,9 @@ These hold across all three clients. A change that breaks one is a bug regardles
 - Rules logic on iOS and Android stays free of view dependencies.
 - A board swipe never scrolls, bounces, or pans the surrounding screen.
 - Icons are SVG, SF Symbols, or Material vectors — never ASCII, emoji, or Unicode glyphs.
+- A server-driven surface describes **content only**, never rules, styling, or behaviour.
+- Every surface has a native fallback, so no payload can blank or crash a screen.
+- Surface actions are names resolved by the host, never code carried in data.
 - Generated Xcode identifiers and Gradle wrapper binaries are not hand-edited.
 - `local.properties`, signing material, tokens, build output, and local simulator data are never committed.
 

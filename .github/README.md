@@ -468,16 +468,17 @@ Coverage is layered deliberately: pure rules logic is tested exhaustively and ch
 
 Coverage is **enforced** by `c8` across everything in `Web-Version/`, and the build fails below 100 % statements, 100 % lines, 100 % functions, or 95 % branches. Both files currently reach **100 % statements, lines, and functions with 98.8 % branches**.
 
-### iOS — 58 tests, 99.4 % line coverage
+### iOS — 89 tests, 95.5 % line coverage
 
-- **49 deterministic model tests** covering every direction, merge ordering, scoring, spawn distribution and index clamping, restart, undo depth and win-state rewind, persistence round-trips, best-score retention, win and loss detection, and rejection of every shape of invalid saved state.
+- **80 deterministic model, surface, and render tests** covering every direction, merge ordering, scoring, spawn distribution and index clamping, restart, undo depth and win-state rewind, persistence round-trips, best-score retention, win and loss detection, and rejection of every shape of invalid saved state.
 - **9 XCUITest simulator tests** covering the help sheet, swipe gestures, the restart confirmation dialog, accessibility identifiers and labels, end-state recovery flows, launch performance, and that a vertical board swipe reaches the board without moving the screen. The suite reports ten executions because the launch test runs once per appearance mode.
 
 Coverage is **enforced**: `scripts/test-ios.sh` reads the `.xcresult` with `xccov` and fails below 90 % line coverage of the app target, currently **99.4 %**.
 
-### Android — 47 tests, 99.2 % domain line coverage
+### Android — 80 tests, 97.6 % domain line coverage
 
 - **33 deterministic ViewModel tests** proving the same rules and persistence contract as the other two clients.
+- **33 server-driven surface tests** covering decoding, version gating, node pruning, source fallback, and the rule that every failure mode ends at the app's own native UI.
 - **9 storage tests** covering `SharedPreferencesGameStorage` serialisation against an in-memory `SharedPreferences`, including truncated, non-numeric, and empty saved grids.
 - **5 Compose instrumentation tests** on an API 34 emulator covering the help sheet, swipe and undo, restart confirmation, and win/loss recovery.
 

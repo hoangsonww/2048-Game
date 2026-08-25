@@ -30,8 +30,8 @@ Two consequences follow, and both are deliberate:
 | Platform | Deterministic tests | UI / integration tests | Runner | Line coverage |
 | --- | --- | --- | --- | --- |
 | Web | 65 engine, controller, metadata, and asset tests + 2 tooling tests | 8 Chromium scenarios | Node test runner, Playwright | 100 % |
-| iOS | 49 model tests | 9 XCUITest flows | XCTest | 99.4 % |
-| Android | 42 ViewModel and storage tests | 5 Compose instrumentation tests | JUnit 4, Compose UI Test | 99.2 % (domain) |
+| iOS | 80 model, surface, and render tests | 9 XCUITest flows | XCTest | 95.5 % |
+| Android | 75 ViewModel, storage, and surface tests | 5 Compose instrumentation tests | JUnit 4, Compose UI Test | 97.6 % (domain) |
 
 The iOS UI suite reports ten executions because the launch test runs once per appearance mode.
 
@@ -42,6 +42,7 @@ Each platform additionally covers the layer above its rules engine:
 - **Web** — the controller (`Web-Version/script.js`) runs against a hand-written DOM in `tests/web/helpers/fake-dom.js`, so keyboard, touch, buttons, rendering, and persistence are unit-tested without a browser.
 - **iOS** — persistence round-trips, spawn-index clamping, and corrupt `UserDefaults` payloads.
 - **Android** — `SharedPreferencesGameStorage` serialisation against an in-memory `SharedPreferences`.
+- **Both native clients** — the server-driven surface layer: decoding, version gating, node pruning, source fallback, and the rule that every failure mode ends at the app's own native UI. The shipped `help.json` payload is validated like any other untrusted input, and a test asserts the iOS and Android copies have not drifted apart.
 
 Every suite enforces its own coverage floor; see the platform sections below.
 
@@ -96,7 +97,7 @@ Requires macOS with Xcode. The script selects an available iPhone simulator auto
 
 Model tests and UI tests run as separate targets (`Game-2048Tests` and `Game-2048UITests`) so a UI-harness failure never masks a rules regression. Preserve the `.xcresult` bundle when diagnosing a failure — it carries the failure screenshots, the full test log, and coverage data that the console output does not.
 
-**Coverage is a hard gate.** After the run, `scripts/test-ios.sh` reads the `.xcresult` with `xccov` and fails below 90 % line coverage of the `Game-2048.app` target, which currently sits at 99.4 %. Override the floor with `IOS_MINIMUM_COVERAGE` only to raise it.
+**Coverage is a hard gate.** After the run, `scripts/test-ios.sh` reads the `.xcresult` with `xccov` and fails below 90 % line coverage of the `Game-2048.app` target, which currently sits at 95.5 %. Override the floor with `IOS_MINIMUM_COVERAGE` only to raise it.
 
 New test files must be added to the `Game-2048Tests` target in `2048 Game.xcodeproj` — the project does not use synchronised file groups, so a file that is merely on disk is silently never compiled or run.
 
@@ -109,7 +110,7 @@ make test-android          # unit tests, lint, debug APK
 make test-android-device   # adds Compose tests on a connected device
 ```
 
-**Coverage is a hard gate.** `make test-android` runs `jacocoCoverageVerification`, which fails below 90 % line or 85 % branch coverage of the Kotlin rules engine and its storage (`GameViewModel`, `GameStorage`, `SavedGame`, `SharedPreferencesGameStorage`). Those currently sit at 99.2 % lines and 91.3 % branches. The HTML report lands in `app/build/reports/jacoco/jacocoTestReport/`.
+**Coverage is a hard gate.** `make test-android` runs `jacocoCoverageVerification`, which fails below 90 % line or 85 % branch coverage of the Kotlin rules engine and its storage (`GameViewModel`, `GameStorage`, `SavedGame`, `SharedPreferencesGameStorage`, and the `sdui` package). Those currently sit at 97.6 % lines and 88.6 % branches. `SurfaceCatalog` is excluded for the same reason `MainActivity` is — it needs a real `Context`. The HTML report lands in `app/build/reports/jacoco/jacocoTestReport/`.
 
 `MainActivity` is Compose and is deliberately outside that gate: it can only be exercised on a device, which `make test-android-device` does. Holding the whole module to a JVM-only threshold would either fail on every machine without an emulator or push the number down to something meaningless.
 

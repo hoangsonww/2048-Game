@@ -186,9 +186,45 @@ private struct EndPanel: View {
     var body: some View { VStack(spacing: 9) { Text(kicker.uppercased()).font(.system(size: 11, weight: .bold, design: .rounded)).tracking(1.2).foregroundStyle(Color(red: 0.96, green: 0.65, blue: 0.56)); Text(title).font(.system(size: 31, weight: .heavy, design: .rounded)).tracking(-1.3); Text(detail).font(.system(size: 14, weight: .medium, design: .rounded)).foregroundStyle(.white.opacity(0.72)).multilineTextAlignment(.center); HStack { Button(primary, action: primaryAction).buttonStyle(.borderedProminent).tint(Color(red: 0.914, green: 0.388, blue: 0.271)); if let secondary, let secondaryAction { Button(secondary, action: secondaryAction).buttonStyle(.plain) } }.padding(.top, 8) }.padding(24).frame(maxWidth: .infinity, maxHeight: .infinity).foregroundStyle(.white).background(Color(red: 0.141, green: 0.137, blue: 0.122).opacity(0.94), in: RoundedRectangle(cornerRadius: 18)) }
 }
 
+/// The help sheet is the app's one server-drivable surface.
+///
+/// It renders a published `help` surface when one is available and valid, and
+/// the hand-written rows below when it is not. The rules of the game are never
+/// described by data — only this content is — so a bad payload costs the player
+/// nothing but the default copy.
 private struct HelpView: View {
     @Environment(\.dismiss) private var dismiss
-    var body: some View { NavigationStack { ScrollView { VStack(alignment: .leading, spacing: 26) { Text("Small rules.\nDeep decisions.").font(.system(size: 38, weight: .heavy, design: .rounded)).tracking(-1.8); HelpRow(number: "01", title: "Slide", detail: "Swipe the board to move every tile in one direction."); HelpRow(number: "02", title: "Match", detail: "Equal tiles merge and add their new value to your score."); HelpRow(number: "03", title: "Protect space", detail: "Keep your largest tile in a corner and preserve empty cells.") }.padding(22) } .background(Color(red: 0.961, green: 0.941, blue: 0.902)).navigationTitle("How to play").navigationBarTitleDisplayMode(.inline).toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } } } }
+    @State private var resolution: SurfaceResolution?
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                SurfaceView(resolution: resolution) { nativeHelp }
+                    .padding(22)
+            }
+            .background(Color(red: 0.961, green: 0.941, blue: 0.902))
+            .navigationTitle("How to play")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .task { resolution = await SurfaceCatalog.shared.resolve(.help) }
+        }
+    }
+
+    /// The shipped content, and the fallback for every failure mode.
+    private var nativeHelp: some View {
+        VStack(alignment: .leading, spacing: 26) {
+            Text("Small rules.\nDeep decisions.")
+                .font(.system(size: 38, weight: .heavy, design: .rounded))
+                .tracking(-1.8)
+            HelpRow(number: "01", title: "Slide", detail: "Swipe the board to move every tile in one direction.")
+            HelpRow(number: "02", title: "Match", detail: "Equal tiles merge and add their new value to your score.")
+            HelpRow(
+                number: "03",
+                title: "Protect space",
+                detail: "Keep your largest tile in a corner and preserve empty cells."
+            )
+        }
+    }
 }
 
 private struct HelpRow: View {

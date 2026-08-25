@@ -67,6 +67,11 @@ dependencies {
     implementation("androidx.compose.animation:animation:1.0.5")
     implementation("androidx.compose.material:material-icons-extended")
     testImplementation(libs.junit)
+    // The android.jar on the unit-test classpath ships `org.json` as stubs that
+    // throw "not mocked". The real implementation shadows them so the surface
+    // decoder — which parses untrusted input — is testable on the JVM instead
+    // of only on a device. Test-only: nothing extra ships in the APK.
+    testImplementation(libs.org.json)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -92,7 +97,18 @@ val domainClasses = listOf(
     "com/sonnguyenhoang/game2048/GameViewModel*.class",
     "com/sonnguyenhoang/game2048/GameStorage*.class",
     "com/sonnguyenhoang/game2048/SavedGame*.class",
-    "com/sonnguyenhoang/game2048/SharedPreferencesGameStorage*.class"
+    "com/sonnguyenhoang/game2048/SharedPreferencesGameStorage*.class",
+    // The surface layer parses untrusted input and decides what a screen shows,
+    // so it is held to the same bar as the rules engine.
+    "com/sonnguyenhoang/game2048/sdui/**.class"
+)
+
+/**
+ * Framework glue that can only run with a real `Context`, so it is measured by
+ * the device suite for the same reason `MainActivity` is.
+ */
+val deviceOnlyClasses = listOf(
+    "com/sonnguyenhoang/game2048/sdui/SurfaceCatalog*.class"
 )
 
 // Scoped to the one directory AGP writes unit-test coverage into. A wider tree
@@ -114,7 +130,10 @@ tasks.register<JacocoReport>("jacocoTestReport") {
 
     sourceDirectories.setFrom(files("src/main/java"))
     classDirectories.setFrom(
-        fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/debug")) { include(domainClasses) }
+        fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/debug")) {
+            include(domainClasses)
+            exclude(deviceOnlyClasses)
+        }
     )
     executionData.setFrom(unitTestExecution)
 }
@@ -125,7 +144,10 @@ tasks.register<JacocoCoverageVerification>("jacocoCoverageVerification") {
     dependsOn("jacocoTestReport")
 
     classDirectories.setFrom(
-        fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/debug")) { include(domainClasses) }
+        fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/debug")) {
+            include(domainClasses)
+            exclude(deviceOnlyClasses)
+        }
     )
     sourceDirectories.setFrom(files("src/main/java"))
     executionData.setFrom(unitTestExecution)

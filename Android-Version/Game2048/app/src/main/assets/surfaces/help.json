@@ -1,0 +1,35 @@
+{
+  "id": "help",
+  "schemaVersion": 1,
+  "revision": "2026-08-23.1",
+  "nodes": [
+    { "id": "title", "type": "heading", "properties": { "text": "Small rules.\nDeep decisions." } },
+    {
+      "id": "slide",
+      "type": "step",
+      "properties": {
+        "number": "01",
+        "title": "Slide",
+        "detail": "Swipe the board to move every tile in one direction."
+      }
+    },
+    {
+      "id": "match",
+      "type": "step",
+      "properties": {
+        "number": "02",
+        "title": "Match",
+        "detail": "Equal tiles merge and add their new value to your score."
+      }
+    },
+    {
+      "id": "space",
+      "type": "step",
+      "properties": {
+        "number": "03",
+        "title": "Protect space",
+        "detail": "Keep your largest tile in a corner and preserve empty cells."
+      }
+    }
+  ]
+}

@@ -40,6 +40,7 @@ Run the smallest relevant checks while iterating and the complete affected-platf
 - Preserve existing user changes in a dirty working tree. Do not reset, discard, or rewrite unrelated work.
 - Treat audit, diagnosis, review, and test-only requests as read-only unless the user asks for implementation.
 - Do not add a backend, analytics, accounts, remote storage, or network calls without explicit product direction.
+- Server-driven surfaces describe **content only**. Rules, styling, and behaviour stay in code, every surface keeps a native fallback, and actions are names the host resolves — never code carried in data. See [ARCHITECTURE.md](ARCHITECTURE.md#server-driven-surfaces).
 - Keep game state local. Validate persisted state before restoring it.
 - Keep source code deterministic where tests inject a random tile provider.
 - Do not edit generated Xcode project identifiers or Gradle wrapper binaries unless the task requires it.
