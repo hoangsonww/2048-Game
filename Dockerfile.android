@@ -77,13 +77,20 @@ WORKDIR /src
 COPY Android-Version/Game2048/gradle/ ./gradle/
 COPY Android-Version/Game2048/gradlew ./gradlew
 COPY Android-Version/Game2048/settings.gradle.kts Android-Version/Game2048/build.gradle.kts Android-Version/Game2048/gradle.properties ./
-RUN ./gradlew --no-daemon --version >/dev/null
+
+# A BuildKit cache mount keeps the resolved dependency graph across the two
+# RUN steps below and across rebuilds on the same builder. Maven Central
+# answers anonymous traffic with 429 under load, and the less often this
+# re-resolves, the less often a build dies for a reason unrelated to the code.
+RUN --mount=type=cache,target=/root/.gradle,sharing=locked \
+    ./gradlew --no-daemon --version >/dev/null
 
 COPY Android-Version/Game2048/app/ ./app/
 
 # No daemon: it would outlive the RUN layer for nothing and only inflate the
 # image. Tests run here too, so a broken build cannot yield a green image.
-RUN ./gradlew --no-daemon assembleDebug testDebugUnitTest
+RUN --mount=type=cache,target=/root/.gradle,sharing=locked \
+    ./gradlew --no-daemon assembleDebug testDebugUnitTest
 
 # ---------------------------------------------------------------------------
 # Extraction target. `--output` against this stage writes the APK to the host

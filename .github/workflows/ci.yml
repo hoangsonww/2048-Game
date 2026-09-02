@@ -364,6 +364,12 @@ jobs:
   docker-android:
     name: Android builder image
     runs-on: ubuntu-latest
+    # Serialised behind the web image on purpose. Both jobs start a BuildKit
+    # container, and an anonymous Docker Hub pull is rate limited per source
+    # address — two at once on the same runner pool is what produced
+    # "unauthorized: authentication required" from Set up Buildx. Running them
+    # in sequence costs wall-clock time and buys back a whole class of failure.
+    needs: docker
     timeout-minutes: 40
     permissions:
       contents: read
