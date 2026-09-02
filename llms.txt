@@ -1,0 +1,20 @@
+# 2048 — The Number Puzzle
+
+> A free, open-source 2048 puzzle with polished web, SwiftUI, and Jetpack Compose clients. The browser game works with keyboard, touch, and accessible on-screen controls; all game data stays on the device.
+
+## Play and learn
+
+- [Play 2048](https://hoangsonww.github.io/2048-Game/): The canonical browser game and concise three-step guide.
+- [Rules, strategy, and project details](https://hoangsonww.github.io/2048-Game/Web-Version/about.html): Complete rules, practical strategy, and information about the native clients.
+- [Detailed interface and project context](https://hoangsonww.github.io/2048-Game/llms-full.txt): UI structure, controls, game behavior, accessibility, privacy, and contributor entry points.
+
+## Project resources
+
+- [Source repository](https://github.com/hoangsonww/2048-Game): Web, iOS, Android, tests, automation, and documentation.
+- [Contribution guide](https://github.com/hoangsonww/2048-Game/blob/main/.github/CONTRIBUTING.md): Setup, behavior contract, validation, and pull-request expectations.
+- [Security policy](https://github.com/hoangsonww/2048-Game/blob/main/.github/SECURITY.md): Supported versions, local-data architecture, and private reporting.
+
+## Optional
+
+- [Web app manifest](https://hoangsonww.github.io/2048-Game/manifest.json): Installable-app metadata, icons, shortcuts, and screenshots.
+- [Sitemap](https://hoangsonww.github.io/2048-Game/sitemap.xml): Canonical public pages.

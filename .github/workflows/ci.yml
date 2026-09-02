@@ -1,0 +1,230 @@
+name: Cross-platform CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Web unit, coverage, and browser flows
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Audit JavaScript dependencies
+        run: npm audit --audit-level=high
+
+      - name: Install Chromium and system dependencies
+        run: npx playwright install --with-deps chromium
+
+      - name: Validate JavaScript syntax
+        run: npm run check:syntax
+
+      - name: Validate repository and discovery metadata
+        run: npm run check:repo
+
+      - name: Lint project shell utilities
+        run: shellcheck -x -P scripts scripts/*.sh .husky/pre-commit .husky/pre-push
+
+      - name: Run rules, SEO, asset, and coverage tests
+        run: npm run test:unit
+
+      - name: Run repository tooling tests
+        run: npm run test:tooling
+
+      - name: Run browser interaction tests
+        run: npm run test:browser
+
+      - name: Upload web coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-coverage
+          path: coverage/
+          if-no-files-found: warn
+
+  ios:
+    name: iOS build, model tests, and UI flows
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Report Xcode version
+        run: xcodebuild -version
+
+      - name: Select and boot an iPhone simulator
+        run: |
+          DEVICE_ID=$(xcrun simctl list devices available -j | jq -r '[.devices[][] | select(.name | startswith("iPhone"))][0].udid')
+          if [ -z "$DEVICE_ID" ] || [ "$DEVICE_ID" = "null" ]; then
+            echo "No available iPhone simulator found" >&2
+            exit 1
+          fi
+          xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+          echo "IOS_DESTINATION=platform=iOS Simulator,id=$DEVICE_ID" >> "$GITHUB_ENV"
+
+      - name: Build app and test bundles
+        run: |
+          xcodebuild -project "2048 Game.xcodeproj" -scheme "Game-2048" \
+            -destination "$IOS_DESTINATION" -derivedDataPath "$RUNNER_TEMP/Game2048Derived" \
+            build-for-testing CODE_SIGNING_ALLOWED=NO -enableCodeCoverage YES
+
+      - name: Run Swift model tests with coverage
+        run: |
+          xcodebuild -project "2048 Game.xcodeproj" -scheme "Game-2048" \
+            -destination "$IOS_DESTINATION" -derivedDataPath "$RUNNER_TEMP/Game2048Derived" \
+            test-without-building -parallel-testing-enabled NO -only-testing:Game-2048Tests \
+            -resultBundlePath "$RUNNER_TEMP/iOS-Unit.xcresult" CODE_SIGNING_ALLOWED=NO -enableCodeCoverage YES
+
+      - name: Run iOS interaction and accessibility tests
+        run: |
+          xcodebuild -project "2048 Game.xcodeproj" -scheme "Game-2048" \
+            -destination "$IOS_DESTINATION" -derivedDataPath "$RUNNER_TEMP/Game2048Derived" \
+            test-without-building -parallel-testing-enabled NO -only-testing:Game-2048UITests \
+            -resultBundlePath "$RUNNER_TEMP/iOS-UI.xcresult" CODE_SIGNING_ALLOWED=NO -enableCodeCoverage YES
+
+      - name: Enforce app-target coverage
+        run: |
+          # The two suites run separately so a UI-harness failure cannot mask a
+          # rules regression, but coverage has to be judged on both together:
+          # GameView is exercised by XCUITest, so gating on the unit bundle
+          # alone measures something the local `make test-ios` does not.
+          xcrun xcresulttool merge \
+            "$RUNNER_TEMP/iOS-Unit.xcresult" "$RUNNER_TEMP/iOS-UI.xcresult" \
+            --output-path "$RUNNER_TEMP/iOS-Combined.xcresult"
+
+          xcrun xccov view --report --files-for-target Game-2048.app "$RUNNER_TEMP/iOS-Combined.xcresult" \
+            | awk 'NR>3 && NF { name=$2; sub(/.*\//, "", name); printf "  %-26s %s %s\n", name, $(NF-1), $NF }'
+
+          percent="$(xcrun xccov view --report --only-targets "$RUNNER_TEMP/iOS-Combined.xcresult" \
+            | awk '$2 == "Game-2048.app" { gsub(/%/, "", $(NF-1)); print $(NF-1); exit }')"
+          echo "Game-2048.app line coverage: ${percent}%"
+
+          if [ -z "$percent" ]; then
+            echo "::error::Could not read a coverage percentage from the merged result bundle."
+            exit 1
+          fi
+
+          awk -v value="$percent" 'BEGIN { exit !(value < 90) }' \
+            && { echo "::error::Coverage ${percent}% is below the required 90%."; exit 1; }
+          echo "Coverage ${percent}% meets the 90% floor."
+
+      - name: Upload iOS result bundles
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-test-results
+          path: |
+            ${{ runner.temp }}/iOS-Unit.xcresult
+            ${{ runner.temp }}/iOS-UI.xcresult
+          if-no-files-found: warn
+
+  android-jvm:
+    name: Android unit, lint, and APK build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: Android-Version/Game2048
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up and validate Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run deterministic ViewModel and storage tests
+        run: ./gradlew testDebugUnitTest --stacktrace
+
+      - name: Enforce rules-engine coverage
+        run: ./gradlew jacocoCoverageVerification --stacktrace
+
+      - name: Run Android lint
+        run: ./gradlew lintDebug --stacktrace
+
+      - name: Assemble debug APK
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Upload Android reports and APK
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-jvm-results
+          path: |
+            Android-Version/Game2048/app/build/reports/
+            Android-Version/Game2048/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: warn
+
+  android-device:
+    name: Android emulator UI flows
+    runs-on: ubuntu-latest
+    needs: android-jvm
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: Android-Version/Game2048
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up and validate Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Enable KVM acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run Compose tests on API 34
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          disable-animations: true
+          working-directory: Android-Version/Game2048
+          script: ./gradlew connectedDebugAndroidTest --stacktrace
+
+      - name: Upload Android instrumentation reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-device-results
+          path: Android-Version/Game2048/app/build/reports/androidTests/
+          if-no-files-found: warn

@@ -1,0 +1,44 @@
+name: Feature request
+description: Propose a focused improvement to gameplay, accessibility, UI, or tooling.
+title: "[Feature]: "
+labels: [enhancement, needs-triage]
+body:
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Primary scope
+      options:
+        - All game clients
+        - Web
+        - iOS / SwiftUI
+        - Android / Jetpack Compose
+        - Accessibility
+        - Documentation or developer experience
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or opportunity
+      description: Describe the user need before proposing implementation details.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: Explain the observable behavior and how success could be verified.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and platform differences
+      description: Note simpler options and any intentional native-platform differences.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues and discussions for similar requests.
+          required: true

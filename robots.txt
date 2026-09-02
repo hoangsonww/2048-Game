@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://hoangsonww.github.io/2048-Game/sitemap.xml
+# AI-readable project and interface documentation:
+# https://hoangsonww.github.io/2048-Game/llms.txt

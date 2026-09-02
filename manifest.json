@@ -1,12 +1,42 @@
 {
-  "name": "2048 Game - Join the numbers and get to the 2048 tile!",
-  "short_name": "2048 Game",
-  "start_url": "index.html",
+  "name": "2048 — The Number Puzzle",
+  "short_name": "2048",
+  "lang": "en",
+  "dir": "ltr",
+  "id": "/2048-Game/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#faf8ef",
-  "theme_color": "#bbada0",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#f5f0e6",
+  "theme_color": "#f5f0e6",
   "author": "Son Nguyen Hoang",
-  "description": "Join the numbers and get to the 2048 tile!",
+  "description": "Slide, combine, and build your way to the 2048 tile.",
+  "categories": ["games", "entertainment"],
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Play a new round",
+      "short_name": "New round",
+      "description": "Open 2048 and start playing.",
+      "url": "./"
+    },
+    {
+      "name": "How to play",
+      "short_name": "Rules",
+      "description": "Read the rules and strategy guide.",
+      "url": "./Web-Version/about.html"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "images/web-version-UI.png",
+      "sizes": "1440x1566",
+      "type": "image/png",
+      "label": "2048 game board, scores, and controls"
+    }
+  ],
   "icons": [
     {
       "src": "images/2048-192x192.png",

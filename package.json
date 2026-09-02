@@ -2,21 +2,33 @@
   "name": "2048game",
   "displayName": "The 2048 Game",
   "version": "1.2.0",
-  "description": "The 2048 Game is a fun, addictive and a very simple puzzle game. Join the numbers and get to the 2048 tile!",
-  "main": "index.js",
+  "description": "A polished, accessible 2048 puzzle for the web, iOS, and Android.",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
-    "install-deps": "npm install",
-    "start": "http-server -o",
-    "build": "npm run start",
-    "test": "http-server -o",
-    "serve": "http-server -o"
+    "start": "node scripts/serve-web.mjs",
+    "serve": "npm start",
+    "build": "npm run check",
+    "check": "npm run check:syntax && npm run check:repo",
+    "check:repo": "node scripts/validate-repository.mjs",
+    "check:syntax": "node --check Web-Version/game-engine.js && node --check Web-Version/script.js && node --check scripts/serve-web.mjs && node --check scripts/capture-web-screenshots.mjs && node --check scripts/validate-repository.mjs",
+    "test": "npm run check && npm run test:unit && npm run test:tooling && npm run test:browser",
+    "test:unit": "c8 --check-coverage --lines 100 --functions 100 --branches 95 --statements 100 --include 'Web-Version/*.js' node --test tests/web/game-engine.test.js tests/web/game-engine-edges.test.js tests/web/game-controller.test.js tests/web/static.test.js",
+    "test:tooling": "node --test tests/tooling/repository.test.js",
+    "test:browser": "node --test tests/web/browser.test.js",
+    "screenshots:web": "node scripts/capture-web-screenshots.mjs",
+    "prepare": "husky"
   },
   "keywords": [
     "2048",
     "game",
     "puzzle",
-    "fun",
-    "addictive"
+    "strategy",
+    "swiftui",
+    "jetpack-compose",
+    "progressive-web-app"
   ],
   "author": "Son Nguyen",
   "license": "MIT",
@@ -28,7 +40,9 @@
     "url": "https://github.com/hoangsonww/2048-Game/issues"
   },
   "homepage": "https://hoangsonww.github.io/2048-Game/",
-  "dependencies": {
-    "http-server": "^14.1.1"
+  "devDependencies": {
+    "c8": "^12.0.0",
+    "husky": "9.1.7",
+    "playwright": "^1.62.1"
   }
 }

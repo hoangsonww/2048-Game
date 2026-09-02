@@ -1,39 +1,146 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>2048 Game - A Simple Brain Teaser</title>
-    <link rel="stylesheet" href="Web-Version/style.css">
-    <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Play 2048 Online — Free Number Puzzle Game</title>
+    <meta name="description" content="Play 2048 online for free. Swipe or use your arrow keys to combine matching tiles, build your score, and reach 2048. Your game saves automatically.">
+    <meta name="keywords" content="2048 game, play 2048, number puzzle, sliding tile game, free puzzle game">
+    <meta name="author" content="Son Nguyen">
+    <meta name="application-name" content="2048">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="color-scheme" content="light">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta name="theme-color" content="#f5f0e6">
+    <link rel="canonical" href="https://hoangsonww.github.io/2048-Game/">
+    <link rel="alternate" hreflang="en" href="https://hoangsonww.github.io/2048-Game/">
+    <link rel="alternate" hreflang="x-default" href="https://hoangsonww.github.io/2048-Game/">
+    <link rel="alternate" type="text/plain" href="llms.txt" title="2048 project summary for language models">
+    <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="images/favicon.ico" sizes="any">
+    <link rel="apple-touch-icon" href="images/2048-192x192.png">
     <link rel="manifest" href="manifest.json">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Join the numbers and get to the 2048 tile! Careful: this game is extremely addictive!">
-    <meta name="theme-color" content="#bbada0">
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-B01ML0VLV1"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-B01ML0VLV1');
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@500&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="Web-Version/style.css">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:site_name" content="2048">
+    <meta property="og:title" content="Play 2048 — A focused number puzzle">
+    <meta property="og:description" content="Combine matching tiles, chase a new best, and pick up exactly where you left off.">
+    <meta property="og:url" content="https://hoangsonww.github.io/2048-Game/">
+    <meta property="og:image" content="https://hoangsonww.github.io/2048-Game/images/share-card.png">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="A warm ivory 2048 game board with colorful numbered tiles">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Play 2048 — A focused number puzzle">
+    <meta name="twitter:description" content="Combine matching tiles and reach 2048 in this free browser puzzle.">
+    <meta name="twitter:image" content="https://hoangsonww.github.io/2048-Game/images/share-card.png">
+    <meta name="twitter:image:alt" content="A warm ivory 2048 game board with colorful numbered tiles">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://hoangsonww.github.io/2048-Game/#website",
+          "url": "https://hoangsonww.github.io/2048-Game/",
+          "name": "2048 — The Number Puzzle",
+          "description": "A free, offline-friendly sliding number puzzle for the browser.",
+          "inLanguage": "en"
+        },
+        {
+          "@type": "VideoGame",
+          "@id": "https://hoangsonww.github.io/2048-Game/#game",
+          "name": "2048",
+          "url": "https://hoangsonww.github.io/2048-Game/",
+          "mainEntityOfPage": { "@id": "https://hoangsonww.github.io/2048-Game/#website" },
+          "image": "https://hoangsonww.github.io/2048-Game/images/share-card.png",
+          "description": "A free single-player sliding number puzzle playable in a modern web browser.",
+          "genre": ["Puzzle", "Strategy"],
+          "applicationCategory": "GameApplication",
+          "gamePlatform": ["Web browser", "iOS", "Android"],
+          "operatingSystem": "Any modern web browser",
+          "playMode": "SinglePlayer",
+          "inLanguage": "en",
+          "isAccessibleForFree": true,
+          "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+          "author": { "@type": "Person", "name": "Son Nguyen", "url": "https://github.com/hoangsonww" }
+        },
+        {
+          "@type": "HowTo",
+          "@id": "https://hoangsonww.github.io/2048-Game/#how-to-play-2048",
+          "name": "How to play 2048",
+          "description": "Slide the board, combine matching tiles, and preserve open spaces until you create 2048.",
+          "totalTime": "PT1M",
+          "step": [
+            { "@type": "HowToStep", "position": 1, "name": "Slide", "text": "Move every tile up, down, left, or right." },
+            { "@type": "HowToStep", "position": 2, "name": "Match", "text": "Combine equal tiles that touch during a move." },
+            { "@type": "HowToStep", "position": 3, "name": "Protect space", "text": "Keep empty cells open and build the largest tile in a corner." }
+          ]
+        }
+      ]
+    }
     </script>
 </head>
-
 <body>
-    <div id="gameContainer" style="text-align: center" onselectstart="return false" ondragstart="return false">
-        <div id="title" style="text-align: center">2048</div>
-        <div id="subtitle" style="text-align: center">Join the numbers and get to the 2048 tile!</div>
-        <div id="scoreContainer">
-            <div>Score: <span id="score">0</span></div>
-            <div>High Score: <span id="highScore">0</span></div>
-        </div>
-        <div id="gridContainer"></div>
-        <button class="buttons" onclick="window.location.href='Web-Version/about.html'">About</button>
-    </div>
+    <noscript><p class="noscript-message">2048 needs JavaScript to move and combine tiles. You can still read the <a href="Web-Version/about.html">rules and strategy guide</a>.</p></noscript>
+    <a class="skip-link" href="#game">Skip to game</a>
+    <header class="site-header" aria-label="Primary navigation">
+        <a class="brand" href="index.html" aria-label="2048 home"><img src="images/brand-mark.svg" alt="" width="34" height="34"><span>2048</span></a>
+        <nav class="header-links" aria-label="Site links"><a href="#how-to-play">How to play</a><a href="Web-Version/about.html">About</a></nav>
+    </header>
+    <main>
+        <section class="game-layout" id="game" aria-labelledby="game-title">
+            <div class="intro-panel">
+                <p class="eyebrow"><span aria-hidden="true">●</span> Free to play · Saves automatically</p>
+                <h1 id="game-title">Make space.<br><em>Find 2048.</em></h1>
+                <p class="intro-copy">Slide every tile at once. Matching numbers combine—simple at first, surprisingly strategic after that.</p>
+                <div class="desktop-hint" aria-label="Keyboard controls">
+                    <div class="key-cluster" aria-hidden="true"><kbd><svg viewBox="0 0 24 24"><path d="m7 14 5-5 5 5"/></svg></kbd><span><kbd><svg viewBox="0 0 24 24"><path d="m14 7-5 5 5 5"/></svg></kbd><kbd><svg viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></svg></kbd><kbd><svg viewBox="0 0 24 24"><path d="m10 7 5 5-5 5"/></svg></kbd></span></div>
+                    <p><strong>Arrow keys or WASD</strong><br>Swipe on touch screens</p>
+                </div>
+            </div>
+            <div class="game-panel">
+                <div class="score-row" aria-label="Game scores">
+                    <div class="score-card score-card--primary"><span>Score</span><strong id="score">0</strong></div>
+                    <div class="score-card"><span>Best</span><strong id="highScore">0</strong></div>
+                    <div class="game-actions">
+                        <button class="icon-button" id="undoButton" type="button" disabled aria-label="Undo last move" title="Undo last move"><svg class="solid-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M7.5 7H16c3.31 0 6 2.69 6 6s-2.69 6-6 6H8v-2h8c2.21 0 4-1.79 4-4s-1.79-4-4-4H7.5l3.25 3.25-1.42 1.42L3.67 8l5.66-5.67 1.42 1.42L7.5 7Z"/></svg></button>
+                        <button class="icon-button" id="newGameButton" type="button" aria-label="Start a new game" title="New game"><svg class="solid-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 1 0 7.74 10h-2.09A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h8V3l-3.35 3.35Z"/></svg></button>
+                    </div>
+                </div>
+                <div class="board-wrap">
+                    <div id="gridContainer" class="game-board" role="grid" aria-label="2048 game board"></div>
+                    <div class="game-message" id="gameMessage" hidden aria-live="assertive">
+                        <p class="message-kicker" id="messageKicker">Round complete</p><h2 id="messageTitle">No more moves</h2>
+                        <p id="messageBody">You built a strong board. Ready to go again?</p>
+                        <div class="message-actions"><button class="button button--primary" id="messagePrimary" type="button">Try again</button><button class="button button--text" id="messageSecondary" type="button" hidden>Keep playing</button></div>
+                    </div>
+                </div>
+                <div class="mobile-controls" aria-label="Directional controls">
+                    <button type="button" data-direction="up" aria-label="Move up"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m7 14 5-5 5 5"/></svg></button><span><button type="button" data-direction="left" aria-label="Move left"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m14 7-5 5 5 5"/></svg></button><button type="button" data-direction="down" aria-label="Move down"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></svg></button><button type="button" data-direction="right" aria-label="Move right"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m10 7 5 5-5 5"/></svg></button></span>
+                </div>
+                <p class="status-line" id="statusLine" role="status" aria-live="polite">Use arrow keys, WASD, or swipe to begin.</p>
+            </div>
+        </section>
+        <section class="guide-section" id="how-to-play" aria-labelledby="guide-title">
+            <div><p class="eyebrow">The whole game in three moves</p><h2 id="guide-title">Small rules.<br>Deep decisions.</h2></div>
+            <ol class="steps">
+                <li><span>01</span><div><strong>Slide</strong><p>Move every tile up, down, left, or right.</p></div></li>
+                <li><span>02</span><div><strong>Match</strong><p>Equal tiles touching in a move merge into one.</p></div></li>
+                <li><span>03</span><div><strong>Protect space</strong><p>Keep empty cells open and build your largest tile in a corner.</p></div></li>
+            </ol>
+        </section>
+    </main>
+    <footer><p>Designed for quick breaks and long strategies.</p><div><a href="Web-Version/about.html">About this project</a><a href="https://github.com/hoangsonww/2048-Game">Source code</a></div></footer>
+    <dialog id="newGameDialog" class="confirm-dialog">
+        <form method="dialog"><div class="dialog-icon" aria-hidden="true"><svg class="solid-icon" viewBox="0 0 24 24"><path d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 1 0 7.74 10h-2.09A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h8V3l-3.35 3.35Z"/></svg></div><h2>Start a fresh board?</h2><p>Your best score stays safe, but this round will be replaced.</p><div class="dialog-actions"><button class="button button--text" value="cancel">Keep playing</button><button class="button button--primary" id="confirmNewGame" value="confirm">New game</button></div></form>
+    </dialog>
+    <script src="Web-Version/game-engine.js"></script>
     <script src="Web-Version/script.js"></script>
-    <script>
-        document.getElementById('gridContainer').addEventListener('touchmove', function(e) {
-            e.preventDefault();
-        }, { passive: false });
-    </script>
 </body>
 </html>

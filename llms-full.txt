@@ -1,0 +1,74 @@
+# 2048 — Full project and interface context
+
+## Product summary
+
+2048 is a free single-player number puzzle. The player moves every tile on a 4×4 board in one direction. Equal values that meet merge once per move; their new value is added to the score. A successful move creates one new `2` or `4`. The goal is to create 2048, after which play can continue. A round ends when the board is full and no neighboring values can merge.
+
+The project contains three independently implemented clients: a static browser application, a native SwiftUI application, and a native Android application built with Jetpack Compose. There is no account system, remote game service, analytics pipeline, advertising SDK, or project-operated backend. Game state and best score remain in local browser or device storage.
+
+## Canonical web experience
+
+- URL: https://hoangsonww.github.io/2048-Game/
+- Language: English.
+- Price: Free.
+- Inputs: Arrow keys, WASD, horizontal or vertical swipe, and visible mobile directional buttons.
+- Session actions: Undo the most recent valid move; request a new game through a confirmation dialog.
+- Persistence: The current board, score, best score, and win-continuation state restore automatically from local storage after validation.
+- Installability: The web manifest provides standalone display, app icons, shortcuts, and a product screenshot.
+
+## Interface map
+
+The page starts with a skip link and a compact header containing the 2048 brand, a “How to play” anchor, and an About link. The main game region has an editorial introduction alongside the functional game panel on wide screens; the layout stacks on compact screens.
+
+The game panel contains Score and Best cards, Undo and New game icon buttons, the labeled 4×4 board, compact directional controls, and a live status message. Undo uses an SVG history arrow; New game uses an SVG refresh arrow. These icons are vector artwork centered inside their controls rather than Unicode or font glyphs.
+
+The board communicates tile values visually and through an accessible grid. Win and loss messages appear over the board with a primary restart action. The win state also offers “Keep playing.” Starting a new game from active play opens a modal confirmation that preserves the best score.
+
+Below the game, a visible three-step guide explains Slide, Match, and Protect space. The footer links to project details and source code. The separate About page expands the rules, strategy, and relationship among the three clients.
+
+## User flows
+
+### Start and resume
+
+On the first visit, the app creates exactly two valid tiles. On a later visit, it validates and restores the saved round; malformed data is discarded and replaced with a fresh board.
+
+### Move and undo
+
+A valid directional input moves the board, performs legal merges, updates Score and Best, saves one undo snapshot, and spawns a tile. An input that cannot move any tile leaves the board, score, and undo history unchanged. Undo restores the board and score from immediately before the last valid move and can be used once.
+
+### Restart
+
+New game opens a confirmation dialog while a round is active. Cancel returns without changing state. Confirm creates a new two-tile board with score zero while retaining Best.
+
+### Win and loss
+
+Creating 2048 displays a goal-reached message. The player may start a new game or dismiss the message and continue building. A locked board displays a no-more-moves message and offers a fresh round.
+
+## Accessibility and responsive behavior
+
+The web app provides semantic headings, landmarks, navigation labels, a skip link, accessible button names, grid semantics, status announcements, keyboard input, visible focus treatment, touch input, reduced-motion support, and responsive controls. Meaning is not conveyed by color alone. Native clients use SF Symbols or Material vector icons with platform accessibility APIs.
+
+## Public pages and machine-readable resources
+
+- Play: https://hoangsonww.github.io/2048-Game/
+- Rules and strategy: https://hoangsonww.github.io/2048-Game/Web-Version/about.html
+- Manifest: https://hoangsonww.github.io/2048-Game/manifest.json
+- Sitemap: https://hoangsonww.github.io/2048-Game/sitemap.xml
+- Robots directives: https://hoangsonww.github.io/2048-Game/robots.txt
+- Concise LLM index: https://hoangsonww.github.io/2048-Game/llms.txt
+- Source: https://github.com/hoangsonww/2048-Game
+
+## Development map
+
+- `Web-Version/game-engine.js`: deterministic browser rules engine.
+- `Web-Version/script.js`: DOM events, presentation state, persistence, and input handling.
+- `Web-Version/style.css`: responsive visual system and accessibility states.
+- `Game-2048/GameViewModel.swift`: iOS rules, state, and persistence.
+- `Game-2048/GameView.swift`: SwiftUI presentation.
+- `Android-Version/Game2048/app/src/main/`: Compose UI, ViewModel, storage, and theme.
+- `Game-2048/SDUI/` and `.../sdui/`: server-driven content surfaces on the native clients, rendered from bundled JSON with a native fallback. Game rules are never described by data, and no client makes a network request.
+- `tests/web/`: rules, metadata, assets, and browser flows.
+- `scripts/` and `Makefile`: stable setup, validation, test, server, and screenshot entry points.
+- `.agents/skills/`: repository-local workflows for coding agents.
+
+Use `make help` to discover commands, `make check` for the fast repository gate, and the relevant `make test-*` target for platform validation. Changes to game behavior should preserve parity across all affected clients and include deterministic tests.

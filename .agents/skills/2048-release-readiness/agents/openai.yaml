@@ -1,0 +1,6 @@
+interface:
+  display_name: "2048 Release Readiness"
+  short_description: "Audit tests, metadata, and UI states"
+  default_prompt: "Use $2048-release-readiness to verify this repository for release."
+policy:
+  allow_implicit_invocation: true

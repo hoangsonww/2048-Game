@@ -1,0 +1,7 @@
+# Default review owner. Add platform-specific maintainers here as the team grows.
+* @hoangsonww
+
+/.github/ @hoangsonww
+/Web-Version/ @hoangsonww
+/Game-2048/ @hoangsonww
+/Android-Version/ @hoangsonww

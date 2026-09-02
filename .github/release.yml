@@ -1,0 +1,12 @@
+changelog:
+  exclude:
+    labels: [skip-changelog]
+  categories:
+    - title: New features
+      labels: [enhancement]
+    - title: Fixes
+      labels: [bug]
+    - title: Documentation and tooling
+      labels: [documentation, developer-experience]
+    - title: Other changes
+      labels: ["*"]

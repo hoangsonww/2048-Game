@@ -1,0 +1,6 @@
+interface:
+  display_name: "2048 iOS Development"
+  short_description: "Build and verify the SwiftUI client"
+  default_prompt: "Use $2048-ios-development to implement and verify this SwiftUI change."
+policy:
+  allow_implicit_invocation: true

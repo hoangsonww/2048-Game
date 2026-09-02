@@ -1,0 +1,44 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, reference an implementation detail from it, or
+  build on its cross-platform parity model, please cite it using the metadata
+  below.
+title: "2048, built three ways: a parity-tested web, iOS, and Android puzzle"
+abstract: >-
+  A production-quality implementation of the 2048 sliding-tile puzzle shipped as
+  three independent native clients — a dependency-free progressive web app, a
+  SwiftUI iOS app, and a Jetpack Compose Android app — that share no runtime code
+  yet are held to a single documented set of behavioral invariants. The project
+  is a worked example of cross-platform behavioral parity without a shared
+  runtime: each client owns its own deterministic rules engine, local-only
+  persistence with defensive state validation, injectable randomness for
+  reproducible tests, and an accessibility contract covering keyboard, touch,
+  screen-reader, reduced-motion, and contrast requirements. Parity is enforced by
+  a four-job continuous integration pipeline spanning Node, Xcode, and Gradle
+  toolchains.
+type: software
+version: 1.2.0
+date-released: "2026-08-21"
+license: MIT
+repository-code: "https://github.com/hoangsonww/2048-Game"
+url: "https://hoangsonww.github.io/2048-Game/"
+repository-artifact: "https://github.com/hoangsonww/2048-Game/releases"
+authors:
+  - given-names: Son
+    family-names: Nguyen
+    alias: hoangsonww
+    orcid: "https://orcid.org/0009-0002-7806-068X"
+    website: "https://github.com/hoangsonww"
+keywords:
+  - "2048"
+  - puzzle game
+  - sliding tile game
+  - cross-platform
+  - behavioral parity
+  - progressive web app
+  - swiftui
+  - jetpack compose
+  - accessibility
+  - offline-first
+  - deterministic testing
+  - game engine

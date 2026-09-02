@@ -1,0 +1,40 @@
+name: Pull request labels
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure repository labels exist
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = [
+              ["bug", "D73A4A", "Something is not working"],
+              ["documentation", "0075CA", "Documentation improvements"],
+              ["enhancement", "A2EEEF", "New feature or request"],
+              ["web", "1D76DB", "Web client"],
+              ["ios", "7057FF", "iOS and SwiftUI client"],
+              ["android", "3DDC84", "Android and Compose client"],
+              ["developer-experience", "5319E7", "Tooling and contributor experience"],
+              ["needs-triage", "FBCA04", "Needs maintainer review"],
+              ["skip-changelog", "E4E669", "Exclude from generated release notes"]
+            ];
+            for (const [name, color, description] of labels) {
+              try {
+                await github.rest.issues.getLabel({ owner: context.repo.owner, repo: context.repo.repo, name });
+              } catch (error) {
+                if (error.status !== 404) throw error;
+                await github.rest.issues.createLabel({ owner: context.repo.owner, repo: context.repo.repo, name, color, description });
+              }
+      - uses: actions/labeler@v6
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
