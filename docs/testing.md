@@ -137,6 +137,47 @@ The `--build` form works on an isolated `git archive` copy rather than mounting 
 
 **iOS is not containerizable.** Xcode is macOS-only and its license forbids redistribution, so iOS builds and simulator tests always require a macOS host. `make doctor` reports this honestly rather than pretending the suite was skipped for another reason.
 
+## Emulator health retries
+
+The Compose instrumentation suite runs on a hosted runner, where the emulator
+occasionally comes up degraded — the console fails to start, `adb` retries
+during boot, and the app process never hosts a Compose hierarchy. That
+presents as `IllegalStateException: No compose hierarchies found in the app`
+from whichever assertion happens to run first, which points at the test
+rather than at the device it is waiting on.
+
+Two mitigations, in order:
+
+1. `GameScreenTest.show()` blocks until a Compose root actually registers, so
+   a *slow* launch waits instead of failing.
+2. [`scripts/ci-emulator-tests.sh`](../scripts/ci-emulator-tests.sh) retries
+   the instrumentation run **once**, and only when the log carries an
+   emulator-health signature (`No compose hierarchies found`, `Failed to start
+   Emulator console`, `INSTALL_FAILED`, `Test run failed to complete`,
+   `Unable to find instrumentation`, `Could not access the Package Manager`).
+
+A third layer sits above both, because the first two can only help once the
+emulator exists. The action provisions it — SDK download, AVD creation, boot —
+before the script is reached, and that provisioning fails on its own
+occasionally (`Error on ZipFile unknown archive` from a corrupt package
+download). The step therefore gets one more attempt, gated on evidence rather
+than on assumption: if a connected-test **result file** exists, the suite ran
+and the failure is real, so it fails immediately. Only when nothing was
+reported at all — meaning the suite never started — is the environment
+retried. A failing test can never reach the second attempt.
+
+That logic lives in a script rather than inline workflow YAML because
+`reactivecircus/android-emulator-runner` runs its `script:` input **one line at
+a time, each in its own `sh -c`**. No variable survives between lines, and a
+multi-line `while` or `if` is split mid-statement and fails with
+`Syntax error: end of file unexpected`. Single-line commands are the only
+thing that input can express directly.
+
+The second is deliberately narrow. A failing assertion looks nothing like
+those signatures and fails on the first attempt — a retry that caught
+everything would convert a real regression into an intermittent one, which is
+worse than the flake it was meant to solve.
+
 ## Gesture ownership
 
 Every client has now shipped a bug where a board swipe reached the surrounding container instead of the game, and each had a different cause. These are the guards:
