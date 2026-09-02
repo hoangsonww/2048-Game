@@ -150,10 +150,18 @@ Two mitigations, in order:
 
 1. `GameScreenTest.show()` blocks until a Compose root actually registers, so
    a *slow* launch waits instead of failing.
-2. The workflow retries the instrumentation run **once**, and only when the
-   log carries an emulator-health signature (`No compose hierarchies found`,
-   `Failed to start Emulator console`, `INSTALL_FAILED`, `Test run failed to
-   complete`, `Unable to find instrumentation`).
+2. [`scripts/ci-emulator-tests.sh`](../scripts/ci-emulator-tests.sh) retries
+   the instrumentation run **once**, and only when the log carries an
+   emulator-health signature (`No compose hierarchies found`, `Failed to start
+   Emulator console`, `INSTALL_FAILED`, `Test run failed to complete`,
+   `Unable to find instrumentation`, `Could not access the Package Manager`).
+
+That logic lives in a script rather than inline workflow YAML because
+`reactivecircus/android-emulator-runner` runs its `script:` input **one line at
+a time, each in its own `sh -c`**. No variable survives between lines, and a
+multi-line `while` or `if` is split mid-statement and fails with
+`Syntax error: end of file unexpected`. Single-line commands are the only
+thing that input can express directly.
 
 The second is deliberately narrow. A failing assertion looks nothing like
 those signatures and fails on the first attempt — a retry that caught
