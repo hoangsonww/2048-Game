@@ -238,3 +238,118 @@ jobs:
           name: android-device-results
           path: Android-Version/Game2048/app/build/reports/androidTests/
           if-no-files-found: warn
+
+  docker:
+    name: Docker image build and publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      # Scoped to this job so the rest of the workflow keeps a read-only token.
+      packages: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # arm64 is cross-built on an amd64 runner, which only works with binfmt
+      # handlers registered first.
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # A pull request builds but never publishes. A fork's GITHUB_TOKEN cannot
+      # write packages anyway, and pushing an image built from unreviewed code
+      # to a tag other people pull is not something a green check should do.
+      - name: Decide whether this run publishes
+        id: mode
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "push=false" >> "$GITHUB_OUTPUT"
+            echo "Pull request: building only, not publishing."
+          else
+            echo "push=true" >> "$GITHUB_OUTPUT"
+            echo "Branch build: publishing to GHCR."
+          fi
+
+      # GHCR rejects an uppercase path, and the repository name is mixed case.
+      - name: Derive the image name
+        id: image
+        run: echo "name=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      - name: Collect tags and labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.image.outputs.name }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,format=long
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      # Built and tested before anything is published, so a broken image cannot
+      # reach a tag someone else pulls. The publish step below reuses this
+      # layer cache, so proving it works costs little.
+      - name: Build the runner-architecture image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: 2048-smoke-test:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test the image
+        run: |
+          set -Eeuo pipefail
+          docker run -d --name smoke -p 8080:8080 "2048-smoke-test:${{ github.sha }}"
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8080/ >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          echo "--- / must serve the game shell ---"
+          curl -fsS http://127.0.0.1:8080/ | grep -q "<title>"
+          echo "--- the engine and controller must be reachable ---"
+          curl -fsS http://127.0.0.1:8080/Web-Version/game-engine.js >/dev/null
+          curl -fsS http://127.0.0.1:8080/Web-Version/script.js >/dev/null
+          echo "--- discovery files and icons must be reachable ---"
+          curl -fsS http://127.0.0.1:8080/manifest.json >/dev/null
+          curl -fsS http://127.0.0.1:8080/images/favicon.svg >/dev/null
+          # --path-as-is stops curl collapsing the ".." itself, so the traversal
+          # actually reaches the server and its guard is what rejects it. The
+          # encoded form covers the decode-then-resolve path separately.
+          echo "--- a traversal must not escape the document root ---"
+          for path in "/../package.json" "/%2e%2e/package.json"; do
+            code="$(curl -s -o /dev/null -w '%{http_code}' --path-as-is "http://127.0.0.1:8080${path}")"
+            echo "  ${path} -> ${code}"
+            test "$code" != "200"
+          done
+          echo "--- the container must not run as root ---"
+          test "$(docker exec smoke id -u)" != "0"
+          echo "Smoke test passed."
+          docker rm -f smoke
+
+      - name: Log in to GHCR
+        if: steps.mode.outputs.push == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # The server is plain Node reading static files, so both architectures are
+      # honest builds rather than an emulated guess. amd64 is a cache hit from
+      # the smoke-test build above.
+      - name: Build both architectures and publish
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ steps.mode.outputs.push == 'true' }}
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

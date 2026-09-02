@@ -10,6 +10,7 @@ const requiredFiles = [
     ".dockerignore",
     ".devcontainer/devcontainer.json",
     ".devcontainer/devcontainer-lock.json",
+    "Dockerfile",
     ".github/PULL_REQUEST_TEMPLATE.md",
     ".pre-commit-config.yaml",
     "AGENTS.md",
