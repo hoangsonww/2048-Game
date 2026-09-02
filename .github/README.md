@@ -528,7 +528,7 @@ More detail, including how to diagnose flaky device runs, is in [`docs/testing.m
 
 ## Continuous integration
 
-[Cross-platform CI](workflows/ci.yml) runs on every push to `main`, every pull request, and on manual dispatch. It is split into four independently visible jobs so a failure points straight at the responsible platform:
+[Cross-platform CI](workflows/ci.yml) runs on every push to `main`, every pull request, and on manual dispatch. It is split into five independently visible jobs so a failure points straight at the responsible platform:
 
 | Job | Runner | Covers |
 | --- | --- | --- |
@@ -536,8 +536,23 @@ More detail, including how to diagnose flaky device runs, is in [`docs/testing.m
 | **iOS** | `macos-15` | `build-for-testing`, XCTest model coverage, XCUITest interaction and accessibility flows |
 | **Android JVM** | `ubuntu-latest` | ViewModel unit tests, Android lint, debug APK assembly |
 | **Android device** | `ubuntu-latest` + KVM | API 34 `pixel_6` emulator running the full Compose instrumentation suite |
+| **Docker** | `ubuntu-latest` | `linux/amd64` and `linux/arm64` image build, a smoke test that actually serves the game, and publication to GHCR |
 
 Web coverage reports, Xcode `.xcresult` bundles, Android lint and test reports, and the debug APK are uploaded as workflow artifacts — including on failure, which is usually when you need them most.
+
+### Container image
+
+The web client is published to the GitHub Container Registry on every push to `main`:
+
+```bash
+docker run --rm -p 8080:8080 ghcr.io/hoangsonww/2048-game:latest
+```
+
+The image is the Node runtime, the static files, and the same `scripts/serve-web.mjs` that `make serve` runs — no bundler, no framework, and nothing installed from npm, because the game has no runtime dependencies. It runs as an unprivileged user and carries a health check.
+
+**A pull request builds the image but never publishes it.** A fork's token cannot write packages, and pushing an image built from unreviewed code to a tag other people pull is not something a green check should do — so the publish step is reachable only from a commit that has already landed on a branch. Every pull request still proves the image builds on both architectures and that the running container serves the game, path traversal included.
+
+The iOS and Android clients are not containerized. Xcode is macOS-only and its licence forbids redistribution, and neither client is a server. That is a platform constraint, not a gap.
 
 Supporting automation: **dependency review** blocks pull requests that introduce known-vulnerable dependencies, and the **labeler** applies path-based platform labels automatically. Dependency updates are applied by hand — there is no bot opening upgrade pull requests. Issue forms, ownership rules, release-note categories, contribution guidance, support routing, and the security policy all live under `.github/`.
 

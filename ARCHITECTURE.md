@@ -1326,7 +1326,14 @@ flowchart LR
     Push[push / PR / dispatch] --> Web[web · ubuntu]
     Push --> IOS[ios · macos-15]
     Push --> AJ[android-jvm · ubuntu]
+    Push --> DK[docker · ubuntu]
     AJ --> AD[android-device · ubuntu]
+
+    DK --> D1[build amd64 + arm64]
+    DK --> D2[smoke test a running container]
+    DK --> D3{"branch push?"}
+    D3 -- yes --> D4[publish to GHCR]
+    D3 -- "no, pull request" --> D5[build only, never publish]
 
     Web --> W1[npm audit]
     Web --> W2[syntax · repo · SEO validation]
