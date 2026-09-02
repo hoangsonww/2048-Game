@@ -99,6 +99,8 @@ Model tests and UI tests run as separate targets (`Game-2048Tests` and `Game-204
 
 **Coverage is a hard gate.** After the run, `scripts/test-ios.sh` reads the `.xcresult` with `xccov` and fails below 90 % line coverage of the `Game-2048.app` target, which currently sits at 95.5 %. Override the floor with `IOS_MINIMUM_COVERAGE` only to raise it.
 
+**Coverage must be measured on both suites together.** `GameView.swift` is 393 lines that only XCUITest exercises, so unit tests alone reach about 83 %. The local script runs one combined `xcodebuild test`, and CI — which runs the two targets separately so a UI-harness failure cannot mask a rules regression — collects coverage from both and merges the result bundles with `xcrun xcresulttool merge` before gating. Gate on one bundle and you are measuring something the other side of the fence is not.
+
 New test files must be added to the `Game-2048Tests` target in `2048 Game.xcodeproj` — the project does not use synchronised file groups, so a file that is merely on disk is silently never compiled or run.
 
 XCUITest depends on accessibility identifiers. If a UI test starts failing after a view change, confirm the identifier still exists before assuming the behavior broke.

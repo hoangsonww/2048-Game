@@ -103,13 +103,30 @@ jobs:
           xcodebuild -project "2048 Game.xcodeproj" -scheme "Game-2048" \
             -destination "$IOS_DESTINATION" -derivedDataPath "$RUNNER_TEMP/Game2048Derived" \
             test-without-building -parallel-testing-enabled NO -only-testing:Game-2048UITests \
-            -resultBundlePath "$RUNNER_TEMP/iOS-UI.xcresult" CODE_SIGNING_ALLOWED=NO
+            -resultBundlePath "$RUNNER_TEMP/iOS-UI.xcresult" CODE_SIGNING_ALLOWED=NO -enableCodeCoverage YES
 
       - name: Enforce app-target coverage
         run: |
-          percent="$(xcrun xccov view --report --only-targets "$RUNNER_TEMP/iOS-Unit.xcresult" \
+          # The two suites run separately so a UI-harness failure cannot mask a
+          # rules regression, but coverage has to be judged on both together:
+          # GameView is exercised by XCUITest, so gating on the unit bundle
+          # alone measures something the local `make test-ios` does not.
+          xcrun xcresulttool merge \
+            "$RUNNER_TEMP/iOS-Unit.xcresult" "$RUNNER_TEMP/iOS-UI.xcresult" \
+            --output-path "$RUNNER_TEMP/iOS-Combined.xcresult"
+
+          xcrun xccov view --report --files-for-target Game-2048.app "$RUNNER_TEMP/iOS-Combined.xcresult" \
+            | awk 'NR>3 && NF { name=$2; sub(/.*\//, "", name); printf "  %-26s %s %s\n", name, $(NF-1), $NF }'
+
+          percent="$(xcrun xccov view --report --only-targets "$RUNNER_TEMP/iOS-Combined.xcresult" \
             | awk '$2 == "Game-2048.app" { gsub(/%/, "", $(NF-1)); print $(NF-1); exit }')"
           echo "Game-2048.app line coverage: ${percent}%"
+
+          if [ -z "$percent" ]; then
+            echo "::error::Could not read a coverage percentage from the merged result bundle."
+            exit 1
+          fi
+
           awk -v value="$percent" 'BEGIN { exit !(value < 90) }' \
             && { echo "::error::Coverage ${percent}% is below the required 90%."; exit 1; }
           echo "Coverage ${percent}% meets the 90% floor."
