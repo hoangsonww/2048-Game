@@ -137,6 +137,29 @@ The `--build` form works on an isolated `git archive` copy rather than mounting 
 
 **iOS is not containerizable.** Xcode is macOS-only and its license forbids redistribution, so iOS builds and simulator tests always require a macOS host. `make doctor` reports this honestly rather than pretending the suite was skipped for another reason.
 
+## Emulator health retries
+
+The Compose instrumentation suite runs on a hosted runner, where the emulator
+occasionally comes up degraded — the console fails to start, `adb` retries
+during boot, and the app process never hosts a Compose hierarchy. That
+presents as `IllegalStateException: No compose hierarchies found in the app`
+from whichever assertion happens to run first, which points at the test
+rather than at the device it is waiting on.
+
+Two mitigations, in order:
+
+1. `GameScreenTest.show()` blocks until a Compose root actually registers, so
+   a *slow* launch waits instead of failing.
+2. The workflow retries the instrumentation run **once**, and only when the
+   log carries an emulator-health signature (`No compose hierarchies found`,
+   `Failed to start Emulator console`, `INSTALL_FAILED`, `Test run failed to
+   complete`, `Unable to find instrumentation`).
+
+The second is deliberately narrow. A failing assertion looks nothing like
+those signatures and fails on the first attempt — a retry that caught
+everything would convert a real regression into an intermittent one, which is
+worse than the flake it was meant to solve.
+
 ## Gesture ownership
 
 Every client has now shipped a bug where a board swipe reached the surrounding container instead of the game, and each had a different cause. These are the guards:
