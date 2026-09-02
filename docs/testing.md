@@ -156,6 +156,16 @@ Two mitigations, in order:
    Emulator console`, `INSTALL_FAILED`, `Test run failed to complete`,
    `Unable to find instrumentation`, `Could not access the Package Manager`).
 
+A third layer sits above both, because the first two can only help once the
+emulator exists. The action provisions it — SDK download, AVD creation, boot —
+before the script is reached, and that provisioning fails on its own
+occasionally (`Error on ZipFile unknown archive` from a corrupt package
+download). The step therefore gets one more attempt, gated on evidence rather
+than on assumption: if a connected-test **result file** exists, the suite ran
+and the failure is real, so it fails immediately. Only when nothing was
+reported at all — meaning the suite never started — is the environment
+retried. A failing test can never reach the second attempt.
+
 That logic lives in a script rather than inline workflow YAML because
 `reactivecircus/android-emulator-runner` runs its `script:` input **one line at
 a time, each in its own `sh -c`**. No variable survives between lines, and a

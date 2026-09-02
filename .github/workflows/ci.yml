@@ -210,7 +210,66 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      # The emulator is provisioned by the action itself — SDK download, AVD
+      # creation, boot — all before our script is reached. That provisioning
+      # fails on its own sometimes: a throttled or corrupt package download
+      # ("Error on ZipFile unknown archive") leaves no emulator at all, and no
+      # amount of care inside the test script can help, because the script
+      # never runs.
+      #
+      # So the step gets one more attempt — but only when the first attempt
+      # failed *without the suite ever reporting*. That distinction is the whole
+      # point, and it is checked against evidence on disk rather than assumed:
+      # a real test failure writes a connected-test report, an emulator that
+      # never came up writes nothing. A second attempt is therefore reachable
+      # only for a broken environment, never for a failing test.
       - name: Run Compose tests on API 34
+        id: emulator
+        continue-on-error: true
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          disable-animations: true
+          # A hosted runner boots the emulator far more slowly than a laptop, and
+          # a half-booted device reports itself to adb before it can host an
+          # activity. Give the boot room, and refuse to start Gradle until the
+          # device says it is genuinely up.
+          emulator-boot-timeout: 900
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -camera-back none -camera-front none -no-metrics
+          working-directory: Android-Version/Game2048
+          # reactivecircus/android-emulator-runner runs this input one line at a
+          # time, each in its own `sh -c`: no variable survives between lines and
+          # any multi-line construct is split mid-statement. So the boot gate and
+          # the retry live in a script, invoked here as a single line. The path is
+          # relative to working-directory above.
+          script: ../../scripts/ci-emulator-tests.sh
+
+      - name: Decide whether that failure was the emulator or the tests
+        id: triage
+        if: steps.emulator.outcome == 'failure'
+        run: |
+          set -Eeuo pipefail
+          # Result files, not just the directories: an interrupted run can leave
+          # an empty directory behind, and that must not read as "the suite ran".
+          # Both locations are checked because AGP writes the machine-readable
+          # results and the HTML report to different trees.
+          produced="$(find app/build/outputs/androidTest-results/connected \
+                           app/build/reports/androidTests/connected \
+                           -type f \( -name '*.xml' -o -name '*.html' \) 2>/dev/null | head -1)"
+          if [ -n "$produced" ]; then
+            echo "The instrumentation suite ran and reported results ($produced),"
+            echo "so this is a real test failure. Not retrying — read the report artifact."
+            exit 1
+          fi
+          echo "No connected-test results exist, so the suite never ran and the"
+          echo "emulator was never usable. Retrying the environment once."
+          echo "retry=true" >> "$GITHUB_OUTPUT"
+
+      - name: Run Compose tests on API 34 (second attempt, unusable emulator)
+        if: steps.triage.outputs.retry == 'true'
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
