@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ensure repository labels exist
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const labels = [
@@ -35,6 +35,6 @@ jobs:
                 if (error.status !== 404) throw error;
                 await github.rest.issues.createLabel({ owner: context.repo.owner, repo: context.repo.repo, name, color, description });
               }
-      - uses: actions/labeler@v6
+      - uses: actions/labeler@v7
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
