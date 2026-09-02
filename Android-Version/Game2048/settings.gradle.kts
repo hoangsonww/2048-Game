@@ -17,7 +17,7 @@ pluginManagement {
 // gradle/gradle-daemon-jvm.properties this means `./gradlew` works on a clean
 // machine regardless of which JDK happens to be on PATH.
 plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version "0.9.0"
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 
 dependencyResolutionManagement {
