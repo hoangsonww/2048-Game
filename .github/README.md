@@ -528,7 +528,7 @@ More detail, including how to diagnose flaky device runs, is in [`docs/testing.m
 
 ## Continuous integration
 
-[Cross-platform CI](workflows/ci.yml) runs on every push to `main`, every pull request, and on manual dispatch. It is split into five independently visible jobs so a failure points straight at the responsible platform:
+[Cross-platform CI](workflows/ci.yml) runs on every push to `main`, every pull request, and on manual dispatch. It is split into six independently visible jobs so a failure points straight at the responsible platform:
 
 | Job | Runner | Covers |
 | --- | --- | --- |
@@ -537,6 +537,7 @@ More detail, including how to diagnose flaky device runs, is in [`docs/testing.m
 | **Android JVM** | `ubuntu-latest` | ViewModel unit tests, Android lint, debug APK assembly |
 | **Android device** | `ubuntu-latest` + KVM | API 34 `pixel_6` emulator running the full Compose instrumentation suite |
 | **Docker** | `ubuntu-latest` | `linux/amd64` and `linux/arm64` image build, a smoke test that actually serves the game, and publication to GHCR |
+| **Android builder** | `ubuntu-latest` | `linux/amd64` SDK image, a containerized APK build with unit tests, and publication to GHCR |
 
 Web coverage reports, Xcode `.xcresult` bundles, Android lint and test reports, and the debug APK are uploaded as workflow artifacts — including on failure, which is usually when you need them most.
 
@@ -552,7 +553,24 @@ The image is the Node runtime, the static files, and the same `scripts/serve-web
 
 **A pull request builds the image but never publishes it.** A fork's token cannot write packages, and pushing an image built from unreviewed code to a tag other people pull is not something a green check should do — so the publish step is reachable only from a commit that has already landed on a branch. Every pull request still proves the image builds on both architectures and that the running container serves the game, path traversal included.
 
-The iOS and Android clients are not containerized. Xcode is macOS-only and its licence forbids redistribution, and neither client is a server. That is a platform constraint, not a gap.
+### Building Android without Android Studio
+
+The second image is a pinned JDK 17 and Android SDK 34 toolbox. Mount a checkout and build against it:
+
+```bash
+docker run --rm -v "$PWD:/src" -w /src/Android-Version/Game2048 \
+    ghcr.io/hoangsonww/2048-game-android:latest ./gradlew assembleDebug
+```
+
+Or build an APK in one shot, without starting a container:
+
+```bash
+docker buildx build -f Dockerfile.android --target apk --output out .
+```
+
+CI does both: it verifies the toolchain inside the image, then builds the debug APK *from* that image and runs the unit tests, so the published toolbox is proven to still build the project rather than merely to contain the binaries. The resulting APK is uploaded as a workflow artifact. `linux/amd64` only — Google ships the Android command-line tools as x86_64 Linux binaries, so an arm64 image would build cleanly and then fail at `aapt2` and `d8`.
+
+**iOS cannot be containerized, and this is not a gap that can be closed.** Docker containers are Linux; Xcode is macOS-only and has no Linux build; and Apple's licence forbids redistributing Xcode. Any one of those three is fatal on its own. iOS builds always require a macOS host.
 
 Supporting automation: **dependency review** blocks pull requests that introduce known-vulnerable dependencies, and the **labeler** applies path-based platform labels automatically. Dependency updates are applied by hand — there is no bot opening upgrade pull requests. Issue forms, ownership rules, release-note categories, contribution guidance, support routing, and the security policy all live under `.github/`.
 

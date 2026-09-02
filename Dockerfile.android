@@ -1,0 +1,93 @@
+# Builds the Android client without Android Studio.
+#
+# The root Dockerfile serves the web client; this one builds the APK. They are
+# separate images because they have nothing in common — one is a Node runtime
+# holding static files, the other is a JDK and a 700MB SDK.
+#
+# The iOS client is deliberately absent and cannot be added. Xcode is
+# macOS-only, Docker containers are Linux, and Apple's licence forbids
+# redistributing Xcode — three independent blockers, any one of them fatal.
+# iOS builds always require a macOS host.
+#
+#   # toolbox: mount a checkout and build against it
+#   docker run --rm -v "$PWD:/src" -w /src/Android-Version/Game2048 \
+#       ghcr.io/hoangsonww/2048-game-android:latest ./gradlew assembleDebug
+#
+#   # one-shot: extract a freshly built debug APK
+#   docker buildx build -f Dockerfile.android --target apk --output out .
+
+# ---------------------------------------------------------------------------
+# The published image: a JDK and an Android SDK, and nothing project-specific.
+# Keeping sources out of this stage is what makes it reusable against any
+# checkout, including a contributor's dirty working tree.
+# ---------------------------------------------------------------------------
+FROM eclipse-temurin:17-jdk-jammy AS sdk
+
+# Pinned so a rebuild produces the same toolchain. These track
+# app/build.gradle.kts: compileSdk 34 and the matching build-tools.
+ARG ANDROID_COMMAND_LINE_TOOLS_VERSION=11076708
+ARG ANDROID_PLATFORM=android-34
+ARG ANDROID_BUILD_TOOLS=34.0.0
+
+ENV ANDROID_HOME=/opt/android-sdk \
+    ANDROID_SDK_ROOT=/opt/android-sdk \
+    GRADLE_USER_HOME=/opt/gradle
+
+ENV PATH=${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:${PATH}
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        bash \
+        ca-certificates \
+        curl \
+        git \
+        unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p "${ANDROID_HOME}/cmdline-tools" \
+    && curl --fail --location --retry 3 \
+        "https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_COMMAND_LINE_TOOLS_VERSION}_latest.zip" \
+        --output /tmp/android-tools.zip \
+    && unzip -q /tmp/android-tools.zip -d /tmp/android-tools \
+    && mv /tmp/android-tools/cmdline-tools "${ANDROID_HOME}/cmdline-tools/latest" \
+    && rm -rf /tmp/android-tools /tmp/android-tools.zip \
+    && yes | sdkmanager --licenses >/dev/null \
+    && sdkmanager "platform-tools" "platforms;${ANDROID_PLATFORM}" "build-tools;${ANDROID_BUILD_TOOLS}" >/dev/null \
+    # A login shell sources /etc/profile, which resets PATH and discards the
+    # ENV above. Symlinking into /usr/local/bin is what keeps these reachable
+    # from `docker run ... bash -lc`, which is how CI verifies the image.
+    && ln -s "${ANDROID_HOME}/platform-tools/adb" /usr/local/bin/adb \
+    && ln -s "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" /usr/local/bin/sdkmanager \
+    && ln -s "${ANDROID_HOME}/cmdline-tools/latest/bin/avdmanager" /usr/local/bin/avdmanager \
+    && adb --version >/dev/null
+
+WORKDIR /src
+CMD ["bash"]
+
+# ---------------------------------------------------------------------------
+# A real build, used to prove the image above actually works and to produce an
+# APK. Not published — it carries a copy of the sources.
+# ---------------------------------------------------------------------------
+FROM sdk AS build
+
+WORKDIR /src
+
+# The wrapper and dependency declarations first, so editing game code does not
+# re-download Gradle and the whole dependency graph.
+COPY Android-Version/Game2048/gradle/ ./gradle/
+COPY Android-Version/Game2048/gradlew ./gradlew
+COPY Android-Version/Game2048/settings.gradle.kts Android-Version/Game2048/build.gradle.kts Android-Version/Game2048/gradle.properties ./
+RUN ./gradlew --no-daemon --version >/dev/null
+
+COPY Android-Version/Game2048/app/ ./app/
+
+# No daemon: it would outlive the RUN layer for nothing and only inflate the
+# image. Tests run here too, so a broken build cannot yield a green image.
+RUN ./gradlew --no-daemon assembleDebug testDebugUnitTest
+
+# ---------------------------------------------------------------------------
+# Extraction target. `--output` against this stage writes the APK to the host
+# without running a container or publishing anything.
+# ---------------------------------------------------------------------------
+FROM scratch AS apk
+COPY --from=build /src/app/build/outputs/apk/debug/app-debug.apk /app-debug.apk
