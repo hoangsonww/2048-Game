@@ -319,8 +319,15 @@ jobs:
           curl -fsS http://127.0.0.1:8080/manifest.json >/dev/null
           curl -fsS http://127.0.0.1:8080/images/favicon.svg >/dev/null
           # --path-as-is stops curl collapsing the ".." itself, so the traversal
-          # actually reaches the server and its guard is what rejects it. The
-          # encoded form covers the decode-then-resolve path separately.
+          # reaches the server rather than being rewritten in the client.
+          #
+          # It is answered by the WHATWG URL parser, not by the resolve-and-
+          # compare guard in static-server.mjs: `new URL("/../x")` normalises
+          # the segment away, so `pathname` is already "/x" and the guard never
+          # fires. That makes the guard defence in depth against a future parser
+          # change rather than the active defence, which is worth knowing before
+          # anyone "simplifies" either half away. What this asserts is the
+          # outcome — a traversal never yields content — not the mechanism.
           echo "--- a traversal must not escape the document root ---"
           for path in "/../package.json" "/%2e%2e/package.json"; do
             code="$(curl -s -o /dev/null -w '%{http_code}' --path-as-is "http://127.0.0.1:8080${path}")"
