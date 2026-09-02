@@ -1327,7 +1327,13 @@ flowchart LR
     Push --> IOS[ios · macos-15]
     Push --> AJ[android-jvm · ubuntu]
     Push --> DK[docker · ubuntu]
+    Push --> DA[docker-android · ubuntu]
     AJ --> AD[android-device · ubuntu]
+
+    DA --> A1[SDK image · amd64 only]
+    DA --> A2[verify toolchain in a login shell]
+    DA --> A3[build APK + unit tests in the image]
+    DA --> A4[publish to GHCR on a branch push]
 
     DK --> D1[build amd64 + arm64]
     DK --> D2[smoke test a running container]

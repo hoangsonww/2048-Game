@@ -11,6 +11,7 @@ const requiredFiles = [
     ".devcontainer/devcontainer.json",
     ".devcontainer/devcontainer-lock.json",
     "Dockerfile",
+    "Dockerfile.android",
     ".github/PULL_REQUEST_TEMPLATE.md",
     ".pre-commit-config.yaml",
     "AGENTS.md",
