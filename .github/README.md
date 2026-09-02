@@ -45,7 +45,6 @@ A polished, accessible, offline-first 2048 puzzle shipped as **three independent
 ![Dev Containers](https://img.shields.io/badge/Dev%20Containers-007ACC?style=for-the-badge&logo=docker&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)
 ![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-222222?style=for-the-badge&logo=githubpages&logoColor=white)
-![Dependabot](https://img.shields.io/badge/Dependabot-025E8C?style=for-the-badge&logo=dependabot&logoColor=white)
 ![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)
 ![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)
 
@@ -540,7 +539,7 @@ More detail, including how to diagnose flaky device runs, is in [`docs/testing.m
 
 Web coverage reports, Xcode `.xcresult` bundles, Android lint and test reports, and the debug APK are uploaded as workflow artifacts — including on failure, which is usually when you need them most.
 
-Supporting automation: **Dependabot** groups monthly npm, Gradle, and GitHub Actions updates; **dependency review** blocks pull requests that introduce known-vulnerable dependencies; and the **labeler** applies path-based platform labels automatically. Issue forms, ownership rules, release-note categories, contribution guidance, support routing, and the security policy all live under `.github/`.
+Supporting automation: **dependency review** blocks pull requests that introduce known-vulnerable dependencies, and the **labeler** applies path-based platform labels automatically. Dependency updates are applied by hand — there is no bot opening upgrade pull requests. Issue forms, ownership rules, release-note categories, contribution guidance, support routing, and the security policy all live under `.github/`.
 
 ---
 

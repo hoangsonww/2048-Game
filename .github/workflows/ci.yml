@@ -218,8 +218,18 @@ jobs:
           target: google_apis
           profile: pixel_6
           disable-animations: true
+          # A hosted runner boots the emulator far more slowly than a laptop, and
+          # a half-booted device reports itself to adb before it can host an
+          # activity. Give the boot room, and refuse to start Gradle until the
+          # device says it is genuinely up.
+          emulator-boot-timeout: 900
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -camera-back none -camera-front none -no-metrics
           working-directory: Android-Version/Game2048
-          script: ./gradlew connectedDebugAndroidTest --stacktrace
+          script: |
+            adb wait-for-device
+            adb shell 'while [ "$(getprop sys.boot_completed)" != "1" ]; do sleep 2; done'
+            adb shell 'while [ "$(getprop init.svc.bootanim)" != "stopped" ]; do sleep 2; done'
+            ./gradlew connectedDebugAndroidTest --stacktrace
 
       - name: Upload Android instrumentation reports
         if: always()

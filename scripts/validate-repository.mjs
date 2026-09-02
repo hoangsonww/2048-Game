@@ -11,7 +11,6 @@ const requiredFiles = [
     ".devcontainer/devcontainer.json",
     ".devcontainer/devcontainer-lock.json",
     ".github/PULL_REQUEST_TEMPLATE.md",
-    ".github/dependabot.yml",
     ".pre-commit-config.yaml",
     "AGENTS.md",
     "CLAUDE.md",

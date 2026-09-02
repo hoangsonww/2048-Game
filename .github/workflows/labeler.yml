@@ -35,6 +35,7 @@ jobs:
                 if (error.status !== 404) throw error;
                 await github.rest.issues.createLabel({ owner: context.repo.owner, repo: context.repo.repo, name, color, description });
               }
+            }
       - uses: actions/labeler@v6
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}

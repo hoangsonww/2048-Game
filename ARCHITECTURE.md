@@ -1424,9 +1424,7 @@ flowchart LR
     subgraph Supply[Supply chain]
         Dep["devDependencies only:<br/>c8 · husky · playwright"]
         Audit[npm audit in CI]
-        Bot[Dependabot]
         Dep --> Audit
-        Dep --> Bot
     end
 ```
 
@@ -1440,7 +1438,7 @@ flowchart LR
 | Untrusted input | Only the saved state, which is fully validated before use |
 | Secrets in the repository | None. `local.properties`, keystores, signing material, and tokens are gitignored and never committed |
 | Signing in CI | None. All builds are unsigned |
-| Dependency monitoring | `npm audit` on every CI run; Dependabot for updates |
+| Dependency monitoring | `npm audit` on every CI run. Upgrades are applied manually; no update bot is enabled |
 
 The only place the app consumes data it did not create is the saved round, and every rejection path there is tested. There is no user-generated content, no URL parameter handling, no `eval`, no `innerHTML` with dynamic content — the DOM is built with `createElement` and `textContent`, so there is no injection sink to defend.
 
