@@ -2,6 +2,7 @@ package com.sonnguyenhoang.game2048
 
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -86,5 +87,30 @@ class GameScreenTest {
 
     private fun show(game: GameViewModel) {
         compose.setContent { Game2048Theme { GameScreen(game) } }
+        awaitFirstComposition()
+    }
+
+    /**
+     * Blocks until the rule's host activity has actually attached a Compose
+     * hierarchy.
+     *
+     * `setContent` returns before the hierarchy is guaranteed to be registered.
+     * On a warm machine the first query wins that race; on a cold or loaded
+     * emulator it does not, and the failure surfaces as
+     * `IllegalStateException: No compose hierarchies found in the app` from
+     * whichever assertion happened to run first — which points at the test
+     * rather than at the launch it is actually waiting on.
+     *
+     * `atLeastOneRootRequired = false` is what makes this a barrier rather than
+     * another way to hit the same exception: it reports "no roots yet" as an
+     * empty list, so the predicate can poll instead of throwing.
+     */
+    private fun awaitFirstComposition() {
+        compose.waitUntil(timeoutMillis = 30_000) {
+            compose.onAllNodes(isRoot())
+                .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                .isNotEmpty()
+        }
+        compose.waitForIdle()
     }
 }
