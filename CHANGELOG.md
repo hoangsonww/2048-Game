@@ -8,6 +8,8 @@ thing everywhere. See [docs/releasing.md](docs/releasing.md).
 
 ## Unreleased
 
+## 2.0.1 — 2026-09-05
+
 ## 2.0.0 — 2026-09-02
 
 Cross-platform rebuild. The web client, the SwiftUI iOS app, and the Jetpack
