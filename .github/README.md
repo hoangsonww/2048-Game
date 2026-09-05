@@ -48,7 +48,7 @@ A polished, accessible, offline-first 2048 puzzle shipped as **three independent
 ![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)
 ![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)
 
-**[▶ Play the web version](https://hoangsonww.github.io/2048-Game/)** · [Rules and strategy](https://hoangsonww.github.io/2048-Game/Web-Version/about.html) · [Report an issue](https://github.com/hoangsonww/2048-Game/issues) · [Contributing](CONTRIBUTING.md) · [Security policy](SECURITY.md)
+**[▶ Play the web version](https://hoangsonww.github.io/2048-Game/)** · [Download the apps](https://github.com/hoangsonww/2048-Game/releases/latest) · [Rules and strategy](https://hoangsonww.github.io/2048-Game/Web-Version/about.html) · [Report an issue](https://github.com/hoangsonww/2048-Game/issues) · [Contributing](CONTRIBUTING.md) · [Security policy](SECURITY.md)
 
 ---
 
@@ -70,6 +70,7 @@ A polished, accessible, offline-first 2048 puzzle shipped as **three independent
 - [Command reference](#command-reference)
 - [Testing and quality gates](#testing-and-quality-gates)
 - [Continuous integration](#continuous-integration)
+- [Releases and downloads](#releases-and-downloads)
 - [Accessibility](#accessibility)
 - [Privacy and data handling](#privacy-and-data-handling)
 - [Web discoverability and PWA install](#web-discoverability-and-pwa-install)
@@ -461,6 +462,8 @@ Every workflow has a stable `make` entry point. Prefer these over ad-hoc command
 | `make doctor` | Reports which platform toolchains are available | — |
 | `make serve` | Serves the web app at `http://localhost:8080` | Node 22+ |
 | `make check` | Fast syntax, repository, shell, SEO, and discovery checks | Node 22+ |
+| `make version` | Prints the version and checks every client agrees | — |
+| `make version-sync` | Rewrites the derived version fields from `VERSION` | — |
 | `make test-web` | Complete deterministic and browser web suite | Node 22+, Chromium |
 | `make android-build` | Builds the Android debug APK | SDK 34 |
 | `make android-install` | Builds and installs on a connected device | SDK 34 + device |
@@ -573,6 +576,53 @@ CI does both: it verifies the toolchain inside the image, then builds the debug 
 **iOS cannot be containerized, and this is not a gap that can be closed.** Docker containers are Linux; Xcode is macOS-only and has no Linux build; and Apple's licence forbids redistributing Xcode. Any one of those three is fatal on its own. iOS builds always require a macOS host.
 
 Supporting automation: **dependency review** blocks pull requests that introduce known-vulnerable dependencies, and the **labeler** applies path-based platform labels automatically. Dependency updates are applied by hand — there is no bot opening upgrade pull requests. Issue forms, ownership rules, release-note categories, contribution guidance, support routing, and the security policy all live under `.github/`.
+
+---
+
+## Releases and downloads
+
+Every tagged release carries a build of all three clients, so none of them
+requires a toolchain to try:
+
+| File | What it is |
+| --- | --- |
+| `2048-vX.Y.Z-debug.apk` | Android app — install directly on a device |
+| `2048-vX.Y.Z-ios-unsigned.zip` | Unsigned iOS `.app` for a simulator, or to sign yourself |
+| `2048-vX.Y.Z-web.zip` | The shipping web client — unzip and serve the folder |
+| `SHA256SUMS-ios.txt`, `SHA256SUMS-web.txt` | Checksums for the two zips |
+
+The latest is at [**Releases**](https://github.com/hoangsonww/2048-Game/releases/latest).
+The web client also runs at [hoangsonww.github.io/2048-Game](https://hoangsonww.github.io/2048-Game/)
+with no download at all.
+
+The iOS artifact is unsigned on purpose. Signing needs a provisioning profile
+and a team identifier, neither of which belongs in a public repository, so App
+Store distribution stays outside this pipeline.
+
+### One version, three clients
+
+`VERSION` at the repository root is the only place the version is edited.
+`scripts/version.sh` propagates it to `package.json`, `versionName` and
+`versionCode` in the Gradle build, and `MARKETING_VERSION` and
+`CURRENT_PROJECT_VERSION` in every Xcode build configuration. `versionCode` is
+derived — `MAJOR * 10000 + MINOR * 100 + PATCH`, so 2.1.3 is 20103 — rather
+than tracked as a second number to forget.
+
+The agreement is enforced, not assumed: `make check` and CI both fail on drift,
+and the release pipeline checks again at the tag before building anything.
+These five fields had drifted four ways at once, which is why the gate exists.
+
+### Cutting one
+
+Actions → **Cut release** → Run workflow, and pick `patch`, `minor`, or
+`major`. It verifies the tree, bumps and propagates the version, opens a
+changelog section, commits, tags, dispatches the builds at that tag, and then
+confirms a release exists with its artifacts attached before reporting success.
+`dry_run` shows what would happen without pushing anything.
+
+Releasing by hand is no longer a supported path. [`docs/releasing.md`](../docs/releasing.md)
+covers the pipeline, the three non-obvious constraints it works around, and what
+to do when a stage fails.
 
 ---
 

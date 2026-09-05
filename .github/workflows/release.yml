@@ -1,9 +1,19 @@
 name: Release
 
-# Publishes an installable Android APK alongside each tagged release so that
-# players can try the Android client without installing a JDK, the Android SDK,
-# or Gradle. The web client needs no release artifact — it is deployed
-# continuously to GitHub Pages.
+# Publishes something installable for every client on each tagged release.
+#
+# Android gets an APK so players can try it without a JDK, the Android SDK, or
+# Gradle. iOS gets an unsigned .app zip — a build artifact for the simulator or
+# for someone who will sign it themselves, not an App Store package; Apple's
+# signing and provisioning stay outside this repository. The web client is
+# deployed continuously to Pages, but a zip of it is still worth attaching so a
+# release is a complete, self-contained record of what shipped.
+#
+# The release itself is created once, up front, by `prepare`. The three build
+# jobs only upload into it. Letting each job create-if-missing looks harmless
+# and is a race: they start together, all three see no release, all three call
+# `gh release create`, and two fail with "already exists" — an intermittent red
+# cross that says nothing about the code. One writer, three uploaders.
 
 on:
   push:
@@ -11,7 +21,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Existing tag to attach the APK to (e.g. v1.2.0)"
+        description: "Existing tag to build and attach artifacts to (e.g. v2.1.0)"
         required: true
         type: string
 
@@ -19,12 +29,70 @@ permissions:
   contents: write
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ inputs.tag || github.ref }}
   cancel-in-progress: false
 
 jobs:
+  prepare:
+    name: Open the release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      tag: ${{ steps.resolve.outputs.tag }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # A tag push carries the tag in the ref; a dispatch carries it as input,
+      # because a workflow dispatched at a tag still has to be told which tag it
+      # is publishing.
+      - name: Resolve the release tag
+        id: resolve
+        run: |
+          set -Eeuo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+          if ! git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+            echo "::error::${TAG} is not a tag in this repository."
+            exit 1
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Publishing ${TAG}"
+
+      # The tree at the tag must agree with the tag. A release whose APK says
+      # 1.0 while the page says 2.1.0 is worse than no release.
+      - name: Verify the tag matches the version in the tree
+        run: |
+          set -Eeuo pipefail
+          expected="${{ steps.resolve.outputs.tag }}"
+          actual="v$(./scripts/version.sh)"
+          if [ "${expected}" != "${actual}" ]; then
+            echo "::error::Tag ${expected} does not match VERSION (${actual})."
+            exit 1
+          fi
+          ./scripts/version.sh check
+
+      - name: Create the release if it does not exist
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          TAG="${{ steps.resolve.outputs.tag }}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "$TAG already exists; artifacts will be added to it."
+          else
+            gh release create "$TAG" --generate-notes --title "$TAG"
+            echo "Created $TAG"
+          fi
+
   android-apk:
     name: Build and attach the Android APK
+    needs: prepare
     runs-on: ubuntu-latest
     timeout-minutes: 25
     defaults:
@@ -34,6 +102,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.tag }}
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -50,31 +120,20 @@ jobs:
       - name: Assemble the debug APK
         run: ./gradlew assembleDebug --stacktrace
 
-      - name: Resolve the release tag
-        id: release_tag
-        working-directory: ${{ github.workspace }}
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TAG="${{ inputs.tag }}"
-          else
-            TAG="${GITHUB_REF_NAME}"
-          fi
-          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-          echo "Publishing artifacts for ${TAG}"
-
       - name: Name the APK after the release
         working-directory: ${{ github.workspace }}
         run: |
+          set -Eeuo pipefail
           SRC="Android-Version/Game2048/app/build/outputs/apk/debug/app-debug.apk"
           test -f "$SRC" || { echo "APK not found at $SRC" >&2; exit 1; }
-          cp "$SRC" "2048-${{ steps.release_tag.outputs.tag }}-debug.apk"
-          ls -lh "2048-${{ steps.release_tag.outputs.tag }}-debug.apk"
+          cp "$SRC" "2048-${{ needs.prepare.outputs.tag }}-debug.apk"
+          ls -lh "2048-${{ needs.prepare.outputs.tag }}-debug.apk"
 
       - name: Upload the APK as a workflow artifact
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
-          path: 2048-${{ steps.release_tag.outputs.tag }}-debug.apk
+          path: 2048-${{ needs.prepare.outputs.tag }}-debug.apk
           if-no-files-found: error
 
       - name: Attach the APK to the release
@@ -82,8 +141,136 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="${{ steps.release_tag.outputs.tag }}"
-          if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" --generate-notes --title "$TAG"
-          fi
+          set -Eeuo pipefail
+          TAG="${{ needs.prepare.outputs.tag }}"
           gh release upload "$TAG" "2048-${TAG}-debug.apk" --clobber
+
+  ios-app:
+    name: Build and attach the unsigned iOS app
+    needs: prepare
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.tag }}
+
+      # Unsigned, for a simulator or for someone who signs it themselves. No
+      # provisioning profile, no team id, no App Store Connect — none of which
+      # can live in a public repository anyway.
+      - name: Build unsigned
+        run: |
+          set -Eeuo pipefail
+          xcodebuild \
+            -project "2048 Game.xcodeproj" \
+            -scheme "Game-2048" \
+            -configuration Release \
+            -destination "generic/platform=iOS Simulator" \
+            -derivedDataPath .build/dd \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=- \
+            build
+
+      - name: Package and attach
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          TAG="${{ needs.prepare.outputs.tag }}"
+          APP="$(find .build/dd/Build/Products -maxdepth 2 -name '*.app' -print -quit)"
+          test -n "$APP" || { echo "No .app was produced" >&2; exit 1; }
+          ditto -c -k --sequesterRsrc --keepParent "$APP" "2048-${TAG}-ios-unsigned.zip"
+          shasum -a 256 "2048-${TAG}-ios-unsigned.zip" > "SHA256SUMS-ios.txt"
+          gh release upload "$TAG" "2048-${TAG}-ios-unsigned.zip" "SHA256SUMS-ios.txt" --clobber
+
+  web-bundle:
+    name: Package and attach the web client
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.tag }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Verify before publishing
+        run: |
+          npm ci
+          npm run check
+          npm run test:unit
+
+      # Exactly the files the container serves, so the zip is the shipping web
+      # client rather than a copy of the repository.
+      - name: Package
+        run: |
+          set -Eeuo pipefail
+          TAG="${{ needs.prepare.outputs.tag }}"
+          mkdir -p dist/2048-web
+          cp -R index.html 404.html manifest.json robots.txt sitemap.xml humans.txt \
+                llms.txt llms-full.txt images Web-Version dist/2048-web/
+          (cd dist && zip -qr "../2048-${TAG}-web.zip" 2048-web)
+          shasum -a 256 "2048-${TAG}-web.zip" > SHA256SUMS-web.txt
+          ls -lh "2048-${TAG}-web.zip"
+
+      - name: Attach
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          TAG="${{ needs.prepare.outputs.tag }}"
+          gh release upload "$TAG" "2048-${TAG}-web.zip" SHA256SUMS-web.txt --clobber
+
+  # A green build is not a release. This job is the one that decides whether
+  # the release actually happened, by looking at what is attached to it rather
+  # than at whether the jobs above reported success.
+  verify:
+    name: Verify the release is complete
+    needs: [prepare, android-apk, ios-app, web-bundle]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check every expected artifact is attached
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -Eeuo pipefail
+          TAG="${{ needs.prepare.outputs.tag }}"
+          assets="$(gh release view "$TAG" --json assets --jq '.assets[].name')"
+          echo "Attached to ${TAG}:"
+          while IFS= read -r asset; do echo "  ${asset}"; done <<< "${assets}"
+
+          missing=0
+          for expected in \
+            "2048-${TAG}-debug.apk" \
+            "2048-${TAG}-ios-unsigned.zip" \
+            "2048-${TAG}-web.zip"; do
+            if ! grep -Fqx "${expected}" <<< "${assets}"; then
+              echo "::error::${expected} is missing from release ${TAG}."
+              missing=1
+            fi
+          done
+          exit "${missing}"
+
+      - name: Summary
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          TAG="${{ needs.prepare.outputs.tag }}"
+          {
+            echo "### ${TAG} published"
+            echo
+            gh release view "$TAG" --json assets \
+              --jq '.assets[] | "- \(.name) (\(.size / 1024 / 1024 * 100 | floor / 100) MB)"'
+            echo
+            echo "<${{ github.server_url }}/${{ github.repository }}/releases/tag/${TAG}>"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,219 @@
+name: Cut release
+
+# One entry point for releasing. Choose a bump; this verifies the tree is
+# releasable, moves VERSION, propagates it to package.json, the Android
+# manifest, and the Xcode project, opens a changelog section, tags, pushes, and
+# then makes sure a release with artifacts actually exists.
+#
+# Everything below encodes something that went wrong in the sibling repository's
+# pipeline. They are cheap here and expensive to rediscover:
+#
+#   * A tag pushed by a workflow starts nothing. GitHub suppresses triggers from
+#     events raised by GITHUB_TOKEN, so `release.yml` has to be dispatched by
+#     name rather than left to notice the tag.
+#   * Dispatching needs `actions: write`. Without it every dispatch is refused
+#     with "HTTP 403: Resource not accessible by integration".
+#   * `release.yml` takes the tag as a required input on dispatch. Omitting it
+#     fails with "Required input 'tag' not provided".
+#   * A green run is not a release. This job once reported success having
+#     produced nothing at all, so it now ends by checking the release exists
+#     with files attached.
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Which part of the version to increase"
+        required: true
+        default: patch
+        type: choice
+        options: [patch, minor, major]
+      dry_run:
+        description: "Work it out and report, but do not tag or push"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  # contents: commit the bump and push the tag.
+  # actions: dispatch release.yml. Read access is not enough to start a run.
+  contents: write
+  actions: write
+
+concurrency:
+  group: cut-release
+  cancel-in-progress: false
+
+jobs:
+  cut:
+    name: Cut ${{ inputs.bump }} release
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # A release must not be cut from a tree that disagrees with itself.
+      - name: Verify the current version is consistent
+        run: ./scripts/version.sh check
+
+      - name: Work out the next version
+        id: next
+        run: |
+          set -Eeuo pipefail
+          current="$(./scripts/version.sh)"
+          ./scripts/version.sh bump "${{ inputs.bump }}" >/dev/null
+          next="$(./scripts/version.sh)"
+          # Leave the tree alone for now; the real bump happens once the tag has
+          # been checked for collisions.
+          git checkout -- .
+          {
+            echo "current=${current}"
+            echo "next=${next}"
+            echo "tag=v${next}"
+          } >> "$GITHUB_OUTPUT"
+          echo "${current} -> ${next} (v${next})"
+
+      - name: Refuse to reuse a tag
+        run: |
+          if git rev-parse -q --verify "refs/tags/${{ steps.next.outputs.tag }}" >/dev/null; then
+            echo "::error::${{ steps.next.outputs.tag }} already exists."
+            exit 1
+          fi
+          echo "${{ steps.next.outputs.tag }} is free."
+
+      - name: Apply the bump
+        run: |
+          set -Eeuo pipefail
+          ./scripts/version.sh set "${{ steps.next.outputs.next }}"
+          ./scripts/version.sh check
+
+      - name: Open the changelog section
+        run: |
+          python3 - "${{ steps.next.outputs.next }}" <<'PY'
+          import datetime
+          import pathlib
+          import sys
+
+          version = sys.argv[1]
+          path = pathlib.Path("CHANGELOG.md")
+          today = datetime.date.today().isoformat()
+          entry = f"## {version} — {today}\n"
+
+          if not path.exists():
+              path.write_text(
+                  "# Changelog\n\nAll notable changes to this project are documented here.\n\n"
+                  f"## Unreleased\n\n{entry}",
+                  encoding="utf-8",
+              )
+              print(f"Created CHANGELOG.md and opened {version}")
+              raise SystemExit
+
+          text = path.read_text(encoding="utf-8")
+          if "## Unreleased" in text:
+              text = text.replace("## Unreleased", f"## Unreleased\n\n{entry}".rstrip(), 1)
+          else:
+              # No Unreleased heading to promote; insert the section after the title.
+              lines = text.splitlines(keepends=True)
+              at = next((i for i, line in enumerate(lines) if line.startswith("## ")), len(lines))
+              lines.insert(at, f"{entry}\n")
+              text = "".join(lines)
+          path.write_text(text, encoding="utf-8")
+          print(f"Opened {version} — {today}")
+          PY
+
+      - name: Commit, tag and push
+        if: ${{ !inputs.dry_run }}
+        run: |
+          set -Eeuo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Stage by change rather than by name: a named list goes stale the
+          # moment version.sh learns about another file.
+          git add -u
+          git add CHANGELOG.md
+          git commit -m "Release ${{ steps.next.outputs.tag }}
+
+          Version moved from ${{ steps.next.outputs.current }} to ${{ steps.next.outputs.next }}
+          across VERSION, package.json, the Android manifest, and the Xcode
+          project, and the changelog section was opened.
+
+          Cut by the Cut release workflow."
+          git tag -a "${{ steps.next.outputs.tag }}" -m "2048 ${{ steps.next.outputs.next }}"
+          git push origin HEAD:"${GITHUB_REF_NAME}"
+          git push origin "${{ steps.next.outputs.tag }}"
+
+      - name: Start the release build
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          tag="${{ steps.next.outputs.tag }}"
+          # release.yml reads the tag from its input, not from the ref, so it
+          # must be passed explicitly.
+          gh workflow run release.yml --ref "${tag}" -f "tag=${tag}"
+          echo "dispatched release.yml for ${tag}"
+
+      - name: Verify a release was actually produced
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          tag="${{ steps.next.outputs.tag }}"
+
+          echo "Waiting for the release build at ${tag}..."
+          runs='[]'
+          deadline=$(( SECONDS + 2400 ))
+          while (( SECONDS < deadline )); do
+            runs="$(gh run list --workflow release.yml --limit 10 \
+              --json status,conclusion,headBranch \
+              --jq "[.[] | select(.headBranch == \"${tag}\")]")"
+            total="$(jq -r 'length' <<< "${runs}")"
+            finished="$(jq -r '[.[] | select(.status == "completed")] | length' <<< "${runs}")"
+            if (( total >= 1 && finished == total )); then
+              break
+            fi
+            sleep 30
+          done
+
+          jq -r '.[] | "  \(.conclusion // .status)"' <<< "${runs}"
+          if [[ "$(jq -r '[.[] | select(.conclusion != "success")] | length' <<< "${runs}")" != "0" ]]; then
+            echo "::error::The release build did not succeed at ${tag}."
+            exit 1
+          fi
+
+          # Builds passing and a release existing are different claims.
+          if ! gh release view "${tag}" >/dev/null 2>&1; then
+            echo "::error::No GitHub Release exists for ${tag}, despite the build succeeding."
+            exit 1
+          fi
+          assets="$(gh release view "${tag}" --json assets --jq '.assets | length')"
+          if [[ "${assets}" -lt 3 ]]; then
+            echo "::error::Release ${tag} has ${assets} file(s); expected the Android, iOS and web artifacts."
+            gh release view "${tag}" --json assets --jq '.assets[].name'
+            exit 1
+          fi
+          echo "Release ${tag} is published with ${assets} file(s):"
+          gh release view "${tag}" --json assets --jq '.assets[] | "  \(.name)"'
+
+      - name: Summary
+        run: |
+          {
+            echo "### ${{ steps.next.outputs.tag }}"
+            echo
+            echo "| | |"
+            echo "| --- | --- |"
+            echo "| From | ${{ steps.next.outputs.current }} |"
+            echo "| To | ${{ steps.next.outputs.next }} |"
+            echo "| Bump | ${{ inputs.bump }} |"
+            echo "| Dry run | ${{ inputs.dry_run }} |"
+            echo
+            if [ "${{ inputs.dry_run }}" = "true" ]; then
+              echo "Nothing was pushed. Rerun with dry run off to cut it."
+            else
+              echo "Tagged, built, and verified published with artifacts."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

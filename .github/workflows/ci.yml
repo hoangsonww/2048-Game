@@ -46,6 +46,13 @@ jobs:
       - name: Lint project shell utilities
         run: shellcheck -x -P scripts scripts/*.sh .husky/pre-commit .husky/pre-push
 
+      # VERSION is the only place a human edits it; package.json, the Android
+      # manifest, and the Xcode project are derived. They had drifted four ways
+      # — 1.2.0, 1.0, 1.0, and a v2.0.0 release — so the agreement is enforced
+      # rather than assumed.
+      - name: Version consistency
+        run: ./scripts/version.sh check
+
       - name: Run rules, SEO, asset, and coverage tests
         run: npm run test:unit
 
