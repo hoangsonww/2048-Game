@@ -153,8 +153,23 @@ jobs:
           tag="${{ steps.next.outputs.tag }}"
           # release.yml reads the tag from its input, not from the ref, so it
           # must be passed explicitly.
-          gh workflow run release.yml --ref "${tag}" -f "tag=${tag}"
-          echo "dispatched release.yml for ${tag}"
+          #
+          # Retried because the tag was pushed seconds ago and the API that
+          # resolves --ref can still answer "No ref found for: <tag>" while it
+          # catches up. That is a timing artefact of this job's own push, not a
+          # problem with the release, and re-running the whole cut to get past
+          # it would mean bumping the version a second time.
+          for attempt in 1 2 3 4 5 6; do
+            if gh workflow run release.yml --ref "${tag}" -f "tag=${tag}"; then
+              echo "dispatched release.yml for ${tag} on attempt ${attempt}"
+              exit 0
+            fi
+            echo "dispatch attempt ${attempt} failed; the tag may not be visible yet"
+            sleep 10
+          done
+          echo "::error::Could not dispatch release.yml for ${tag}."
+          echo "::error::The tag and the bump are pushed. Re-run Release manually with tag=${tag}."
+          exit 1
 
       - name: Verify a release was actually produced
         if: ${{ !inputs.dry_run }}

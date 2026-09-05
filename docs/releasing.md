@@ -110,6 +110,10 @@ than a half-published release.
   safe and idempotent.
 - **`Cut release` times out waiting** — it waits 40 minutes. The tag and commit
   are already pushed; check the `Release` run and re-dispatch it if needed.
+- **The dispatch cannot find the tag** — retried six times over a minute, since
+  the tag was pushed seconds earlier and the API resolving `--ref` can lag its
+  own push. If all six fail the job says so and names the tag to re-dispatch by
+  hand; the bump itself is already committed, so do not cut again.
 
 Re-running `Release` at an existing tag is always safe. It rebuilds from the
 tag, so it produces the same artifacts, and replaces rather than duplicates
