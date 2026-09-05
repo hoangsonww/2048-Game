@@ -18,6 +18,11 @@ section "Checking JavaScript syntax"
 section "Validating repository structure and web discovery metadata"
 (cd "${PROJECT_ROOT}" && node scripts/validate-repository.mjs)
 
+# VERSION is the only place a human edits the version; package.json, the Android
+# manifest, and the Xcode project are derived from it. CI runs this too, so a
+# release cannot be cut from a tree that disagrees with itself.
+"${PROJECT_ROOT}/scripts/version.sh" check
+
 if command -v shellcheck >/dev/null 2>&1; then
     section "Checking shell scripts"
     (cd "${PROJECT_ROOT}" && shellcheck -x -P scripts scripts/*.sh .husky/pre-commit .husky/pre-push)

@@ -5,7 +5,8 @@ SHELL := /usr/bin/env bash
 
 .PHONY: help setup doctor serve check test test-web test-android test-android-device test-ios \
 	screenshots-web clean-web android-build android-install android-run android-tasks \
-	android-clean android-devices gradle ios-build ios-run ios-boot ios-devices verify-devcontainer
+	android-clean android-devices gradle ios-build ios-run ios-boot ios-devices verify-devcontainer \
+	version version-sync
 
 help: ## Show available project commands
 	@awk 'BEGIN {FS = ":.*## "; printf "2048 project commands\n\n"} /^[a-zA-Z0-9_-]+:.*## / {printf "  %-22s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -21,6 +22,13 @@ serve: ## Serve the web app at http://localhost:8080
 
 check: ## Run fast repository, syntax, and metadata checks
 	./scripts/check-repo.sh
+
+version: ## Print the version and verify every client agrees with it
+	@./scripts/version.sh
+	@./scripts/version.sh check
+
+version-sync: ## Rewrite package.json, Gradle, and Xcode from the VERSION file
+	./scripts/version.sh sync
 
 test: ## Run all test suites supported by this host
 	./scripts/test-all.sh

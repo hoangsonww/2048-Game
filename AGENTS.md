@@ -12,7 +12,7 @@ This repository ships the same 2048 experience in three independent clients:
 
 The clients do not share runtime code. When game rules or user-facing behavior changes, inspect all three implementations and either preserve parity or document an intentional platform difference.
 
-Read [ARCHITECTURE.md](ARCHITECTURE.md) for the whole-repository picture — the shared behavioural contract, the rules engine, and why there is no shared core. Read [docs/architecture.md](docs/architecture.md) for per-client implementation detail before changing state, persistence, or game rules. Read [docs/testing.md](docs/testing.md) before changing tests or CI.
+Read [ARCHITECTURE.md](ARCHITECTURE.md) for the whole-repository picture — the shared behavioural contract, the rules engine, and why there is no shared core. Read [docs/architecture.md](docs/architecture.md) for per-client implementation detail before changing state, persistence, or game rules. Read [docs/testing.md](docs/testing.md) before changing tests or CI. Read [docs/releasing.md](docs/releasing.md) before changing versioning or the release workflows.
 
 ## Commands
 
@@ -30,6 +30,8 @@ Read [ARCHITECTURE.md](ARCHITECTURE.md) for the whole-repository picture — the
 - `make test-ios`: iOS unit and UI tests on an available simulator.
 - `make test`: run every suite supported by the current host.
 - `make screenshots-web`: capture deterministic desktop/mobile UI states.
+- `make version`: print the version and verify every client agrees with it.
+- `make version-sync`: rewrite the derived version fields from `VERSION`.
 
 Never call `adb`, `xcrun`, or `./gradlew` bare from a script or Make target. Use `scripts/android.sh` and `scripts/ios.sh`, which resolve a JDK 17, an `adb` binary, and a simulator UDID. Bare `adb` is not on `PATH` on a default Android Studio install.
 
@@ -45,6 +47,10 @@ Run the smallest relevant checks while iterating and the complete affected-platf
 - Keep source code deterministic where tests inject a random tile provider.
 - Do not edit generated Xcode project identifiers or Gradle wrapper binaries unless the task requires it.
 - Never commit `local.properties`, signing files, tokens, build output, or local simulator data.
+- `VERSION` is the only place the version is edited. `package.json`, the Gradle
+  build, and the Xcode project are derived from it by `scripts/version.sh`; never
+  edit them directly. Release only through the `Cut release` workflow, never by
+  tagging manually. See [docs/releasing.md](docs/releasing.md).
 
 ## Product invariants
 

@@ -46,6 +46,13 @@ jobs:
       - name: Lint project shell utilities
         run: shellcheck -x -P scripts scripts/*.sh .husky/pre-commit .husky/pre-push
 
+      # VERSION is the only place a human edits it; package.json, the Android
+      # manifest, and the Xcode project are derived. They had drifted four ways
+      # — 1.2.0, 1.0, 1.0, and a v2.0.0 release — so the agreement is enforced
+      # rather than assumed.
+      - name: Version consistency
+        run: ./scripts/version.sh check
+
       - name: Run rules, SEO, asset, and coverage tests
         run: npm run test:unit
 
@@ -371,7 +378,15 @@ jobs:
             sleep 1
           done
           echo "--- / must serve the game shell ---"
-          curl -fsS http://127.0.0.1:8080/ | grep -q "<title>"
+          # Read the body into a variable rather than piping it into `grep -q`.
+          # `grep -q` exits at its first match — the <title> on line 6 — closing
+          # the pipe while curl still has the rest of the page to write. curl
+          # then dies of SIGPIPE with exit 23, `pipefail` propagates it, and the
+          # smoke test fails having proven the page was correct. Whether it
+          # happens at all depends on whether the whole body fitted in the pipe
+          # buffer, so it stayed dormant until index.html grew by one line.
+          shell="$(curl -fsS http://127.0.0.1:8080/)"
+          grep -q "<title>" <<< "${shell}"
           echo "--- the engine and controller must be reachable ---"
           curl -fsS http://127.0.0.1:8080/Web-Version/game-engine.js >/dev/null
           curl -fsS http://127.0.0.1:8080/Web-Version/script.js >/dev/null
