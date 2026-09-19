@@ -36,11 +36,11 @@ The cost of this approach is that a rules change must be made three times. That 
 
 ## The same contract, three presentations
 
-Each client renders the same board, score pair, and action bar with native idioms. Pixel identity is not the goal; equivalent capability, hierarchy, and feedback are.
+Each client renders the same board, score pair, and action bar with native idioms. Pixel identity is not the goal; equivalent capability, hierarchy, and feedback are. Optional cloud chrome (Sign in, leaderboard, guest invite) appears on all three.
 
 | Web | iOS | Android |
 | :---: | :---: | :---: |
-| ![The web client's board, score cards, and action bar](../images/web-version-UI.png) | ![The SwiftUI client showing the same layout on iPhone](../images/IOS-UI.png) | ![The Compose client showing the same layout on a Pixel](../images/android-ui.png) |
+| ![The web client's board, guest invite, and cloud controls](../images/web-version-UI.png) | ![The SwiftUI client with Sign in, leaderboard, and guest banner](../images/IOS-UI.png) | ![The Compose client with Sign in, leaderboard, and guest banner](../images/android-ui.png) |
 | Inline SVG icons | SF Symbols | Material vectors |
 
 ## Runtime boundaries

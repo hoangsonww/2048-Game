@@ -29,7 +29,8 @@ Read [ARCHITECTURE.md](ARCHITECTURE.md) for the whole-repository picture — the
 - `make ios-build` / `ios-boot` / `ios-devices`.
 - `make test-ios`: iOS unit and UI tests on an available simulator.
 - `make test`: run every suite supported by the current host.
-- `make screenshots-web`: capture deterministic desktop/mobile UI states.
+- `make screenshots-web`: capture deterministic desktop/mobile game + cloud UI states and promote into `images/`.
+- `make screenshots-web-qa`: same captures into `output/playwright/latest/` only.
 - `make version`: print the version and verify every client agrees with it.
 - `make version-sync`: rewrite the derived version fields from `VERSION`.
 - `make server-check` / `server-test`: Cloud API OpenAPI validation and unit tests (`server/`).

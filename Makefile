@@ -4,7 +4,7 @@ SHELL := /usr/bin/env bash
 
 
 .PHONY: help setup doctor serve check test test-web test-android test-android-device test-ios \
-	screenshots-web clean-web android-build android-install android-run android-tasks \
+	screenshots-web screenshots-web-qa clean-web android-build android-install android-run android-tasks \
 	android-clean android-devices gradle ios-build ios-run ios-boot ios-devices verify-devcontainer \
 	version version-sync server-test server-check
 
@@ -88,8 +88,11 @@ ios-devices: ## List available iPhone simulators
 verify-devcontainer: ## Build the dev container image and verify its toolchain
 	./scripts/verify-devcontainer.sh
 
-screenshots-web: ## Capture desktop/mobile gameplay, dialogs, win/loss, and About
+screenshots-web: ## Capture desktop/mobile gameplay, cloud UI, dialogs, win/loss, About; promote into images/
 	npm run screenshots:web
 
+screenshots-web-qa: ## Capture web UI into output/ only (no images/ promote)
+	npm run screenshots:web:qa
+
 clean-web: ## Remove generated web coverage and latest local screenshots
-	rm -rf -- "$(CURDIR)/coverage" "$(CURDIR)/output/playwright/latest"
+	rm -rf -- "$(CURDIR)/coverage" "$(CURDIR)/output/playwright/latest" "$(CURDIR)/output/cloud"

@@ -79,6 +79,10 @@ Nothing is silently discarded. Prefer the higher `moves` (then score) when both 
 
 Removing the cloud layer is a delete of those modules plus the header / banner wiring. The board and rules stay.
 
+## Screenshots
+
+Canonical captures live under `images/` (`web-cloud-*`, `android-cloud-*`, `ios-cloud-guest.png`). Regenerate the web set with `make screenshots-web`.
+
 ## Local development
 
 ```bash

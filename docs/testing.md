@@ -197,17 +197,25 @@ Tests may also drive state through launch arguments (iOS) or launch state (Andro
 
 ## Manual UI review
 
-Automated coverage does not replace looking at the screen. `make screenshots-web` captures these five states at desktop and mobile widths deterministically, so a diff against them is a fast way to spot an unintended visual change:
+Automated coverage does not replace looking at the screen. `make screenshots-web` captures classic game states and optional cloud surfaces at desktop and mobile widths, then promotes the canonical set into `images/`:
 
 | Gameplay | Restart confirmation | Win |
 | :---: | :---: | :---: |
-| ![Normal gameplay with a partially filled board](../images/web-version-UI.png) | ![The confirmation dialog shown before replacing an active round](../images/web-restart-dialog.png) | ![The win overlay after reaching 2048](../images/web-win.png) |
+| ![Normal gameplay with guest invite and cloud controls](../images/web-version-UI.png) | ![The confirmation dialog shown before replacing an active round](../images/web-restart-dialog.png) | ![The win overlay after reaching 2048](../images/web-win.png) |
 
 | Game over | Mobile layout | About |
 | :---: | :---: | :---: |
 | ![The game-over overlay on a locked board](../images/web-loss.png) | ![The mobile layout with on-screen direction controls](../images/web-mobile-gameplay.png) | ![The rules and strategy page](../images/web-about.png) |
 
-For every changed surface, inspect normal gameplay, help/about, restart confirmation, win, and game-over states where applicable, and check:
+| Guest invite | Create account | Leaderboard |
+| :---: | :---: | :---: |
+| ![Guest banner above the board](../images/web-cloud-guest.png) | ![Create-account dialog](../images/web-cloud-signup.png) | ![Leaderboard dialog](../images/web-cloud-leaderboard.png) |
+
+| Account panel | Android guest | Android auth sheet |
+| :---: | :---: | :---: |
+| ![Signed-in account panel](../images/web-cloud-account.png) | ![Android guest banner](../images/android-cloud-guest.png) | ![Android create-account sheet](../images/android-cloud-signup.png) |
+
+For every changed surface, inspect normal gameplay, help/about, restart confirmation, win, game-over, and any touched cloud dialogs where applicable, and check:
 
 - Compact and large breakpoints
 - Icon centering, at every icon, by geometry rather than font metrics

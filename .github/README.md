@@ -100,11 +100,11 @@ The result is a codebase where you can read one platform's implementation in iso
 
 ## Screenshots
 
-The same round, mid-game, on all three clients. Each is a real capture from the current build — the web shots are produced deterministically by `make screenshots-web`, and the native shots come from a simulator and an emulator.
+The same round, mid-game, on all three clients. Web shots are produced by `make screenshots-web` (which also promotes into `images/`). Native shots are captured from a simulator and emulator.
 
 | Web | iOS | Android |
 | :---: | :---: | :---: |
-| ![2048 web app showing the editorial layout, score panel, and 4×4 game board](../images/web-version-UI.png) | ![2048 SwiftUI app on an iPhone 17 Pro simulator, showing the board and score cards](../images/IOS-UI.png) | ![2048 Jetpack Compose app on a Pixel 6 emulator, showing the board and score cards](../images/android-ui.png) |
+| ![2048 web app with guest invite, Sign in, leaderboard control, and 4×4 board](../images/web-version-UI.png) | ![2048 SwiftUI app on iPhone with Sign in, leaderboard, help, and guest sync banner](../images/IOS-UI.png) | ![2048 Jetpack Compose app on Pixel with Sign in, leaderboard, and guest account banner](../images/android-ui.png) |
 
 ### Web states
 
@@ -116,7 +116,27 @@ The same round, mid-game, on all three clients. Each is a real capture from the 
 | :---: | :---: |
 | ![The restart confirmation dialog warning that the current round will be replaced](../images/web-restart-dialog.png) | ![The About page describing the rules, strategy, and project details](../images/web-about.png) |
 
-Regenerate every web capture with `make screenshots-web`; output lands in the gitignored `output/playwright/latest/`.
+### Optional cloud surfaces
+
+Guest play, auth, sync, and leaderboards — local-first; an account is never required.
+
+| Guest invite (desktop) | Create account | Sign in |
+| :---: | :---: | :---: |
+| ![Guest banner inviting account creation above the board](../images/web-cloud-guest.png) | ![Create-account dialog with username, email, and password](../images/web-cloud-signup.png) | ![Sign-in dialog with username-or-email and password](../images/web-cloud-signin.png) |
+
+| Signed in | Leaderboard | Account panel |
+| :---: | :---: | :---: |
+| ![Signed-in header and cloud sync status under the board](../images/web-cloud-signed-in.png) | ![Leaderboard dialog with Today / This week / All time periods](../images/web-cloud-leaderboard.png) | ![Account panel with profile summary, sync time, and sign out](../images/web-cloud-account.png) |
+
+| Mobile guest | Mobile create account | Android create account |
+| :---: | :---: | :---: |
+| ![Mobile layout with guest invite and on-screen controls](../images/web-cloud-mobile-guest.png) | ![Mobile create-account dialog](../images/web-cloud-mobile-signup.png) | ![Android Compose create-account bottom sheet](../images/android-cloud-signup.png) |
+
+| Android guest | Android leaderboard | Android sign in |
+| :---: | :---: | :---: |
+| ![Android guest banner above the board](../images/android-cloud-guest.png) | ![Android leaderboard bottom sheet](../images/android-cloud-leaderboard.png) | ![Android sign-in bottom sheet](../images/android-cloud-signin.png) |
+
+Regenerate web captures (and refresh `images/`) with `make screenshots-web`. QA-only output without promoting: `make screenshots-web-qa` → `output/playwright/latest/`.
 
 ---
 
@@ -501,7 +521,8 @@ Every workflow has a stable `make` entry point. Prefer these over ad-hoc command
 | `make ios-devices` | Lists available iPhone simulators | macOS, Xcode |
 | `make test-ios` | iOS unit and UI tests on an available simulator | macOS, Xcode |
 | `make test` | Every suite this host can support | Varies |
-| `make screenshots-web` | Deterministic desktop and mobile UI captures | Node 22+, Chromium |
+| `make screenshots-web` | Deterministic desktop/mobile + cloud UI captures; promotes into `images/` | Node 22+, Chromium |
+| `make screenshots-web-qa` | Same captures into `output/` only (no promote) | Node 22+, Chromium |
 | `make clean-web` | Removes generated coverage and local screenshots | — |
 
 ---
