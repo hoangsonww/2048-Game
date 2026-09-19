@@ -145,7 +145,8 @@ Regenerate every web capture with `make screenshots-web`; output lands in the gi
 | Vector-only iconography | SVG | SF Symbols | Material vectors |
 | Installable / distributable | PWA | `.app` | `.apk` |
 | Works fully offline | ✅ | ✅ | ✅ |
-| Network calls, accounts, analytics, or telemetry | ❌ | ❌ | ❌ |
+| Optional account, cloud save sync, leaderboards | ✅ | ✅ | ✅ |
+| Mandatory network for a move | ❌ | ❌ | ❌ |
 
 ---
 
@@ -262,6 +263,7 @@ Full detail in [`ARCHITECTURE.md`](../ARCHITECTURE.md#server-driven-surfaces).
 ├── Web-Version/
 │   ├── game-engine.js                  Pure deterministic rules engine
 │   ├── script.js                       State, input handling, persistence, DOM
+│   ├── cloud.js / account.js           Optional Cloud API client and account UI
 │   ├── style.css                       Shared visual system and responsive layout
 │   └── about.html                      Rules and strategy guide
 │
@@ -269,17 +271,19 @@ Full detail in [`ARCHITECTURE.md`](../ARCHITECTURE.md#server-driven-surfaces).
 │   ├── Game_2048App.swift              App entry point
 │   ├── GameView.swift                  Responsive native board and controls
 │   ├── GameViewModel.swift             Rules, scoring, undo, persistence
-│   ├── ContentView.swift               Root container
+│   ├── Cloud/                          Optional account, sync, leaderboard
 │   └── Assets.xcassets                 App icons and colors
-├── Game-2048Tests/                     XCTest model tests
+├── Game-2048Tests/                     XCTest model and cloud tests
 ├── Game-2048UITests/                   XCUITest interaction and launch tests
 ├── 2048 Game.xcodeproj                 Xcode project (scheme: Game-2048)
 │
 ├── Android-Version/Game2048/           Jetpack Compose client
-│   ├── app/src/main/java/…             MainActivity, GameViewModel, GameStorage, theme
-│   ├── app/src/test/java/…             JUnit ViewModel tests
+│   ├── app/src/main/java/…             MainActivity, GameViewModel, cloud/, GameStorage, theme
+│   ├── app/src/test/java/…             JUnit ViewModel and cloud tests
 │   ├── app/src/androidTest/java/…      Compose instrumentation tests
 │   └── gradle/libs.versions.toml       Version catalog
+│
+├── server/                             Optional Cloud API (Express + MongoDB Atlas)
 │
 ├── tests/
 │   ├── web/                            Engine, static-metadata, and browser tests
@@ -641,13 +645,13 @@ Accessibility is treated as a behavioral requirement, not a finishing touch, and
 
 ## Privacy and data handling
 
-The honest version, which is short: **nothing leaves your device.**
+**Local-first by default.** Without an account, nothing leaves your device.
 
-- No accounts, no sign-in, no user identifiers.
-- No analytics, telemetry, crash reporting, or advertising SDKs.
-- No backend, no API calls, no remote storage.
-- Game state lives in `localStorage` on web, `UserDefaults` on iOS, and `SharedPreferences` on Android — all local to the device and removable by clearing site data or deleting the app.
-- The only outbound request the web client makes is to Google Fonts for the display typeface, and the app remains fully playable if that request is blocked.
+- No analytics SDK, advertising SDK, or crash reporter.
+- Game state lives in `localStorage` on web, `UserDefaults` on iOS, and `SharedPreferences` on Android — removable by clearing site data or deleting the app.
+- The only non-game outbound request the web client may make is Google Fonts for the display typeface; the app remains fully playable if that request is blocked.
+
+**Optional account.** Creating an account enables cross-device save sync, scores, and leaderboards against the Cloud API. Declining the invitation leaves play unchanged. Details: [docs/privacy.md](../docs/privacy.md) and [docs/backend.md](../docs/backend.md).
 
 ---
 

@@ -23,6 +23,15 @@
 		F4CCBB4B2BA9F8A0007AA07E /* help.json in Resources */ = {isa = PBXBuildFile; fileRef = F4CCBB4A2BA9F8A0007AA07E /* help.json */; };
 		F4CCBB4D2BA9F8A0007AA07E /* SurfaceSDUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB4C2BA9F8A0007AA07E /* SurfaceSDUITests.swift */; };
 		F4CCBB4F2BA9F8A0007AA07E /* SurfaceRenderingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB4E2BA9F8A0007AA07E /* SurfaceRenderingTests.swift */; };
+		F4CCBB512BA9F8A0007AA07E /* CloudModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB502BA9F8A0007AA07E /* CloudModels.swift */; };
+		F4CCBB532BA9F8A0007AA07E /* CloudAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB522BA9F8A0007AA07E /* CloudAPI.swift */; };
+		F4CCBB552BA9F8A0007AA07E /* CloudStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB542BA9F8A0007AA07E /* CloudStore.swift */; };
+		F4CCBB572BA9F8A0007AA07E /* CloudController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB562BA9F8A0007AA07E /* CloudController.swift */; };
+		F4CCBB592BA9F8A0007AA07E /* CloudViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB582BA9F8A0007AA07E /* CloudViews.swift */; };
+		F4CCBB5C2BA9F8A0007AA07E /* CloudAPITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB5B2BA9F8A0007AA07E /* CloudAPITests.swift */; };
+		F4CCBB5E2BA9F8A0007AA07E /* CloudControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB5D2BA9F8A0007AA07E /* CloudControllerTests.swift */; };
+		F4CCBB602BA9F8A0007AA07E /* CloudStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB5F2BA9F8A0007AA07E /* CloudStoreTests.swift */; };
+		F4CCBB622BA9F8A0007AA07E /* CloudModelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB612BA9F8A0007AA07E /* CloudModelsTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -63,6 +72,15 @@
 		F4CCBB4A2BA9F8A0007AA07E /* help.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = help.json; sourceTree = "<group>"; };
 		F4CCBB4C2BA9F8A0007AA07E /* SurfaceSDUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurfaceSDUITests.swift; sourceTree = "<group>"; };
 		F4CCBB4E2BA9F8A0007AA07E /* SurfaceRenderingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurfaceRenderingTests.swift; sourceTree = "<group>"; };
+		F4CCBB502BA9F8A0007AA07E /* CloudModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudModels.swift; sourceTree = "<group>"; };
+		F4CCBB522BA9F8A0007AA07E /* CloudAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudAPI.swift; sourceTree = "<group>"; };
+		F4CCBB542BA9F8A0007AA07E /* CloudStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudStore.swift; sourceTree = "<group>"; };
+		F4CCBB562BA9F8A0007AA07E /* CloudController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudController.swift; sourceTree = "<group>"; };
+		F4CCBB582BA9F8A0007AA07E /* CloudViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudViews.swift; sourceTree = "<group>"; };
+		F4CCBB5B2BA9F8A0007AA07E /* CloudAPITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudAPITests.swift; sourceTree = "<group>"; };
+		F4CCBB5D2BA9F8A0007AA07E /* CloudControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudControllerTests.swift; sourceTree = "<group>"; };
+		F4CCBB5F2BA9F8A0007AA07E /* CloudStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudStoreTests.swift; sourceTree = "<group>"; };
+		F4CCBB612BA9F8A0007AA07E /* CloudModelsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudModelsTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -119,10 +137,23 @@
 				F4CCBB052BA9F8A0007AA07E /* Preview Content */,
 				F4CCBB312BA9FA64007AA07E /* GameViewModel.swift */,
 				F4CCBB332BA9FA79007AA07E /* GameView.swift */,
+				F4CCBB5A2BA9F8A0007AA07E /* Cloud */,
 				F4CCBB482BA9F8A0007AA07E /* SDUI */,
 				F4CCBB492BA9F8A0007AA07E /* Surfaces */,
 			);
 			path = "Game-2048";
+			sourceTree = "<group>";
+		};
+		F4CCBB5A2BA9F8A0007AA07E /* Cloud */ = {
+			isa = PBXGroup;
+			children = (
+				F4CCBB502BA9F8A0007AA07E /* CloudModels.swift */,
+				F4CCBB522BA9F8A0007AA07E /* CloudAPI.swift */,
+				F4CCBB542BA9F8A0007AA07E /* CloudStore.swift */,
+				F4CCBB562BA9F8A0007AA07E /* CloudController.swift */,
+				F4CCBB582BA9F8A0007AA07E /* CloudViews.swift */,
+			);
+			path = Cloud;
 			sourceTree = "<group>";
 		};
 		F4CCBB482BA9F8A0007AA07E /* SDUI */ = {
@@ -159,6 +190,10 @@
 				F4CCBB2B2BA9F8A0007AA07E /* GameViewModelEdgeCaseTests.swift */,
 				F4CCBB4C2BA9F8A0007AA07E /* SurfaceSDUITests.swift */,
 				F4CCBB4E2BA9F8A0007AA07E /* SurfaceRenderingTests.swift */,
+				F4CCBB5B2BA9F8A0007AA07E /* CloudAPITests.swift */,
+				F4CCBB5D2BA9F8A0007AA07E /* CloudControllerTests.swift */,
+				F4CCBB5F2BA9F8A0007AA07E /* CloudStoreTests.swift */,
+				F4CCBB612BA9F8A0007AA07E /* CloudModelsTests.swift */,
 			);
 			path = "Game-2048Tests";
 			sourceTree = "<group>";
@@ -305,6 +340,11 @@
 			files = (
 				F4CCBB322BA9FA64007AA07E /* GameViewModel.swift in Sources */,
 				F4CCBB342BA9FA79007AA07E /* GameView.swift in Sources */,
+				F4CCBB512BA9F8A0007AA07E /* CloudModels.swift in Sources */,
+				F4CCBB532BA9F8A0007AA07E /* CloudAPI.swift in Sources */,
+				F4CCBB552BA9F8A0007AA07E /* CloudStore.swift in Sources */,
+				F4CCBB572BA9F8A0007AA07E /* CloudController.swift in Sources */,
+				F4CCBB592BA9F8A0007AA07E /* CloudViews.swift in Sources */,
 				F4CCBB402BA9F8A0007AA07E /* Surface.swift in Sources */,
 				F4CCBB422BA9F8A0007AA07E /* SurfaceResolver.swift in Sources */,
 				F4CCBB442BA9F8A0007AA07E /* SurfaceView.swift in Sources */,
@@ -321,6 +361,10 @@
 				F4CCBB2A2BA9F8A0007AA07E /* GameViewModelEdgeCaseTests.swift in Sources */,
 				F4CCBB4D2BA9F8A0007AA07E /* SurfaceSDUITests.swift in Sources */,
 				F4CCBB4F2BA9F8A0007AA07E /* SurfaceRenderingTests.swift in Sources */,
+				F4CCBB5C2BA9F8A0007AA07E /* CloudAPITests.swift in Sources */,
+				F4CCBB5E2BA9F8A0007AA07E /* CloudControllerTests.swift in Sources */,
+				F4CCBB602BA9F8A0007AA07E /* CloudStoreTests.swift in Sources */,
+				F4CCBB622BA9F8A0007AA07E /* CloudModelsTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -477,7 +521,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "Game-2048/Game_2048.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20001;
+				CURRENT_PROJECT_VERSION = 20100;
 				DEVELOPMENT_ASSET_PATHS = "\"Game-2048/Preview Content\"";
 				DEVELOPMENT_TEAM = CYTX8F348Q;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -501,7 +545,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.3;
-				MARKETING_VERSION = 2.0.1;
+				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "sonnguyen.2048-Game";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -520,7 +564,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "Game-2048/Game_2048.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20001;
+				CURRENT_PROJECT_VERSION = 20100;
 				DEVELOPMENT_ASSET_PATHS = "\"Game-2048/Preview Content\"";
 				DEVELOPMENT_TEAM = CYTX8F348Q;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -544,7 +588,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.3;
-				MARKETING_VERSION = 2.0.1;
+				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "sonnguyen.2048-Game";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -561,12 +605,12 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20001;
+				CURRENT_PROJECT_VERSION = 20100;
 				DEVELOPMENT_TEAM = CYTX8F348Q;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.4;
 				MACOSX_DEPLOYMENT_TARGET = 14.3;
-				MARKETING_VERSION = 2.0.1;
+				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "sonnguyen.Game-2048Tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -584,12 +628,12 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20001;
+				CURRENT_PROJECT_VERSION = 20100;
 				DEVELOPMENT_TEAM = CYTX8F348Q;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.4;
 				MACOSX_DEPLOYMENT_TARGET = 14.3;
-				MARKETING_VERSION = 2.0.1;
+				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "sonnguyen.Game-2048Tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -606,12 +650,12 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20001;
+				CURRENT_PROJECT_VERSION = 20100;
 				DEVELOPMENT_TEAM = CYTX8F348Q;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.4;
 				MACOSX_DEPLOYMENT_TARGET = 14.3;
-				MARKETING_VERSION = 2.0.1;
+				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "sonnguyen.Game-2048UITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -628,12 +672,12 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20001;
+				CURRENT_PROJECT_VERSION = 20100;
 				DEVELOPMENT_TEAM = CYTX8F348Q;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.4;
 				MACOSX_DEPLOYMENT_TARGET = 14.3;
-				MARKETING_VERSION = 2.0.1;
+				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "sonnguyen.Game-2048UITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;

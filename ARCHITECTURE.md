@@ -45,7 +45,7 @@ flowchart LR
     View -->|board, score, status| Player
 ```
 
-Everything is local. There is no account, no server, no analytics, no network call. The only persistence is the browser's `localStorage`, iOS `UserDefaults`, and Android `SharedPreferences` — each holding one saved round and one best score.
+Everything is local-first. The board, score, undo, and best score work with no network. The only required persistence is the browser's `localStorage`, iOS `UserDefaults`, and Android `SharedPreferences` — each holding one saved round and one best score. An **optional** Cloud API adds accounts, cross-device sync, and leaderboards; it never gates play. See [docs/backend.md](docs/backend.md) and [docs/privacy.md](docs/privacy.md).
 
 ---
 
@@ -120,8 +120,8 @@ The decisions that shaped this repository, and what would have to change for eac
 | 6 | Undo is exactly one step | A single slot is predictable, cheap to persist, and matches the original game | Users asked for deeper history and were willing to pay the persistence complexity |
 | 7 | Gradle provisions its own JDK via `gradle-daemon-jvm.properties` | A contributor should not have to install a specific JDK before `make test-android` works | Gradle's toolchain provisioning stopped being reliable |
 | 8 | Everything routes through `make` and `scripts/` | `adb` is not on `PATH` after a default Android Studio install, and the default `java` is usually wrong | Never — this is the difference between a clone that works and one that does not |
-| 9 | Storage keys are per-platform and idiomatic, not unified | Saves never travel between clients, so a shared format would buy nothing | A cross-device sync feature existed, which would contradict decision 10 |
-| 10 | No backend, no accounts, no analytics, no network calls | The game does not need them, and their absence is what makes the privacy posture trivially auditable | Never, without an explicit product decision |
+| 9 | Storage keys are per-platform and idiomatic, not unified | Local saves never leave the device format; the cloud wire format is a separate flat-board contract | Cross-device sync existed — it does now, via the Cloud API, without unifying local keys |
+| 10 | Local-first play; optional Cloud API for accounts and sync | An account is an invitation, never a gate; offline play stays complete | Product direction required any change that makes the network mandatory for a move |
 
 ---
 
@@ -134,6 +134,7 @@ flowchart TD
     Root --> Web["index.html · Web-Version/<br/>static web app"]
     Root --> IOS["Game-2048/ · 2048 Game.xcodeproj<br/>SwiftUI app"]
     Root --> Droid["Android-Version/Game2048/<br/>Compose app"]
+    Root --> Server["server/<br/>Cloud API · Express + Atlas"]
     Root --> Tests["tests/<br/>web + tooling suites"]
     Root --> Scripts["scripts/<br/>toolchain-resolving entry points"]
     Root --> Docs["docs/ · .github/README.md"]
@@ -143,13 +144,14 @@ flowchart TD
 
 | Path | Holds | Built by |
 | --- | --- | --- |
-| `index.html`, `Web-Version/` | The static web app: engine, controller, styles | Nothing — it is served as-is |
-| `Game-2048/` | SwiftUI views, view model, assets, entitlements | `xcodebuild` via `scripts/ios.sh` |
+| `index.html`, `Web-Version/` | The static web app: engine, controller, styles, optional cloud client | Nothing — it is served as-is |
+| `Game-2048/` | SwiftUI views, view model, Cloud/, assets, entitlements | `xcodebuild` via `scripts/ios.sh` |
 | `Game-2048Tests/`, `Game-2048UITests/` | XCTest and XCUITest targets | Same |
-| `Android-Version/Game2048/` | Compose UI, view model, storage, Gradle build | Gradle via `scripts/android.sh` |
+| `Android-Version/Game2048/` | Compose UI, view model, cloud package, storage, Gradle build | Gradle via `scripts/android.sh` |
+| `server/` | Optional Cloud API (auth, saves, scores, leaderboards) | Node on Vercel / `npm run dev` |
 | `tests/web/`, `tests/tooling/` | Node test-runner suites and the fake DOM harness | `node --test` |
 | `scripts/` | Every entry point; resolves JDKs, simulators, and `adb` | Invoked by `make` |
-| `docs/` | Architecture, testing, and screenshot guides | — |
+| `docs/` | Architecture, backend, privacy, testing, and screenshot guides | — |
 | `.agents/skills/` | Repository-local agent workflows, mirrored to `.claude/skills/` | — |
 
 There are two `.xcodeproj` directories at the root. **`2048 Game.xcodeproj` is the real one**; `Game-2048.xcodeproj` is a stray with no `project.pbxproj`. Build scripts reference the former explicitly.
@@ -1443,13 +1445,13 @@ flowchart LR
 
 | Property | Status |
 | --- | --- |
-| Data collected | None. No accounts, no analytics, no telemetry, no identifiers |
-| Network calls at runtime | None on any client |
-| Runtime dependencies | **Zero** on all three clients. The web app ships no third-party JavaScript |
-| Build dependencies | Web: three devDependencies (`c8`, `husky`, `playwright`). Android: AndroidX and Compose. iOS: Apple SDKs only |
-| Persisted data | One saved round and one best score, in platform-local storage. Never leaves the device |
-| Untrusted input | Only the saved state, which is fully validated before use |
-| Secrets in the repository | None. `local.properties`, keystores, signing material, and tokens are gitignored and never committed |
+| Data collected | Local round + best score always. With an optional account: profile, cloud saves, scores, session tokens — see [docs/privacy.md](docs/privacy.md) |
+| Network calls at runtime | None required for play. Optional Cloud API when the player signs in |
+| Runtime dependencies | **Zero** required third-party JS on web. Cloud clients use platform HTTP only |
+| Build dependencies | Web: three devDependencies (`c8`, `husky`, `playwright`). Android: AndroidX and Compose. iOS: Apple SDKs only. Server: Express stack under `server/` |
+| Persisted data | Local: one saved round and one best score. Cloud (opt-in): saves, scores, account metadata |
+| Untrusted input | Saved state (local and cloud) is fully validated before use |
+| Secrets in the repository | None. `.env`, `local.properties`, keystores, signing material, and tokens are gitignored and never committed |
 | Signing in CI | None. All builds are unsigned |
 | Dependency monitoring | `npm audit` on every CI run. Upgrades are applied manually; no update bot is enabled |
 
@@ -1561,7 +1563,7 @@ These hold across all three clients. A change that breaks one is a bug regardles
 - New game preserves the best score and requires confirmation when a round is in progress.
 - The best score never decreases.
 - Corrupt or structurally invalid saved state is discarded safely — never crashes, never partially restores.
-- Game state stays on the device. No backend, analytics, accounts, remote storage, or network calls.
+- Game state stays playable on the device. The optional Cloud API never gates a move; see [docs/backend.md](docs/backend.md).
 
 **Code**
 

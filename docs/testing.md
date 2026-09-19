@@ -30,7 +30,7 @@ Two consequences follow, and both are deliberate:
 | Platform | Deterministic tests | UI / integration tests | Runner | Line coverage |
 | --- | --- | --- | --- | --- |
 | Web | 65 engine, controller, metadata, and asset tests + 2 tooling tests | 8 Chromium scenarios | Node test runner, Playwright | 100 % |
-| iOS | 80 model, surface, and render tests | 9 XCUITest flows | XCTest | 95.5 % |
+| iOS | 80+ model/surface/cloud tests | 9 XCUITest flows | XCTest | 95.5 % |
 | Android | 75 ViewModel, storage, and surface tests | 5 Compose instrumentation tests | JUnit 4, Compose UI Test | 97.6 % (domain) |
 
 The iOS UI suite reports ten executions because the launch test runs once per appearance mode.
@@ -43,6 +43,7 @@ Each platform additionally covers the layer above its rules engine:
 - **iOS** — persistence round-trips, spawn-index clamping, and corrupt `UserDefaults` payloads.
 - **Android** — `SharedPreferencesGameStorage` serialisation against an in-memory `SharedPreferences`.
 - **Both native clients** — the server-driven surface layer: decoding, version gating, node pruning, source fallback, and the rule that every failure mode ends at the app's own native UI. The shipped `help.json` payload is validated like any other untrusted input, and a test asserts the iOS and Android copies have not drifted apart.
+- **Cloud clients (all three platforms)** — fake-transport unit tests for auth, token refresh, sync resolutions, and the guest-prompt / controller state machine. The live API is covered by `server/` unit and integration suites, not by device tests.
 
 Every suite enforces its own coverage floor; see the platform sections below.
 
@@ -97,7 +98,7 @@ Requires macOS with Xcode. The script selects an available iPhone simulator auto
 
 Model tests and UI tests run as separate targets (`Game-2048Tests` and `Game-2048UITests`) so a UI-harness failure never masks a rules regression. Preserve the `.xcresult` bundle when diagnosing a failure — it carries the failure screenshots, the full test log, and coverage data that the console output does not.
 
-**Coverage is a hard gate.** After the run, `scripts/test-ios.sh` reads the `.xcresult` with `xccov` and fails below 90 % line coverage of the `Game-2048.app` target, which currently sits at 95.5 %. Override the floor with `IOS_MINIMUM_COVERAGE` only to raise it.
+**Coverage is a hard gate.** After the run, `scripts/test-ios.sh` reads the `.xcresult` with `xccov` and fails below 90 % line coverage of the `Game-2048.app` target (excluding `CloudViews.swift`, which is SwiftUI sheet chrome covered by posture rather than line count — same idea as Android excluding `CloudUi`). Override the floor with `IOS_MINIMUM_COVERAGE` only to raise it.
 
 **Coverage must be measured on both suites together.** `GameView.swift` is 393 lines that only XCUITest exercises, so unit tests alone reach about 83 %. The local script runs one combined `xcodebuild test`, and CI — which runs the two targets separately so a UI-harness failure cannot mask a rules regression — collects coverage from both and merges the result bundles with `xcrun xcresulttool merge` before gating. Gate on one bundle and you are measuring something the other side of the fence is not.
 

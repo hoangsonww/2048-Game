@@ -1,18 +1,21 @@
 # 2048 — The Number Puzzle
 
-> A free, open-source 2048 puzzle with polished web, SwiftUI, and Jetpack Compose clients. The browser game works with keyboard, touch, and accessible on-screen controls; all game data stays on the device.
+> A free, open-source 2048 puzzle with polished web, SwiftUI, and Jetpack Compose clients. The browser game works with keyboard, touch, and accessible on-screen controls. Play is local-first; an optional account syncs rounds and scores across devices.
 
 ## Play and learn
 
 - [Play 2048](https://hoangsonww.github.io/2048-Game/): The canonical browser game and concise three-step guide.
 - [Rules, strategy, and project details](https://hoangsonww.github.io/2048-Game/Web-Version/about.html): Complete rules, practical strategy, and information about the native clients.
 - [Detailed interface and project context](https://hoangsonww.github.io/2048-Game/llms-full.txt): UI structure, controls, game behavior, accessibility, privacy, and contributor entry points.
+- [Cloud API reference](https://game-2048-cloud-api.vercel.app/docs): Optional accounts, saves, scores, and leaderboards (OpenAPI).
 
 ## Project resources
 
-- [Source repository](https://github.com/hoangsonww/2048-Game): Web, iOS, Android, tests, automation, and documentation.
+- [Source repository](https://github.com/hoangsonww/2048-Game): Web, iOS, Android, cloud API, tests, automation, and documentation.
+- [Backend notes](https://github.com/hoangsonww/2048-Game/blob/main/docs/backend.md): Local-first posture, sync contract, deploy.
+- [Privacy](https://github.com/hoangsonww/2048-Game/blob/main/docs/privacy.md): What stays on device and what an account stores.
 - [Contribution guide](https://github.com/hoangsonww/2048-Game/blob/main/.github/CONTRIBUTING.md): Setup, behavior contract, validation, and pull-request expectations.
-- [Security policy](https://github.com/hoangsonww/2048-Game/blob/main/.github/SECURITY.md): Supported versions, local-data architecture, and private reporting.
+- [Security policy](https://github.com/hoangsonww/2048-Game/blob/main/.github/SECURITY.md): Supported versions and private reporting.
 
 ## Optional
 

@@ -15,6 +15,7 @@ This document is the authoritative description of how the three clients are buil
 - [Persistence and state validation](#persistence-and-state-validation)
 - [Application lifecycle](#application-lifecycle)
 - [Server-driven surfaces](#server-driven-surfaces)
+- [Optional cloud layer](#optional-cloud-layer)
 - [Web client](#web-client)
 - [iOS client](#ios-client)
 - [Android client](#android-client)
@@ -23,7 +24,7 @@ This document is the authoritative description of how the three clients are buil
 
 ## Design principle
 
-The repository contains three offline-first clients. There is **no shared backend, no shared runtime library, and no generated cross-platform layer**. Each client is written idiomatically for its platform.
+The repository contains three local-first clients and an optional Cloud API. There is **no shared rules runtime** and **no generated cross-platform layer**. Each client is written idiomatically for its platform. Network access is never required to move a tile; accounts and sync live in additive modules documented in [backend.md](backend.md).
 
 That is a deliberate trade. A shared core would guarantee parity mechanically but would force a lowest-common-denominator architecture onto all three platforms and add a build step to a project that otherwise needs none. Instead, parity is maintained by three explicit mechanisms:
 
@@ -148,9 +149,24 @@ changing this code:
 - **New iOS surface files must be added to the Xcode target.** The project has
   no synchronised groups, so a file only on disk never compiles.
 
+## Optional cloud layer
+
+Accounts, cross-device sync, and leaderboards are additive modules on each
+client. The rules engine never imports them; a small bridge
+(`cloudSave` / `applyCloudSave`) converts the board to the flat wire format.
+
+| Concern | Rule |
+| --- | --- |
+| Play without an account | Fully supported; guest prompt is dismissible |
+| Sync conflicts | Prefer the further round; park the other — never last-writer-wins discard |
+| Offline | Moves never wait on the network |
+| Layout (iOS) | Cloud UI must not push the board into a `ScrollView` |
+
+Full contract: [backend.md](backend.md). Privacy: [privacy.md](privacy.md).
+
 ## Web client
 
-Static files with no bundler, transpiler, or runtime dependencies. `game-engine.js` is pure and dual-target (browser and Node), which keeps enforced coverage cheap and fast. `script.js` owns DOM wiring, input handling, persistence, and the accessibility live region.
+Static files with no bundler, transpiler, or runtime dependencies. `game-engine.js` is pure and dual-target (browser and Node), which keeps enforced coverage cheap and fast. `script.js` owns DOM wiring, input handling, persistence, and the accessibility live region. Optional `cloud.js` / `account.js` own the account surface.
 
 Both files are covered at 100 % of lines. `script.js` is an IIFE that reads the document once on load and then talks to the page only through the elements it captured, which is exactly what lets `tests/web/helpers/fake-dom.js` stand in for the browser and unit-test it. Keep that property: a controller that reaches back into `document` mid-flight is a controller that can only be tested in a real browser.
 
@@ -164,7 +180,7 @@ The local development server intentionally disables caching so UI work reloads p
 
 ## iOS client
 
-SwiftUI, targeting iOS 17.4+ for both iPhone and iPad. Uses `UserDefaults` for persistence, `UINotificationFeedbackGenerator`-class haptics, SF Symbols for all control iconography, and accessibility identifiers on every interactive element so XCUITest can drive real flows.
+SwiftUI, targeting iOS 17.4+ for both iPhone and iPad. Uses `UserDefaults` for persistence, `UINotificationFeedbackGenerator`-class haptics, SF Symbols for all control iconography, and accessibility identifiers on every interactive element so XCUITest can drive real flows. Optional cloud code lives in `Game-2048/Cloud/` and must be listed in the Xcode project — same rule as surfaces.
 
 The board is exposed as an explicit accessibility container rather than a pile of individually focusable cells, which is what makes VoiceOver navigation coherent.
 
@@ -174,7 +190,7 @@ Layout is size-responsive rather than fixed — do not reintroduce hard-coded bo
 
 ## Android client
 
-Jetpack Compose with Material 3, `minSdk` 24 and `compileSdk`/`targetSdk` 34, Kotlin 1.9 with AGP 8.3.1 on Gradle 8.13. State lives in a `ViewModel`; persistence goes through `GameStorage.kt` over `SharedPreferences`.
+Jetpack Compose with Material 3, `minSdk` 24 and `compileSdk`/`targetSdk` 34, Kotlin 1.9 with AGP 8.3.1 on Gradle 8.13. State lives in a `ViewModel`; persistence goes through `GameStorage.kt` over `SharedPreferences`. Optional cloud code lives under `…/cloud/` and uses `HttpURLConnection` with a fake-transport seam for JVM unit tests.
 
 No JDK needs to be installed. `gradle/gradle-daemon-jvm.properties` pins daemon JVM criteria, so Gradle downloads and runs on its own Adoptium JDK 17 matching the host OS and architecture; `scripts/android.sh` additionally prefers a local JDK 17 when one exists.
 

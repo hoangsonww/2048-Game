@@ -32,6 +32,7 @@ Read [ARCHITECTURE.md](ARCHITECTURE.md) for the whole-repository picture — the
 - `make screenshots-web`: capture deterministic desktop/mobile UI states.
 - `make version`: print the version and verify every client agrees with it.
 - `make version-sync`: rewrite the derived version fields from `VERSION`.
+- `make server-check` / `server-test`: Cloud API OpenAPI validation and unit tests (`server/`).
 
 Never call `adb`, `xcrun`, or `./gradlew` bare from a script or Make target. Use `scripts/android.sh` and `scripts/ios.sh`, which resolve a JDK 17, an `adb` binary, and a simulator UDID. Bare `adb` is not on `PATH` on a default Android Studio install.
 
@@ -41,9 +42,9 @@ Run the smallest relevant checks while iterating and the complete affected-platf
 
 - Preserve existing user changes in a dirty working tree. Do not reset, discard, or rewrite unrelated work.
 - Treat audit, diagnosis, review, and test-only requests as read-only unless the user asks for implementation.
-- Do not add a backend, analytics, accounts, remote storage, or network calls without explicit product direction.
+- Do not add analytics SDKs, advertising, or mandatory network calls for core play without explicit product direction. The optional Cloud API (`server/`, [docs/backend.md](docs/backend.md)) is the approved account / sync / leaderboard path — keep game rules and the active round local-first.
 - Server-driven surfaces describe **content only**. Rules, styling, and behaviour stay in code, every surface keeps a native fallback, and actions are names the host resolves — never code carried in data. See [ARCHITECTURE.md](ARCHITECTURE.md#server-driven-surfaces).
-- Keep game state local. Validate persisted state before restoring it.
+- Keep the active round local-first. Validate persisted state (local and cloud) before restoring it.
 - Keep source code deterministic where tests inject a random tile provider.
 - Do not edit generated Xcode project identifiers or Gradle wrapper binaries unless the task requires it.
 - Never commit `local.properties`, signing files, tokens, build output, or local simulator data.

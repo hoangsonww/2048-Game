@@ -14,7 +14,12 @@ final class GameViewModel: ObservableObject {
         static let score = "savedScoreV2"
         static let highScore = "highScore"
         static let hasWon = "savedHasWonV2"
+        static let moves = "savedMovesV2"
     }
+
+    /// What just happened to the round. The optional cloud layer observes
+    /// these; the rules engine knows nothing about the observer.
+    enum RoundChange { case move, undo, newGame, gameOver, restored }
 
     let gridSize = 4
     @Published var grid: [[Int]]
@@ -22,6 +27,15 @@ final class GameViewModel: ObservableObject {
     @Published private(set) var highScore: Int
     @Published var hasWon: Bool
     @Published private(set) var canUndo = false
+
+    /// Moves played in this round. It feeds the cloud sync's "which device got
+    /// further" comparison and is deliberately *not* rewound by undo: a number
+    /// a player can lower by pressing a button is not a measurement.
+    @Published private(set) var moves = 0
+
+    /// Set by the cloud layer. A closure rather than a dependency so the rules
+    /// engine keeps compiling, and keeps being testable, with no cloud present.
+    var onRoundChanged: ((RoundChange) -> Void)?
 
     private var previous: Snapshot?
     private let defaults: UserDefaults
@@ -71,10 +85,12 @@ final class GameViewModel: ObservableObject {
 
         previous = Snapshot(grid: oldGrid, score: oldScore, hasWon: oldWinState)
         canUndo = true
+        moves += 1
         addNewNumber()
         updateGameStatus()
         updateHighScore()
         persist()
+        notify(isGameOver() ? .gameOver : .move)
         return true
     }
 
@@ -84,9 +100,11 @@ final class GameViewModel: ObservableObject {
         hasWon = false
         previous = nil
         canUndo = false
+        moves = 0
         addNewNumber()
         addNewNumber()
         persist()
+        notify(.newGame)
     }
 
     func undo() {
@@ -97,6 +115,49 @@ final class GameViewModel: ObservableObject {
         self.previous = nil
         canUndo = false
         persist()
+        notify(.undo)
+    }
+
+    // MARK: - Cloud bridge
+
+    /// The round in the shape every client exchanges with the API. The board
+    /// travels as flat cells because that is what the service stores; the
+    /// conversion happens here and nowhere else.
+    func cloudSave() -> CloudSave {
+        CloudSave(
+            board: grid.flatMap { $0 },
+            score: score,
+            bestScore: highScore,
+            won: hasWon,
+            gameOver: isGameOver(),
+            moves: moves
+        )
+    }
+
+    /// Replaces the round with one that came from another device.
+    ///
+    /// Validated with the same predicate that guards a corrupt `UserDefaults`
+    /// entry: a payload from the network is no more trustworthy than one from
+    /// disk, and is refused the same way rather than half-applied.
+    @discardableResult
+    func applyCloudSave(_ save: CloudSave) -> Bool {
+        guard save.board.count == gridSize * gridSize, save.board.allSatisfy(isValidTile) else { return false }
+
+        grid = stride(from: 0, to: save.board.count, by: gridSize).map { Array(save.board[$0..<$0 + gridSize]) }
+        score = max(0, save.score)
+        highScore = max(highScore, max(0, save.bestScore), score)
+        hasWon = save.won || grid.joined().contains { $0 >= 2048 }
+        moves = max(0, save.moves)
+        previous = nil
+        canUndo = false
+        defaults.set(highScore, forKey: Storage.highScore)
+        persist()
+        notify(.restored)
+        return true
+    }
+
+    private func notify(_ change: RoundChange) {
+        onRoundChanged?(change)
     }
 
     func addNewNumber() {
@@ -175,6 +236,7 @@ final class GameViewModel: ObservableObject {
         defaults.set(grid.flatMap { $0 }, forKey: Storage.grid)
         defaults.set(score, forKey: Storage.score)
         defaults.set(hasWon, forKey: Storage.hasWon)
+        defaults.set(moves, forKey: Storage.moves)
     }
 
     private func restoreSavedGame() -> Bool {
@@ -184,6 +246,7 @@ final class GameViewModel: ObservableObject {
         grid = stride(from: 0, to: values.count, by: gridSize).map { Array(values[$0..<$0 + gridSize]) }
         score = max(0, defaults.integer(forKey: Storage.score))
         hasWon = defaults.bool(forKey: Storage.hasWon)
+        moves = max(0, defaults.integer(forKey: Storage.moves))
         return true
     }
 

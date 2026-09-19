@@ -6,7 +6,7 @@ SHELL := /usr/bin/env bash
 .PHONY: help setup doctor serve check test test-web test-android test-android-device test-ios \
 	screenshots-web clean-web android-build android-install android-run android-tasks \
 	android-clean android-devices gradle ios-build ios-run ios-boot ios-devices verify-devcontainer \
-	version version-sync
+	version version-sync server-test server-check
 
 help: ## Show available project commands
 	@awk 'BEGIN {FS = ":.*## "; printf "2048 project commands\n\n"} /^[a-zA-Z0-9_-]+:.*## / {printf "  %-22s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -44,6 +44,12 @@ test-android-device: ## Also run Android tests on a connected emulator/device
 
 test-ios: ## Run iOS unit and UI tests on an available simulator
 	./scripts/test-ios.sh
+
+server-check: ## Validate the Cloud API OpenAPI document
+	cd server && npm run check
+
+server-test: ## Run Cloud API unit tests
+	cd server && npm test
 
 android-build: ## Build the Android debug APK
 	./scripts/android.sh assembleDebug

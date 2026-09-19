@@ -8,6 +8,13 @@ thing everywhere. See [docs/releasing.md](docs/releasing.md).
 
 ## Unreleased
 
+## 2.1.0 — 2026-09-19
+
+Optional Cloud API and client accounts. Play stays local-first; an account adds
+cross-device save sync, scores, and leaderboards. Express + MongoDB Atlas backend
+with OpenAPI 3.1 (Swagger UI, Redoc, Scalar), wired into web, iOS, and Android.
+See [docs/backend.md](docs/backend.md) and [docs/privacy.md](docs/privacy.md).
+
 ## 2.0.1 — 2026-09-05
 
 ## 2.0.0 — 2026-09-02

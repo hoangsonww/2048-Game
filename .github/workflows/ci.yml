@@ -122,12 +122,31 @@ jobs:
             "$RUNNER_TEMP/iOS-Unit.xcresult" "$RUNNER_TEMP/iOS-UI.xcresult" \
             --output-path "$RUNNER_TEMP/iOS-Combined.xcresult"
 
-          xcrun xccov view --report --files-for-target Game-2048.app "$RUNNER_TEMP/iOS-Combined.xcresult" \
+          file_report="$(xcrun xccov view --report --files-for-target Game-2048.app "$RUNNER_TEMP/iOS-Combined.xcresult")"
+          printf '%s\n' "$file_report" \
             | awk 'NR>3 && NF { name=$2; sub(/.*\//, "", name); printf "  %-26s %s %s\n", name, $(NF-1), $NF }'
 
-          percent="$(xcrun xccov view --report --only-targets "$RUNNER_TEMP/iOS-Combined.xcresult" \
-            | awk '$2 == "Game-2048.app" { gsub(/%/, "", $(NF-1)); print $(NF-1); exit }')"
-          echo "Game-2048.app line coverage: ${percent}%"
+          # Exclude CloudViews.swift — SwiftUI sheet chrome, same posture as
+          # Android excluding CloudUi from JaCoCo.
+          percent="$(printf '%s\n' "$file_report" | awk '
+            NR <= 3 { next }
+            NF < 3 { next }
+            {
+              file = $2
+              sub(/.*\//, "", file)
+              if (file == "CloudViews.swift") next
+              hit_total = $NF
+              gsub(/[()]/, "", hit_total)
+              split(hit_total, parts, "/")
+              hit += parts[1] + 0
+              total += parts[2] + 0
+            }
+            END {
+              if (total == 0) exit 1
+              printf "%.2f", (hit / total) * 100
+            }
+          ')"
+          echo "Game-2048.app line coverage (excluding CloudViews.swift): ${percent}%"
 
           if [ -z "$percent" ]; then
             echo "::error::Could not read a coverage percentage from the merged result bundle."

@@ -3,17 +3,23 @@ import UIKit
 
 struct GameView: View {
     @StateObject private var viewModel: GameViewModel
+    @StateObject private var cloud: CloudController
     @State private var showingHelp = false
     @State private var confirmingNewGame = false
     @State private var showingWin = false
+    @State private var authMode: AuthMode?
+    @State private var showingAccount = false
+    @State private var showingLeaderboard = false
 
     private let paper = Color(red: 0.961, green: 0.941, blue: 0.902)
     private let ink = Color(red: 0.141, green: 0.137, blue: 0.122)
     private let accent = Color(red: 0.914, green: 0.388, blue: 0.271)
     private let muted = Color(red: 0.435, green: 0.416, blue: 0.380)
 
-    init(viewModel: GameViewModel = GameViewModel()) {
+    @MainActor
+    init(viewModel: GameViewModel = GameViewModel(), cloud: CloudController? = nil) {
         _viewModel = StateObject(wrappedValue: viewModel)
+        _cloud = StateObject(wrappedValue: cloud ?? CloudController.live())
         _showingWin = State(initialValue: viewModel.hasWon)
     }
 
@@ -52,11 +58,40 @@ struct GameView: View {
             }
         }
         .sheet(isPresented: $showingHelp) { HelpView() }
+        .sheet(item: $authMode) { mode in
+            AuthSheet(
+                cloud: cloud,
+                mode: mode,
+                onRegister: { username, email, password in
+                    Task { await cloud.register(username: username, email: email, password: password, save: viewModel.cloudSave, apply: { _ = viewModel.applyCloudSave($0) }) }
+                },
+                onLogin: { identifier, password in
+                    Task { await cloud.login(identifier: identifier, password: password, save: viewModel.cloudSave, apply: { _ = viewModel.applyCloudSave($0) }) }
+                }
+            )
+        }
+        .sheet(isPresented: $showingAccount) {
+            AccountSheet(
+                cloud: cloud,
+                onSyncNow: { Task { await cloud.sync(save: viewModel.cloudSave, apply: { _ = viewModel.applyCloudSave($0) }) } },
+                onSignOut: {
+                    Task {
+                        await cloud.signOut()
+                        showingAccount = false
+                    }
+                }
+            )
+        }
+        .sheet(isPresented: $showingLeaderboard) {
+            LeaderboardSheet(cloud: cloud, onPeriod: { period in Task { await cloud.loadLeaderboard(period: period) } })
+                .task { await cloud.loadLeaderboard() }
+        }
         .confirmationDialog("Start a fresh board?", isPresented: $confirmingNewGame, titleVisibility: .visible) {
             Button("New game", role: .destructive) { restart() }
             Button("Keep playing") { confirmingNewGame = false }
         } message: { Text("Your best score stays safe, but this round will be replaced.") }
         .onChange(of: viewModel.hasWon) { _, hasWon in if hasWon { showingWin = true } }
+        .task { await attachCloud() }
     }
 
     // Sized to fit an iPhone viewport without scrolling. The previous spacing
@@ -65,15 +100,17 @@ struct GameView: View {
     // every vertical swipe. Keep the total under the viewport so the static
     // branch is chosen and the board receives its own gestures.
     private var content: some View {
-        VStack(spacing: 18) {
+        VStack(spacing: 16) {
             header
             titleBlock
             scoreBar
             board
             actionBar
-            Text("Swipe anywhere on the board to move")
-                .font(.system(size: 13, weight: .medium, design: .rounded))
-                .foregroundStyle(muted)
+            // One row under the board: guest invitation or sync status. It
+            // replaces the old hint line rather than stacking under it — the
+            // layout has roughly thirteen points of slack, and spending them
+            // here would send the board into a ScrollView.
+            CloudBar(cloud: cloud, onCreateAccount: { authMode = .register })
         }
         .padding(.horizontal, 18)
         .padding(.top, 8)
@@ -81,15 +118,40 @@ struct GameView: View {
     }
 
     private var header: some View {
-        HStack {
+        HStack(spacing: 6) {
             HStack(spacing: 9) {
                 BrandMark().frame(width: 34, height: 34)
                 Text("2048").font(.system(size: 18, weight: .heavy, design: .rounded)).tracking(-0.5)
             }
-            Spacer()
+            Spacer(minLength: 4)
+            AccountButton(cloud: cloud) {
+                if cloud.isSignedIn { showingAccount = true } else { authMode = .register }
+            }
+            LeaderboardButton { showingLeaderboard = true }
             Button { showingHelp = true } label: { Image(systemName: "questionmark").font(.system(size: 15, weight: .bold)).frame(width: 38, height: 38).background(.white.opacity(0.65), in: RoundedRectangle(cornerRadius: 11)).overlay(RoundedRectangle(cornerRadius: 11).stroke(Color.black.opacity(0.08))) }
             .foregroundStyle(ink).accessibilityLabel("How to play")
         }
+    }
+
+    /// The cloud observes the round; the round knows nothing about the cloud.
+    @MainActor
+    private func attachCloud() async {
+        viewModel.onRoundChanged = { [weak cloud, weak viewModel] change in
+            guard let cloud, let viewModel else { return }
+            Task { @MainActor in
+                switch change {
+                case .gameOver:
+                    await cloud.submitRound(viewModel.cloudSave())
+                    await cloud.sync(save: viewModel.cloudSave, apply: { _ = viewModel.applyCloudSave($0) })
+                case .restored:
+                    // A round we just downloaded does not need uploading back.
+                    break
+                case .move, .undo, .newGame:
+                    await cloud.sync(save: viewModel.cloudSave, apply: { _ = viewModel.applyCloudSave($0) })
+                }
+            }
+        }
+        await cloud.restore(save: viewModel.cloudSave, apply: { _ = viewModel.applyCloudSave($0) })
     }
 
     private var titleBlock: some View {
