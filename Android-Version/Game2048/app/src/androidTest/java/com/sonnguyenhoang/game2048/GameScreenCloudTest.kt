@@ -90,10 +90,10 @@ class GameScreenCloudTest {
             )
         )
 
-        compose.onNodeWithText("Sign in").performClick()
+        compose.onNodeWithContentDescription("Sign in or create an account").performClick()
         compose.onNodeWithText("Username or email").performTextInput("ada")
         compose.onNodeWithText("Password").performTextInput("Password1")
-        compose.onNodeWithText("Sign in").performClick()
+        compose.onNodeWithContentDescription("Submit sign in").performClick()
         compose.waitForIdle()
 
         compose.onNodeWithContentDescription("Account: Ada").assertExists()
@@ -113,10 +113,10 @@ class GameScreenCloudTest {
             )
         )
 
-        compose.onNodeWithText("Sign in").performClick()
+        compose.onNodeWithContentDescription("Sign in or create an account").performClick()
         compose.onNodeWithText("Username or email").performTextInput("ada")
         compose.onNodeWithText("Password").performTextInput("wrong")
-        compose.onNodeWithText("Sign in").performClick()
+        compose.onNodeWithContentDescription("Submit sign in").performClick()
         compose.waitForIdle()
 
         compose.onNodeWithContentDescription("Sign-in problem: That email or password is not correct.").assertExists()
