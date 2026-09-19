@@ -186,6 +186,16 @@ function loadController({ storage = {}, random = () => 0 } = {}) {
         state: () => run(() => JSON.parse(windowStub.render_game_to_text())),
         redraw: () => run(() => windowStub.advanceTime()),
 
+        // The bridge the optional cloud layer talks to. Every call runs inside
+        // the stubbed page for the same reason every dispatch does: the
+        // controller keeps reaching for `localStorage` and `Date` after load.
+        bridge: {
+            save: () => run(() => windowStub.Game2048Game.getSave()),
+            applySave: save => run(() => windowStub.Game2048Game.applySave(save)),
+            newGame: () => run(() => windowStub.Game2048Game.newGame()),
+            subscribe: listener => run(() => windowStub.Game2048Game.subscribe(listener))
+        },
+
         cells: () => grid.querySelectorAll(".cell"),
         board: () => grid.querySelectorAll(".cell").map(cell => Number(cell.dataset.value)),
         status: () => elements.statusLine.textContent,

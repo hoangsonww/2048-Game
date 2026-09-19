@@ -1,0 +1,12 @@
+# 2048 Cloud API
+#
+# The API itself is not content worth indexing, but the reference pages are —
+# they are the documentation for a public API.
+
+User-agent: *
+Allow: /docs
+Allow: /redoc
+Allow: /reference
+Allow: /openapi.json
+Allow: /openapi.yaml
+Disallow: /api/

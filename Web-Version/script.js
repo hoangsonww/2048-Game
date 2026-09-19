@@ -22,12 +22,28 @@
     let state = {
         board: createEmptyBoard(), score: 0,
         best: Number.parseInt(localStorage.getItem(BEST_KEY), 10) || 0,
-        won: false, gameOver: false, history: null
+        won: false, gameOver: false, history: null, moves: 0, startedAt: Date.now()
     };
     let touchStart = null;
+    // Cloud integration subscribes here. The set is empty until something does,
+    // and a listener that throws must not take a move down with it — the game
+    // is the thing that has to keep working.
+    const changeListeners = new Set();
 
     function cloneSnapshot() {
         return { board: [...state.board], score: state.score, won: state.won };
+    }
+
+    function tell(listener, reason) {
+        try { listener(reason, cloudSave()); } catch (_) { /* a broken observer is not a broken game */ }
+    }
+
+    function notify(reason) {
+        for (const listener of changeListeners) tell(listener, reason);
+    }
+
+    function nonNegativeInteger(value, fallback) {
+        return Number.isInteger(value) && value >= 0 ? value : fallback;
     }
 
     function loadGame() {
@@ -36,9 +52,10 @@
             const validBoard = isValidBoard(saved?.board);
             if (validBoard) {
                 state.board = saved.board;
-                state.score = Number.isInteger(saved.score) && saved.score >= 0 ? saved.score : 0;
-                state.best = Math.max(state.best, Number.isInteger(saved.best) && saved.best >= 0 ? saved.best : 0);
+                state.score = nonNegativeInteger(saved.score, 0);
+                state.best = Math.max(state.best, nonNegativeInteger(saved.best, 0));
                 state.won = Boolean(saved.won);
+                state.moves = nonNegativeInteger(saved.moves, 0);
                 state.gameOver = isGameOver(state.board);
                 return true;
             }
@@ -49,15 +66,17 @@
     }
 
     function saveGame() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ board: state.board, score: state.score, best: state.best, won: state.won }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ board: state.board, score: state.score, best: state.best, won: state.won, moves: state.moves }));
         localStorage.setItem(BEST_KEY, String(state.best));
     }
 
     function startNewGame() {
         state.board = addRandomTile(addRandomTile(createEmptyBoard()));
         state.score = 0; state.won = false; state.gameOver = false; state.history = null;
+        state.moves = 0; state.startedAt = Date.now();
         hideMessage(); saveGame(); render(true);
         announce("New game started. Two tiles are on the board.");
+        notify("new-game");
     }
 
     function move(direction) {
@@ -68,6 +87,7 @@
         }
         state.history = cloneSnapshot(); state.board = result.board; state.score += result.gained;
         state.best = Math.max(state.best, state.score); state.board = addRandomTile(state.board);
+        state.moves += 1;
         const reachedGoal = state.board.some(value => value >= 2048);
         state.gameOver = isGameOver(state.board);
         saveGame(); render(true);
@@ -77,6 +97,7 @@
         } else if (state.gameOver) {
             showMessage("Round complete", "No more moves", `Final score: ${state.score.toLocaleString()}. Your best is ${state.best.toLocaleString()}.`, false);
         } else announce(result.gained ? `${direction}. Merged for ${result.gained} points.` : `Moved ${direction}.`);
+        notify(state.gameOver ? "game-over" : "move");
         return true;
     }
 
@@ -84,7 +105,45 @@
         if (!state.history) return;
         state.board = state.history.board; state.score = state.history.score; state.won = state.history.won;
         state.gameOver = false; state.history = null;
+        // The move count is not rewound. It measures the round the player
+        // actually played, and a metric you can lower by pressing undo is not
+        // a measurement.
         hideMessage(); saveGame(); render(false); announce("Last move undone.");
+        notify("undo");
+    }
+
+    /** The shape the cloud client and the native clients all exchange. */
+    function cloudSave() {
+        return {
+            board: [...state.board], score: state.score, bestScore: state.best,
+            won: state.won, gameOver: state.gameOver, moves: state.moves,
+            elapsedSeconds: Math.max(0, Math.round((Date.now() - state.startedAt) / 1000)),
+            undo: state.history ? { board: [...state.history.board], score: state.history.score, won: state.history.won } : null
+        };
+    }
+
+    /**
+     * Replaces the local round with one that came from another device.
+     *
+     * Validated with the same predicate that guards a corrupt localStorage
+     * entry, because a payload from the network is no more trustworthy than
+     * one from disk — and is refused the same way rather than half-applied.
+     */
+    function applyRemoteSave(save) {
+        if (!save || !isValidBoard(save.board)) return false;
+        state.board = [...save.board];
+        state.score = nonNegativeInteger(save.score, 0);
+        state.best = Math.max(state.best, nonNegativeInteger(save.bestScore, 0));
+        state.won = Boolean(save.won);
+        state.moves = nonNegativeInteger(save.moves, 0);
+        state.gameOver = isGameOver(state.board);
+        state.history = null;
+        state.startedAt = Date.now();
+        hideMessage(); saveGame(); render(true);
+        if (state.gameOver) showMessage("Round complete", "No more moves", `Final score: ${state.score.toLocaleString()}.`, false);
+        announce("Restored the round from your account.");
+        notify("restored");
+        return true;
     }
 
     function render(animate) {
@@ -167,14 +226,30 @@
         coordinateSystem: "4x4 grid; origin top-left; rows increase downward, columns increase rightward",
         mode: state.gameOver ? "game-over" : (gameMessage.hidden ? "playing" : "won"),
         board: Array.from({ length: SIZE }, (_, row) => state.board.slice(row * SIZE, row * SIZE + SIZE)),
-        score: state.score, best: state.best, canUndo: Boolean(state.history),
+        score: state.score, best: state.best, canUndo: Boolean(state.history), moves: state.moves,
         availableMoves: availableMoves(state.board)
     });
     window.advanceTime = () => render(false);
+
+    // The bridge the optional cloud layer talks to. It is a read/write view of
+    // the round and nothing more — no rule, no scoring, and no persistence
+    // decision lives on the other side of it, so deleting `account.js` and
+    // `cloud.js` leaves a complete game behind.
+    window.Game2048Game = {
+        getSave: cloudSave,
+        applySave: applyRemoteSave,
+        newGame: startNewGame,
+        subscribe(listener) {
+            changeListeners.add(listener);
+            tell(listener, "subscribed");
+            return () => changeListeners.delete(listener);
+        }
+    };
 
     if (!loadGame()) startNewGame();
     else {
         render(false); announce("Saved game restored. Continue when ready.");
         if (state.gameOver) showMessage("Round complete", "No more moves", `Final score: ${state.score.toLocaleString()}.`, false);
+        notify("loaded");
     }
 })();

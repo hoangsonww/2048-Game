@@ -92,6 +92,7 @@
     <header class="site-header" aria-label="Primary navigation">
         <a class="brand" href="index.html" aria-label="2048 home"><img src="images/brand-mark.svg" alt="" width="34" height="34"><span>2048</span></a>
         <nav class="header-links" aria-label="Site links"><a href="#how-to-play">How to play</a><a href="Web-Version/about.html">About</a></nav>
+        <button class="account-button" id="accountButton" type="button" aria-label="Sign in or create an account"><svg class="solid-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-3.34 0-10 1.67-10 5v3h20v-3c0-3.33-6.66-5-10-5Z"/></svg><span id="accountButtonLabel">Sign in</span></button>
     </header>
     <main>
         <section class="game-layout" id="game" aria-labelledby="game-title">
@@ -109,9 +110,14 @@
                     <div class="score-card score-card--primary"><span>Score</span><strong id="score">0</strong></div>
                     <div class="score-card"><span>Best</span><strong id="highScore">0</strong></div>
                     <div class="game-actions">
+                        <button class="icon-button" id="leaderboardButton" type="button" aria-label="Open the leaderboard" title="Leaderboard"><svg class="solid-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 21h4V11H4v10Zm6 0h4V3h-4v18Zm6 0h4v-7h-4v7Z"/></svg></button>
                         <button class="icon-button" id="undoButton" type="button" disabled aria-label="Undo last move" title="Undo last move"><svg class="solid-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M7.5 7H16c3.31 0 6 2.69 6 6s-2.69 6-6 6H8v-2h8c2.21 0 4-1.79 4-4s-1.79-4-4-4H7.5l3.25 3.25-1.42 1.42L3.67 8l5.66-5.67 1.42 1.42L7.5 7Z"/></svg></button>
                         <button class="icon-button" id="newGameButton" type="button" aria-label="Start a new game" title="New game"><svg class="solid-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 1 0 7.74 10h-2.09A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h8V3l-3.35 3.35Z"/></svg></button>
                     </div>
+                </div>
+                <div class="cloud-banner" id="cloudBanner" hidden>
+                    <div class="cloud-banner__text"><strong>Playing as a guest</strong><p><span class="cloud-banner__long">Your round is saved on this device. Create a free account to keep your board and best score on every device.</span><span class="cloud-banner__short">Create a free account to keep your board on every device.</span></p></div>
+                    <div class="cloud-banner__actions"><button class="button button--primary" id="cloudBannerCreate" type="button">Create account</button><button class="button button--text" id="cloudBannerSignIn" type="button">Sign in</button><button class="icon-button icon-button--ghost" id="cloudBannerDismiss" type="button" aria-label="Dismiss this suggestion"><svg class="solid-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg></button></div>
                 </div>
                 <div class="board-wrap">
                     <div id="gridContainer" class="game-board" role="grid" aria-label="2048 game board"></div>
@@ -125,6 +131,7 @@
                     <button type="button" data-direction="up" aria-label="Move up"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m7 14 5-5 5 5"/></svg></button><span><button type="button" data-direction="left" aria-label="Move left"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m14 7-5 5 5 5"/></svg></button><button type="button" data-direction="down" aria-label="Move down"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></svg></button><button type="button" data-direction="right" aria-label="Move right"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m10 7 5 5-5 5"/></svg></button></span>
                 </div>
                 <p class="status-line" id="statusLine" role="status" aria-live="polite">Use arrow keys, WASD, or swipe to begin.</p>
+                <p class="cloud-status" id="cloudStatus" role="status" aria-live="polite">Playing on this device. Your round is saved locally.</p>
             </div>
         </section>
         <section class="guide-section" id="how-to-play" aria-labelledby="guide-title">
@@ -140,7 +147,42 @@
     <dialog id="newGameDialog" class="confirm-dialog">
         <form method="dialog"><div class="dialog-icon" aria-hidden="true"><svg class="solid-icon" viewBox="0 0 24 24"><path d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 1 0 7.74 10h-2.09A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h8V3l-3.35 3.35Z"/></svg></div><h2>Start a fresh board?</h2><p>Your best score stays safe, but this round will be replaced.</p><div class="dialog-actions"><button class="button button--text" value="cancel">Keep playing</button><button class="button button--primary" id="confirmNewGame" value="confirm">New game</button></div></form>
     </dialog>
+    <dialog id="authDialog" class="confirm-dialog cloud-dialog">
+        <form id="authForm" class="cloud-form">
+            <div class="dialog-icon" aria-hidden="true"><svg class="solid-icon" viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-3.34 0-10 1.67-10 5v3h20v-3c0-3.33-6.66-5-10-5Z"/></svg></div>
+            <h2 id="authTitle">Create your account</h2>
+            <p id="authIntro">Keep your board, best score, and streak on every device you play on.</p>
+            <p class="cloud-form__error" id="authError" role="alert" hidden></p>
+            <div class="cloud-field" id="authUsernameField"><label for="authUsername">Username</label><input id="authUsername" name="username" type="text" autocomplete="username" minlength="3" maxlength="24" spellcheck="false"></div>
+            <div class="cloud-field" id="authEmailField"><label for="authEmail">Email</label><input id="authEmail" name="email" type="email" autocomplete="email"></div>
+            <div class="cloud-field" id="authIdentifierField" hidden><label for="authIdentifier">Username or email</label><input id="authIdentifier" name="identifier" type="text" autocomplete="username" spellcheck="false"></div>
+            <div class="cloud-field"><label for="authPassword">Password</label><input id="authPassword" name="password" type="password" autocomplete="current-password" minlength="8"><span class="cloud-field__hint">At least 8 characters, including one letter and one number.</span></div>
+            <div class="dialog-actions"><button class="button button--text" id="authCancel" type="button">Not now</button><button class="button button--primary" id="authSubmit" type="submit">Create account</button></div>
+            <button class="button button--link" id="authSwitch" type="button">I already have an account</button>
+        </form>
+    </dialog>
+    <dialog id="accountDialog" class="confirm-dialog cloud-dialog">
+        <div class="cloud-panel">
+            <div class="dialog-icon" aria-hidden="true"><svg class="solid-icon" viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-3.34 0-10 1.67-10 5v3h20v-3c0-3.33-6.66-5-10-5Z"/></svg></div>
+            <h2 id="accountName">Your account</h2>
+            <p class="cloud-panel__muted" id="accountEmail"></p>
+            <p class="cloud-panel__summary" id="accountSummary"></p>
+            <p class="cloud-panel__muted" id="accountSync"></p>
+            <div class="dialog-actions"><button class="button button--text" id="accountSignOut" type="button">Sign out</button><button class="button button--text" id="accountSyncNow" type="button">Sync now</button><button class="button button--primary" id="accountClose" type="button">Done</button></div>
+        </div>
+    </dialog>
+    <dialog id="leaderboardDialog" class="confirm-dialog cloud-dialog cloud-dialog--wide">
+        <div class="cloud-panel">
+            <h2>Leaderboard</h2>
+            <div class="period-row" id="leaderboardPeriods" role="group" aria-label="Leaderboard window"><button class="period-button" type="button" data-period="daily" aria-pressed="false">Today</button><button class="period-button" type="button" data-period="weekly" aria-pressed="false">This week</button><button class="period-button" type="button" data-period="all" aria-pressed="true">All time</button></div>
+            <ol class="leaderboard-list" id="leaderboardList" aria-label="Ranked players"></ol>
+            <p class="cloud-panel__muted" id="leaderboardNote" aria-live="polite"></p>
+            <div class="dialog-actions"><button class="button button--primary" id="leaderboardClose" type="button">Close</button></div>
+        </div>
+    </dialog>
     <script src="Web-Version/game-engine.js"></script>
     <script src="Web-Version/script.js"></script>
+    <script src="Web-Version/cloud.js"></script>
+    <script src="Web-Version/account.js"></script>
 </body>
 </html>
