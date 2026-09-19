@@ -58,7 +58,11 @@ test("About page, LLM discovery, error page, and contributor metadata are comple
     assert.match(llms, /llms-full\.txt/);
     assert.match(read("llms-full.txt"), /## Interface map/);
     assert.match(read("404.html"), /noindex, follow/);
-    assert.match(read("humans.txt"), /No accounts, analytics/);
+    assert.match(read("humans.txt"), /Local-first play; optional account/);
+    assert.match(read("humans.txt"), /No analytics or advertising SDKs/);
+    assert.match(read("llms-full.txt"), /Cloud API/);
+    assert.match(read("index.html"), /cloud\.js/);
+    assert.match(read("index.html"), /account\.js/);
 });
 
 test("interactive controls use vector SVG icons instead of text glyphs", () => {

@@ -5,6 +5,8 @@ The optional backend behind accounts, cross-device saves, scores, and leaderboar
 Live deployment: [https://game-2048-cloud-api.vercel.app](https://game-2048-cloud-api.vercel.app)
 Reference: [/docs](https://game-2048-cloud-api.vercel.app/docs) · [/redoc](https://game-2048-cloud-api.vercel.app/redoc) · [/reference](https://game-2048-cloud-api.vercel.app/reference) · [/openapi.json](https://game-2048-cloud-api.vercel.app/openapi.json)
 
+The service root (`/`) redirects to Swagger UI at `/docs`.
+
 ## Product posture
 
 The game is still **local-first**. Every client plays, scores, undoes, and restores a round with no network. An account is an invitation under the board, never a gate on the board.

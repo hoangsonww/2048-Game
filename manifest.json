@@ -12,7 +12,7 @@
   "background_color": "#f5f0e6",
   "theme_color": "#f5f0e6",
   "author": "Son Nguyen Hoang",
-  "description": "Slide, combine, and build your way to the 2048 tile.",
+  "description": "Slide, combine, and build your way to the 2048 tile. Local-first play with optional account sync.",
   "categories": ["games", "entertainment"],
   "prefer_related_applications": false,
   "shortcuts": [

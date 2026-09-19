@@ -115,30 +115,10 @@ export function createApp() {
         res.json({ status: "ok", service: config.serviceName, version: config.version });
     });
 
+    // Landing on the service root should take a human to the interactive
+    // reference, not a JSON directory. Machine clients already know /api/v1.
     app.get("/", (_req, res) => {
-        res.json({
-            service: config.serviceName,
-            version: config.version,
-            description: "Cloud API for the 2048 game. The game itself works fully offline; everything here is additive.",
-            documentation: {
-                swagger: "/docs",
-                redoc: "/redoc",
-                reference: "/reference",
-                openapiJson: "/openapi.json",
-                openapiYaml: "/openapi.yaml",
-                postman: "/postman.json"
-            },
-            api: {
-                base: "/api/v1",
-                health: "/api/v1/health",
-                readiness: "/api/v1/ready",
-                configuration: "/api/v1/config",
-                leaderboard: "/api/v1/leaderboard",
-                dailyChallenge: "/api/v1/challenges/daily"
-            },
-            game: "https://hoangsonww.github.io/2048-Game/",
-            source: "https://github.com/hoangsonww/2048-Game"
-        });
+        res.redirect(302, "/docs");
     });
 
     app.use(notFoundHandler);

@@ -66,12 +66,14 @@ after(async () => {
     await disconnectFromDatabase();
 });
 
-suite("the service index links to every documentation surface", async () => {
-    const response = await agent().get("/").expect(200);
-    assert.equal(response.body.service, "2048-cloud-api");
-    for (const surface of ["swagger", "redoc", "reference", "openapiJson"]) {
-        assert.ok(response.body.documentation[surface], `missing link: ${surface}`);
-    }
+suite("the service root sends visitors to Swagger UI", async () => {
+    const response = await agent().get("/").redirects(0).expect(302);
+    assert.equal(response.headers.location, "/docs");
+});
+
+suite("Swagger UI is reachable at /docs", async () => {
+    const response = await agent().get("/docs").expect(200);
+    assert.match(response.text, /swagger-ui/i);
 });
 
 suite("liveness does not require the database and readiness does", async () => {

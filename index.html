@@ -4,14 +4,21 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Play 2048 Online — Free Number Puzzle Game</title>
-    <meta name="description" content="Play 2048 online for free. Swipe or use your arrow keys to combine matching tiles, build your score, and reach 2048. Your game saves automatically.">
-    <meta name="keywords" content="2048 game, play 2048, number puzzle, sliding tile game, free puzzle game">
+    <meta name="description" content="Play 2048 online for free. Swipe or use arrow keys to combine tiles and reach 2048. Your game saves on this device; an optional account syncs progress across devices.">
+    <meta name="keywords" content="2048 game, play 2048, number puzzle, sliding tile game, free puzzle game, 2048 leaderboard">
     <meta name="author" content="Son Nguyen">
-    <meta name="application-name" content="2048">
-    <meta name="format-detection" content="telephone=no">
+    <meta name="creator" content="Son Nguyen">
+    <meta name="publisher" content="Son Nguyen">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="theme-color" content="#F5F0E6">
     <meta name="color-scheme" content="light">
-    <meta name="robots" content="index, follow, max-image-preview:large">
-    <meta name="theme-color" content="#f5f0e6">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="application-name" content="2048">
+    <meta name="apple-mobile-web-app-title" content="2048">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="canonical" href="https://hoangsonww.github.io/2048-Game/">
     <link rel="alternate" hreflang="en" href="https://hoangsonww.github.io/2048-Game/">
     <link rel="alternate" hreflang="x-default" href="https://hoangsonww.github.io/2048-Game/">
@@ -28,7 +35,7 @@
     <meta property="og:locale" content="en_US">
     <meta property="og:site_name" content="2048">
     <meta property="og:title" content="Play 2048 — A focused number puzzle">
-    <meta property="og:description" content="Combine matching tiles, chase a new best, and pick up exactly where you left off.">
+    <meta property="og:description" content="Combine matching tiles, chase a new best, and optionally sync your round across devices.">
     <meta property="og:url" content="https://hoangsonww.github.io/2048-Game/">
     <meta property="og:image" content="https://hoangsonww.github.io/2048-Game/images/share-card.png">
     <meta property="og:image:type" content="image/png">
@@ -37,7 +44,7 @@
     <meta property="og:image:alt" content="A warm ivory 2048 game board with colorful numbered tiles">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Play 2048 — A focused number puzzle">
-    <meta name="twitter:description" content="Combine matching tiles and reach 2048 in this free browser puzzle.">
+    <meta name="twitter:description" content="Combine matching tiles, reach 2048, and optionally sync progress with a free account.">
     <meta name="twitter:image" content="https://hoangsonww.github.io/2048-Game/images/share-card.png">
     <meta name="twitter:image:alt" content="A warm ivory 2048 game board with colorful numbered tiles">
     <script type="application/ld+json">
@@ -49,7 +56,7 @@
           "@id": "https://hoangsonww.github.io/2048-Game/#website",
           "url": "https://hoangsonww.github.io/2048-Game/",
           "name": "2048 — The Number Puzzle",
-          "description": "A free, offline-friendly sliding number puzzle for the browser.",
+          "description": "A free, local-first sliding number puzzle for the browser, with optional account sync across devices.",
           "inLanguage": "en"
         },
         {
@@ -59,7 +66,7 @@
           "url": "https://hoangsonww.github.io/2048-Game/",
           "mainEntityOfPage": { "@id": "https://hoangsonww.github.io/2048-Game/#website" },
           "image": "https://hoangsonww.github.io/2048-Game/images/share-card.png",
-          "description": "A free single-player sliding number puzzle playable in a modern web browser.",
+          "description": "A free single-player sliding number puzzle. Play offline on this device; an optional account syncs saves and scores.",
           "genre": ["Puzzle", "Strategy"],
           "applicationCategory": "GameApplication",
           "gamePlatform": ["Web browser", "iOS", "Android"],
@@ -97,9 +104,9 @@
     <main>
         <section class="game-layout" id="game" aria-labelledby="game-title">
             <div class="intro-panel">
-                <p class="eyebrow"><span aria-hidden="true">●</span> Free to play · Saves automatically</p>
+                <p class="eyebrow"><span aria-hidden="true">●</span> Free to play · Local-first · Optional sync</p>
                 <h1 id="game-title">Make space.<br><em>Find 2048.</em></h1>
-                <p class="intro-copy">Slide every tile at once. Matching numbers combine—simple at first, surprisingly strategic after that.</p>
+                <p class="intro-copy">Slide every tile at once. Matching numbers combine—simple at first, surprisingly strategic after that. Your round stays on this device; create an account anytime to sync and climb the leaderboard.</p>
                 <div class="desktop-hint" aria-label="Keyboard controls">
                     <div class="key-cluster" aria-hidden="true"><kbd><svg viewBox="0 0 24 24"><path d="m7 14 5-5 5 5"/></svg></kbd><span><kbd><svg viewBox="0 0 24 24"><path d="m14 7-5 5 5 5"/></svg></kbd><kbd><svg viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></svg></kbd><kbd><svg viewBox="0 0 24 24"><path d="m10 7 5 5-5 5"/></svg></kbd></span></div>
                     <p><strong>Arrow keys or WASD</strong><br>Swipe on touch screens</p>
@@ -143,7 +150,7 @@
             </ol>
         </section>
     </main>
-    <footer><p>Designed for quick breaks and long strategies.</p><div><a href="Web-Version/about.html">About this project</a><a href="https://github.com/hoangsonww/2048-Game">Source code</a><a href="https://github.com/hoangsonww/2048-Game/releases/latest">Download the apps</a></div></footer>
+    <footer><p>Designed for quick breaks and long strategies.</p><div><a href="Web-Version/about.html">About this project</a><a href="https://github.com/hoangsonww/2048-Game">Source code</a><a href="https://github.com/hoangsonww/2048-Game/releases/latest">Download the apps</a><a href="https://game-2048-cloud-api.vercel.app/docs">Cloud API</a></div></footer>
     <dialog id="newGameDialog" class="confirm-dialog">
         <form method="dialog"><div class="dialog-icon" aria-hidden="true"><svg class="solid-icon" viewBox="0 0 24 24"><path d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 1 0 7.74 10h-2.09A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h8V3l-3.35 3.35Z"/></svg></div><h2>Start a fresh board?</h2><p>Your best score stays safe, but this round will be replaced.</p><div class="dialog-actions"><button class="button button--text" value="cancel">Keep playing</button><button class="button button--primary" id="confirmNewGame" value="confirm">New game</button></div></form>
     </dialog>

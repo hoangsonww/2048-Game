@@ -1,6 +1,6 @@
 # 2048, Built Three Ways
 
-A polished, accessible, offline-first 2048 puzzle shipped as **three independent native clients** — a dependency-free progressive web app, a SwiftUI iOS app, and a Jetpack Compose Android app. They share no runtime code, yet every one of them is held to the same documented set of behavioral invariants and verified by the same four-job continuous integration pipeline.
+A polished, accessible, **local-first** 2048 puzzle shipped as **three independent native clients** — a dependency-free progressive web app, a SwiftUI iOS app, and a Jetpack Compose Android app — plus an optional Cloud API for accounts, cross-device save sync, and leaderboards. The clients share no runtime code, yet every one of them is held to the same documented set of behavioral invariants and verified by continuous integration. A move never requires the network.
 
 ![Server-Driven UI](https://img.shields.io/badge/Server--Driven%20UI-5A0FC8?style=for-the-badge&logo=json&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
@@ -48,7 +48,7 @@ A polished, accessible, offline-first 2048 puzzle shipped as **three independent
 ![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)
 ![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)
 
-**[▶ Play the web version](https://hoangsonww.github.io/2048-Game/)** · [Download the apps](https://github.com/hoangsonww/2048-Game/releases/latest) · [Rules and strategy](https://hoangsonww.github.io/2048-Game/Web-Version/about.html) · [Report an issue](https://github.com/hoangsonww/2048-Game/issues) · [Contributing](CONTRIBUTING.md) · [Security policy](SECURITY.md)
+**[▶ Play the web version](https://hoangsonww.github.io/2048-Game/)** · [Download the apps](https://github.com/hoangsonww/2048-Game/releases/latest) · [Cloud API docs](https://game-2048-cloud-api.vercel.app/docs) · [Rules and strategy](https://hoangsonww.github.io/2048-Game/Web-Version/about.html) · [Report an issue](https://github.com/hoangsonww/2048-Game/issues) · [Contributing](CONTRIBUTING.md) · [Security policy](SECURITY.md)
 
 ---
 
@@ -61,6 +61,7 @@ A polished, accessible, offline-first 2048 puzzle shipped as **three independent
 - [Controls](#controls)
 - [Behavioral invariants](#behavioral-invariants)
 - [Architecture](#architecture)
+- [Cloud API](#cloud-api)
 - [Server-driven surfaces](#server-driven-surfaces)
 - [Repository map](#repository-map)
 - [Getting started](#getting-started)
@@ -171,6 +172,8 @@ Three practical habits carry most beginners a long way:
 | Move | Arrow keys, `W`/`A`/`S`/`D`, swipe on the board, or the on-screen direction pad | Swipe the board in any direction | Swipe the board in any direction |
 | Undo last move | Undo button | Undo button | Undo button |
 | New game | New game button (confirms first if a round is in progress) | New game button (confirms first) | New game button (confirms first) |
+| Sign in / account | Header account button | Account control | Account control |
+| Leaderboard | Leaderboard button | Leaderboard | Leaderboard |
 | Rules and help | About link | Help button | Help button |
 | Fullscreen | `F` | — | — |
 | Continue past 2048 | "Keep playing" in the win overlay | "Keep playing" | "Keep playing" |
@@ -195,7 +198,7 @@ These are the contract. Every client must satisfy all of them, and each one is c
 
 ## Architecture
 
-Three clients, three runtimes, one contract. There is no backend, no shared library, and no network dependency of any kind at runtime.
+Three clients, three runtimes, one contract. There is no shared rules library. Play is local-first: a move never requires the network. An optional Cloud API (`server/`) adds accounts, cross-device sync, and leaderboards — see [docs/backend.md](../docs/backend.md).
 
 | Concern | Web | iOS | Android |
 | --- | --- | --- | --- |
@@ -224,11 +227,26 @@ Deeper detail lives in [`ARCHITECTURE.md`](../ARCHITECTURE.md) for the whole sys
 
 ---
 
+## Cloud API
+
+Optional Express + MongoDB Atlas service for accounts, JWT auth, cross-device save sync, scores, and leaderboards. Live at [game-2048-cloud-api.vercel.app](https://game-2048-cloud-api.vercel.app) — the service root (`/`) redirects to Swagger UI at `/docs`.
+
+| Surface | URL |
+| --- | --- |
+| Swagger UI | [/docs](https://game-2048-cloud-api.vercel.app/docs) |
+| Redoc | [/redoc](https://game-2048-cloud-api.vercel.app/redoc) |
+| Scalar | [/reference](https://game-2048-cloud-api.vercel.app/reference) |
+| OpenAPI JSON | [/openapi.json](https://game-2048-cloud-api.vercel.app/openapi.json) |
+
+Play stays local-first: declining an account leaves the board unchanged. Full contract, sync rules, and local run notes: [`docs/backend.md`](../docs/backend.md). Privacy: [`docs/privacy.md`](../docs/privacy.md).
+
+---
+
 ## Server-driven surfaces
 
-Both native clients ship a **server-driven UI runtime with no server.**
+Both native clients ship a **server-driven UI runtime that does not fetch over the network today.**
 
-Store review takes days. A typo in the help copy should not have to wait that long, and every mature store app solves this by describing the screen with data the app fetches rather than code it ships. This repository's invariant is that there is no backend and no network call — so the runtime is built and the transport deliberately is not. Surfaces are described by JSON, validated, and rendered natively from the app bundle. Adding a publisher later is one new `SurfaceSource` and one line of wiring; the renderer, validator, and every test stay untouched.
+Store review takes days. A typo in the help copy should not have to wait that long, and every mature store app solves this by describing the screen with data rather than code it ships. Help surfaces are described by JSON, validated, and rendered natively from the app bundle — the same contract that could later load from a publisher without rewriting the renderer. The optional Cloud API handles accounts and sync; it does not drive help copy today. Adding a remote surface source later is one new `SurfaceSource` and one line of wiring; the renderer, validator, and every test stay untouched.
 
 **The game is never server-driven.** Board, merging, scoring, and undo are code, and no payload can reach them. What is describable is content — the help sheet today.
 
@@ -704,7 +722,7 @@ Issue forms for [bug reports](https://github.com/hoangsonww/2048-Game/issues/new
 
 ## Security
 
-The clients are static, offline, and store no credentials, so the attack surface is small — but reports are still taken seriously. Please review [`SECURITY.md`](SECURITY.md) for the disclosure process, and do not open a public issue for a suspected vulnerability.
+The clients are local-first and play without an account. The optional Cloud API adds auth and sync — see [`SECURITY.md`](SECURITY.md) for the disclosure process. Do not open a public issue for a suspected vulnerability.
 
 ---
 

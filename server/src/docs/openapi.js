@@ -630,6 +630,8 @@ export function buildOpenApiDocument({ serverUrl = config.publicUrl } = {}) {
                 "",
                 "What an account adds is continuity — the same round and the same best score on a laptop, a phone, and a tablet — plus leaderboards, achievements, and a daily challenge.",
                 "",
+                "The service root (`GET /`) redirects to this documentation at `/docs`. Machine-readable OpenAPI lives at `/openapi.json`; Redoc and Scalar are at `/redoc` and `/reference`.",
+                "",
                 "### Principles",
                 "",
                 "- **The game never depends on the network.** Every endpoint here is additive. If this service is down, all three clients keep working exactly as they did before it existed.",

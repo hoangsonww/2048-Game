@@ -41,7 +41,7 @@ class GameScreenCloudTest {
 
     private class MemoryStore(private var tokens: CloudTokens? = null) : TokenStore, CloudPreferences {
         override fun read(): CloudTokens? = tokens
-        override fun write(value: CloudTokens?) { tokens = value }
+        override fun write(tokens: CloudTokens?) { this.tokens = tokens }
         override var promptDismissed: Boolean = false
         override val hasTokens: Boolean get() = tokens != null
     }
@@ -154,7 +154,7 @@ class GameScreenCloudTest {
     private fun openSignInAndSubmit(identifier: String, password: String) {
         compose.onNodeWithContentDescription("Open sign in").performClick()
         compose.waitUntil(timeoutMillis = 5_000) {
-            compose.onAllNodes(androidx.compose.ui.test.hasContentDescription("Username or email"))
+            compose.onAllNodes(hasContentDescription("Username or email"))
                 .fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithContentDescription("Username or email").performTextInput(identifier)
