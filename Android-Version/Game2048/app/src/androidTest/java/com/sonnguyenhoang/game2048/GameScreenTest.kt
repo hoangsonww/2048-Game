@@ -85,8 +85,16 @@ class GameScreenTest {
 
     private val zeros = listOf(0, 0, 0, 0)
 
+    /**
+     * Renders the game with the cloud surface off.
+     *
+     * These tests are about the board, and an account button, a guest prompt,
+     * and a status line in the same hierarchy would make every text query
+     * ambiguous for reasons that have nothing to do with what is being
+     * asserted. `GameScreenCloudTest` covers the surface deliberately.
+     */
     private fun show(game: GameViewModel) {
-        compose.setContent { Game2048Theme { GameScreen(game) } }
+        compose.setContent { Game2048Theme { GameScreen(game, cloudEnabled = false) } }
         awaitFirstComposition()
     }
 

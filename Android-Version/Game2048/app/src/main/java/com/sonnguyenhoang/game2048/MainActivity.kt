@@ -1,6 +1,8 @@
 package com.sonnguyenhoang.game2048
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -48,7 +50,20 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sonnguyenhoang.game2048.cloud.AccountButton
+import com.sonnguyenhoang.game2048.cloud.AccountSheet
+import com.sonnguyenhoang.game2048.cloud.AuthMode
+import com.sonnguyenhoang.game2048.cloud.AuthSheet
+import com.sonnguyenhoang.game2048.cloud.CloudApi
+import com.sonnguyenhoang.game2048.cloud.CloudController
+import com.sonnguyenhoang.game2048.cloud.CloudStatusLine
+import com.sonnguyenhoang.game2048.cloud.GuestPrompt
+import com.sonnguyenhoang.game2048.cloud.LeaderboardButton
+import com.sonnguyenhoang.game2048.cloud.LeaderboardSheet
+import com.sonnguyenhoang.game2048.cloud.SharedPreferencesCloudStore
+import com.sonnguyenhoang.game2048.cloud.UrlConnectionTransport
 import com.sonnguyenhoang.game2048.ui.theme.*
+import java.util.concurrent.Executors
 import kotlin.math.abs
 
 class MainActivity : ComponentActivity() {
@@ -58,9 +73,34 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/**
+ * Builds the optional cloud controller from a real `Context`.
+ *
+ * Returns null when a caller supplies its own — the Compose test suite does —
+ * so the game screen can be exercised with no network layer at all, which is
+ * also exactly how it behaves for a player who never signs in.
+ */
+@Composable
+private fun rememberCloudController(provided: CloudController?): CloudController? {
+    val context = LocalContext.current
+    return remember(provided) {
+        provided ?: run {
+            val store = SharedPreferencesCloudStore(context.getSharedPreferences("game_2048_cloud", 0))
+            val worker = Executors.newSingleThreadExecutor()
+            val mainHandler = Handler(Looper.getMainLooper())
+            CloudController(
+                api = CloudApi(UrlConnectionTransport(), store),
+                preferences = store,
+                background = { work -> worker.execute(work) },
+                main = { work -> mainHandler.post(work) }
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GameScreen(providedViewModel: GameViewModel? = null) {
+fun GameScreen(providedViewModel: GameViewModel? = null, providedCloud: CloudController? = null, cloudEnabled: Boolean = true) {
     val context = LocalContext.current
     val viewModel = providedViewModel ?: remember { GameViewModel(SharedPreferencesGameStorage(context.getSharedPreferences("game_2048", 0))) }
     val haptics = LocalHapticFeedback.current
@@ -68,13 +108,49 @@ fun GameScreen(providedViewModel: GameViewModel? = null) {
     var confirmRestart by remember { mutableStateOf(false) }
     var dismissWin by remember { mutableStateOf(false) }
 
+    val cloud = if (cloudEnabled) rememberCloudController(providedCloud) else null
+    var authMode by remember { mutableStateOf<AuthMode?>(null) }
+    var showAccount by remember { mutableStateOf(false) }
+    var showLeaderboard by remember { mutableStateOf(false) }
+
+    // The cloud observes the round; the round knows nothing about the cloud.
+    // A move syncs, a finished round also submits, and an undo just syncs.
+    DisposableEffect(cloud, viewModel) {
+        if (cloud != null) {
+            viewModel.onRoundChanged = { change ->
+                when (change) {
+                    GameViewModel.RoundChange.GAME_OVER -> {
+                        cloud.submitRound(viewModel.cloudSave())
+                        cloud.sync(viewModel::cloudSave, viewModel::applyCloudSave)
+                    }
+                    // A round we just downloaded does not need uploading back.
+                    GameViewModel.RoundChange.RESTORED -> Unit
+                    else -> cloud.sync(viewModel::cloudSave, viewModel::applyCloudSave)
+                }
+            }
+        }
+        onDispose { viewModel.onRoundChanged = null }
+    }
+
+    LaunchedEffect(cloud) {
+        cloud?.restore(viewModel::cloudSave, viewModel::applyCloudSave)
+    }
+
     Box(Modifier.fillMaxSize().background(Paper)) {
         GridTexture()
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Header(onHelp = { showHelp = true })
+            Header(
+                onHelp = { showHelp = true },
+                cloud = cloud,
+                onAccount = { if (cloud?.isSignedIn == true) showAccount = true else authMode = AuthMode.REGISTER },
+                onLeaderboard = {
+                    showLeaderboard = true
+                    cloud?.loadLeaderboard()
+                }
+            )
             Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
                 Text("Make space.", fontSize = 42.sp, lineHeight = 44.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-1.8).sp, color = Ink)
                 Text("Find 2048.", fontSize = 38.sp, lineHeight = 42.sp, fontFamily = FontFamily.Serif, fontStyle = FontStyle.Italic, letterSpacing = (-1.4).sp, color = Accent)
@@ -82,6 +158,13 @@ fun GameScreen(providedViewModel: GameViewModel? = null) {
             Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                 ScoreCard("Score", viewModel.score, true, Modifier.weight(1f))
                 ScoreCard("Best", viewModel.highScore, false, Modifier.weight(1f))
+            }
+            if (cloud != null && cloud.showGuestPrompt) {
+                GuestPrompt(
+                    onCreate = { authMode = AuthMode.REGISTER },
+                    onSignIn = { authMode = AuthMode.LOGIN },
+                    onDismiss = { cloud.dismissPrompt() }
+                )
             }
             GameBoard(
                 grid = viewModel.grid,
@@ -104,8 +187,38 @@ fun GameScreen(providedViewModel: GameViewModel? = null) {
                 Spacer(Modifier.width(7.dp))
                 Text("Swipe anywhere on the board to move", color = Muted, fontSize = 13.sp, fontWeight = FontWeight.Medium)
             }
+            if (cloud != null) CloudStatusLine(cloud)
             Spacer(Modifier.height(10.dp))
         }
+    }
+
+    if (cloud != null) {
+        authMode?.let { mode ->
+            AuthSheet(
+                controller = cloud,
+                initialMode = mode,
+                onDismiss = { authMode = null; cloud.clearAuthError() },
+                onRegister = { username, email, password ->
+                    cloud.register(username, email, password, viewModel::cloudSave, viewModel::applyCloudSave)
+                },
+                onLogin = { identifier, password ->
+                    cloud.login(identifier, password, viewModel::cloudSave, viewModel::applyCloudSave)
+                }
+            )
+        }
+
+        if (showAccount) AccountSheet(
+            controller = cloud,
+            onDismiss = { showAccount = false },
+            onSyncNow = { cloud.sync(viewModel::cloudSave, viewModel::applyCloudSave) },
+            onSignOut = { cloud.signOut(); showAccount = false }
+        )
+
+        if (showLeaderboard) LeaderboardSheet(
+            controller = cloud,
+            onDismiss = { showLeaderboard = false },
+            onPeriod = { period -> cloud.loadLeaderboard(period) }
+        )
     }
 
     if (confirmRestart) AlertDialog(
@@ -140,11 +253,17 @@ private fun GridTexture() {
 }
 
 @Composable
-private fun Header(onHelp: () -> Unit) {
+private fun Header(onHelp: () -> Unit, cloud: CloudController? = null, onAccount: () -> Unit = {}, onLeaderboard: () -> Unit = {}) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         BrandMark(Modifier.size(36.dp)); Spacer(Modifier.width(10.dp))
         Text("2048", color = Ink, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.5).sp)
         Spacer(Modifier.weight(1f))
+        if (cloud != null) {
+            AccountButton(cloud, onAccount)
+            Spacer(Modifier.width(4.dp))
+            LeaderboardButton(onLeaderboard)
+            Spacer(Modifier.width(6.dp))
+        }
         IconButton(onClick = onHelp, modifier = Modifier.size(44.dp).background(Color.White.copy(alpha = 0.68f), RoundedCornerShape(13.dp))) { Icon(Icons.AutoMirrored.Rounded.HelpOutline, contentDescription = "How to play", modifier = Modifier.size(22.dp), tint = Ink) }
     }
 }

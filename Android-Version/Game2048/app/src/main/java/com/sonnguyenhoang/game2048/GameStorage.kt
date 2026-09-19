@@ -6,7 +6,14 @@ data class SavedGame(
     val grid: List<List<Int>>,
     val score: Int,
     val best: Int,
-    val hasWon: Boolean
+    val hasWon: Boolean,
+    /**
+     * Moves played in this round. Persisted so the count survives a relaunch
+     * and so a cloud sync can tell which of two devices got further. Older
+     * saves predate the field and restore as zero, which is why it is
+     * defaulted rather than required.
+     */
+    val moves: Int = 0
 )
 
 interface GameStorage {
@@ -23,7 +30,8 @@ internal class SharedPreferencesGameStorage(private val preferences: SharedPrefe
             grid = values.chunked(4),
             score = preferences.getInt(KEY_SCORE, 0),
             best = preferences.getInt(KEY_BEST, 0),
-            hasWon = preferences.getBoolean(KEY_WON, false)
+            hasWon = preferences.getBoolean(KEY_WON, false),
+            moves = preferences.getInt(KEY_MOVES, 0)
         )
     }
 
@@ -35,6 +43,7 @@ internal class SharedPreferencesGameStorage(private val preferences: SharedPrefe
             .putInt(KEY_SCORE, game.score)
             .putInt(KEY_BEST, game.best)
             .putBoolean(KEY_WON, game.hasWon)
+            .putInt(KEY_MOVES, game.moves)
             .apply()
     }
 
@@ -43,5 +52,6 @@ internal class SharedPreferencesGameStorage(private val preferences: SharedPrefe
         const val KEY_SCORE = "saved_score_v2"
         const val KEY_BEST = "high_score"
         const val KEY_WON = "saved_won_v2"
+        const val KEY_MOVES = "saved_moves_v2"
     }
 }
