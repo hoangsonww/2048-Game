@@ -215,7 +215,11 @@ fun AuthSheet(
                     if (registering) onRegister(username, email, password) else onLogin(identifier, password)
                 },
                 enabled = !working,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics {
+                        contentDescription = if (registering) "Submit create account" else "Submit sign in"
+                    },
                 colors = ButtonDefaults.buttonColors(containerColor = Accent)
             ) {
                 Text(if (registering) "Create account" else "Sign in", fontWeight = FontWeight.Bold)
