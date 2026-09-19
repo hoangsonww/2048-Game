@@ -1,5 +1,6 @@
 package com.sonnguyenhoang.game2048
 
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -90,11 +91,9 @@ class GameScreenCloudTest {
             )
         )
 
-        compose.onNodeWithContentDescription("Sign in or create an account").performClick()
-        compose.onNodeWithText("Username or email").performTextInput("ada")
-        compose.onNodeWithText("Password").performTextInput("Password1")
-        compose.onNodeWithContentDescription("Submit sign in").performClick()
-        compose.waitForIdle()
+        // Guest "Sign in" opens LOGIN mode. The header account button opens
+        // REGISTER, which has Username/Email — not the identifier field.
+        openSignInAndSubmit(identifier = "ada", password = "Password1")
 
         compose.onNodeWithContentDescription("Account: Ada").assertExists()
         compose.onNodeWithText("Playing as a guest").assertDoesNotExist()
@@ -113,11 +112,7 @@ class GameScreenCloudTest {
             )
         )
 
-        compose.onNodeWithContentDescription("Sign in or create an account").performClick()
-        compose.onNodeWithText("Username or email").performTextInput("ada")
-        compose.onNodeWithText("Password").performTextInput("wrong")
-        compose.onNodeWithContentDescription("Submit sign in").performClick()
-        compose.waitForIdle()
+        openSignInAndSubmit(identifier = "ada", password = "wrong")
 
         compose.onNodeWithContentDescription("Sign-in problem: That email or password is not correct.").assertExists()
         compose.onNodeWithText("Welcome back").assertExists()
@@ -153,6 +148,19 @@ class GameScreenCloudTest {
         val game = GameViewModel(randomIndex = { 0 }, randomUnit = { 0.0 })
         compose.setContent { Game2048Theme { GameScreen(game, providedCloud = cloud) } }
         awaitFirstComposition()
+    }
+
+    /** Opens LOGIN via the guest prompt and submits the form. */
+    private fun openSignInAndSubmit(identifier: String, password: String) {
+        compose.onNodeWithContentDescription("Open sign in").performClick()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodes(androidx.compose.ui.test.hasContentDescription("Username or email"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithContentDescription("Username or email").performTextInput(identifier)
+        compose.onNodeWithContentDescription("Password").performTextInput(password)
+        compose.onNodeWithContentDescription("Submit sign in").performClick()
+        compose.waitForIdle()
     }
 
     /** See the note on the same helper in [GameScreenTest]. */

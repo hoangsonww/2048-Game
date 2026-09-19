@@ -95,9 +95,14 @@ fun GuestPrompt(onCreate: () -> Unit, onSignIn: () -> Unit, onDismiss: () -> Uni
                 Button(
                     onClick = onCreate,
                     colors = ButtonDefaults.buttonColors(containerColor = Accent),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    modifier = Modifier.semantics { contentDescription = "Open create account" }
                 ) { Text("Create account", fontSize = 13.sp, fontWeight = FontWeight.SemiBold) }
-                TextButton(onClick = onSignIn, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)) {
+                TextButton(
+                    onClick = onSignIn,
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+                    modifier = Modifier.semantics { contentDescription = "Open sign in" }
+                ) {
                     Text("Sign in", color = Ink, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
@@ -255,7 +260,9 @@ private fun CloudTextField(
         onValueChange = onValueChange,
         label = { Text(label) },
         singleLine = true,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics { contentDescription = label },
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = ImeAction.Next),
         visualTransformation = if (isPassword) PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
         colors = OutlinedTextFieldDefaults.colors(
