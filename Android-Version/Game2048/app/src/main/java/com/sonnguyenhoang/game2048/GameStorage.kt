@@ -20,34 +20,67 @@ interface GameStorage {
     fun load(): SavedGame?
     fun loadBest(): Int
     fun save(game: SavedGame)
+
+    /** Forgets everything this slot holds, leaving no trace for the next round. */
+    fun clear()
 }
 
-internal class SharedPreferencesGameStorage(private val preferences: SharedPreferences) : GameStorage {
+/**
+ * One slot of saved progress.
+ *
+ * The [prefix] is what gives the guest and the signed-in round completely
+ * separate storage in the same preferences file. Two instances with different
+ * prefixes cannot read or overwrite each other, which is the mechanism behind
+ * "signing out restores exactly what you were playing".
+ */
+internal class SharedPreferencesGameStorage(
+    private val preferences: SharedPreferences,
+    private val prefix: String = ""
+) : GameStorage {
+    private val gridKey = prefix + KEY_GRID
+    private val scoreKey = prefix + KEY_SCORE
+    private val bestKey = prefix + KEY_BEST
+    private val wonKey = prefix + KEY_WON
+    private val movesKey = prefix + KEY_MOVES
+
     override fun load(): SavedGame? {
-        val values = preferences.getString(KEY_GRID, null)?.split(",")?.mapNotNull(String::toIntOrNull) ?: return null
+        val values = preferences.getString(gridKey, null)?.split(",")?.mapNotNull(String::toIntOrNull) ?: return null
         if (values.size != 16) return null
         return SavedGame(
             grid = values.chunked(4),
-            score = preferences.getInt(KEY_SCORE, 0),
-            best = preferences.getInt(KEY_BEST, 0),
-            hasWon = preferences.getBoolean(KEY_WON, false),
-            moves = preferences.getInt(KEY_MOVES, 0)
+            score = preferences.getInt(scoreKey, 0),
+            best = preferences.getInt(bestKey, 0),
+            hasWon = preferences.getBoolean(wonKey, false),
+            moves = preferences.getInt(movesKey, 0)
         )
     }
 
-    override fun loadBest(): Int = preferences.getInt(KEY_BEST, 0)
+    override fun loadBest(): Int = preferences.getInt(bestKey, 0)
 
     override fun save(game: SavedGame) {
         preferences.edit()
-            .putString(KEY_GRID, game.grid.flatten().joinToString(","))
-            .putInt(KEY_SCORE, game.score)
-            .putInt(KEY_BEST, game.best)
-            .putBoolean(KEY_WON, game.hasWon)
-            .putInt(KEY_MOVES, game.moves)
+            .putString(gridKey, game.grid.flatten().joinToString(","))
+            .putInt(scoreKey, game.score)
+            .putInt(bestKey, game.best)
+            .putBoolean(wonKey, game.hasWon)
+            .putInt(movesKey, game.moves)
             .apply()
     }
 
-    private companion object {
+    override fun clear() {
+        preferences.edit()
+            .remove(gridKey)
+            .remove(scoreKey)
+            .remove(bestKey)
+            .remove(wonKey)
+            .remove(movesKey)
+            .apply()
+    }
+
+    internal companion object {
+        /** Where a round played signed in is kept, away from the guest one. */
+        const val ACCOUNT_PREFIX = "account_"
+
         const val KEY_GRID = "saved_grid_v2"
         const val KEY_SCORE = "saved_score_v2"
         const val KEY_BEST = "high_score"

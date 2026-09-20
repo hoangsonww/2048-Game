@@ -404,14 +404,33 @@ class CloudApiTest {
     }
 
     @Test
-    fun `a response with no user object does not crash the caller`() {
+    fun `a reset posts the pair unauthenticated and drops the tokens`() {
+        val transport = FakeTransport(HttpResponse(200, """{"reset":true,"sessionsRevoked":2}"""))
+        val store = MemoryTokenStore(CloudTokens("access-1", "refresh-1"))
+
+        api(transport, store).resetPassword("  ada  ", "  ada@example.test  ", "Recovered1")
+
+        val call = transport.calls.single()
+        assertEquals("POST", call.method)
+        assertTrue(call.url.endsWith("/api/v1/auth/reset-password"))
+        assertNull("a reset is not an authenticated request", call.headers["Authorization"])
+        val body = org.json.JSONObject(call.body!!)
+        assertEquals("ada", body.getString("username"))
+        assertEquals("ada@example.test", body.getString("email"))
+        assertEquals("Recovered1", body.getString("newPassword"))
+        // The server revoked every session, so the local pair is worthless.
+        assertNull(store.read())
+    }
+
+    @Test
+    fun `a profile reply carrying no user is not read as a blank one`() {
+        // Reading a user out of an empty body produces a blank display name
+        // and zeroed career totals, which then replace a good session on
+        // screen. No user object means no user.
         val transport = FakeTransport(HttpResponse(200, "{}"))
         val store = MemoryTokenStore(CloudTokens("access-1", "refresh-1"))
 
-        val user = api(transport, store).currentUser()
-
-        assertEquals("", user?.username)
-        assertEquals(0, user?.bestScore)
+        assertNull(api(transport, store).currentUser())
     }
 
     @Test

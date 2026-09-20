@@ -15,7 +15,14 @@ const contentTypes = {
     ".xml": "application/xml; charset=utf-8"
 };
 
-export function createStaticServer(rootDirectory) {
+/**
+ * @param {string} rootDirectory
+ * @param {object} [options]
+ * @param {string} [options.apiBaseUrl] Point the page's cloud client at a
+ *   local API. Injected into the served HTML rather than committed to it, so
+ *   the checked-in page always ships the production default. Local QA only.
+ */
+export function createStaticServer(rootDirectory, { apiBaseUrl } = {}) {
     const root = path.resolve(rootDirectory);
 
     return http.createServer((request, response) => {
@@ -35,11 +42,29 @@ export function createStaticServer(rootDirectory) {
                 return;
             }
 
-            response.writeHead(200, {
+            const type = contentTypes[path.extname(candidate).toLowerCase()] ?? "application/octet-stream";
+            const headers = {
                 "Cache-Control": "no-store",
-                "Content-Type": contentTypes[path.extname(candidate).toLowerCase()] ?? "application/octet-stream",
+                "Content-Type": type,
                 "X-Content-Type-Options": "nosniff"
-            });
+            };
+
+            if (apiBaseUrl && type.startsWith("text/html")) {
+                fs.readFile(candidate, "utf8", (readError, html) => {
+                    if (readError) {
+                        response.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" }).end("Read failed");
+                        return;
+                    }
+                    const injected = html.replace(
+                        "</head>",
+                        `<script>window.GAME2048_API_BASE_URL = ${JSON.stringify(apiBaseUrl)};</script></head>`
+                    );
+                    response.writeHead(200, headers).end(injected);
+                });
+                return;
+            }
+
+            response.writeHead(200, headers);
             fs.createReadStream(candidate).pipe(response);
         });
     });

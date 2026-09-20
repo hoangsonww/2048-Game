@@ -13,7 +13,9 @@ if (!Number.isInteger(requestedPort) || requestedPort < 0 || requestedPort > 655
     process.exit(2);
 }
 
-const server = createStaticServer(root);
+// Local QA against a locally running Cloud API:
+//   GAME2048_API_BASE_URL=http://127.0.0.1:4000 make serve
+const server = createStaticServer(root, { apiBaseUrl: process.env.GAME2048_API_BASE_URL });
 server.listen(requestedPort, "0.0.0.0", () => {
     const address = server.address();
     const activePort = typeof address === "object" && address ? address.port : requestedPort;

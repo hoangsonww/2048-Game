@@ -46,6 +46,8 @@ const promoteMap = {
     "desktop-cloud-guest": "web-cloud-guest.png",
     "desktop-cloud-signup": "web-cloud-signup.png",
     "desktop-cloud-signin": "web-cloud-signin.png",
+    "desktop-cloud-handover": "web-cloud-handover.png",
+    "desktop-cloud-reset": "web-cloud-reset.png",
     "desktop-cloud-signed-in": "web-cloud-signed-in.png",
     "desktop-cloud-leaderboard": "web-cloud-leaderboard.png",
     "desktop-cloud-account": "web-cloud-account.png",
@@ -59,6 +61,11 @@ await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
 const baseURL = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch({ headless: true });
 const report = [];
+
+/** Lets tile colour transitions and dialog fades finish before a capture. */
+async function settleTransitions(page) {
+    await page.waitForTimeout(600);
+}
 
 async function capture(name, viewport, options = {}) {
     const context = await browser.newContext({
@@ -90,6 +97,7 @@ async function capture(name, viewport, options = {}) {
         await page.reload({ waitUntil: "networkidle" });
     }
     if (options.action) await options.action(page);
+    await settleTransitions(page);
     await page.screenshot({ path: path.join(outputDirectory, `${name}.png`), fullPage: options.fullPage ?? false });
     const gameState = route === "/" ? JSON.parse(await page.evaluate(() => window.render_game_to_text())) : null;
     report.push({ name, viewport, route, gameState, errors: errors.slice(0, 5) });
@@ -158,6 +166,27 @@ try {
             await page.waitForSelector("#authDialog[open]");
         }
     });
+    await capture("desktop-cloud-reset", { width: 1440, height: 950 }, {
+        state: played,
+        apiBaseUrl,
+        action: async page => {
+            await page.locator("#cloudBannerSignIn").click();
+            await page.waitForSelector("#authDialog[open]");
+            await page.locator("#authForgot").click();
+            await page.waitForSelector("#resetDialog[open]");
+        }
+    });
+    // The warning shown before a sign-in takes the round off the screen.
+    await capture("desktop-cloud-handover", { width: 1440, height: 900 }, {
+        state: played,
+        apiBaseUrl,
+        action: async page => {
+            await page.locator("#cloudBannerSignIn").click();
+            await page.waitForSelector("#authDialog[open]");
+            await page.locator("#authSubmit").click();
+            await page.waitForSelector("#profileSwitchDialog[open]");
+        }
+    });
     await capture("mobile-cloud-guest", { width: 390, height: 844 }, {
         state: played,
         hasTouch: true,
@@ -205,13 +234,22 @@ try {
         await page.fill("#authUsername", account.username);
         await page.fill("#authEmail", account.email);
         await page.fill("#authPassword", account.password);
+        await page.fill("#authConfirm", account.password);
         await page.locator("#authSubmit").click();
+        // A round is on screen, so the handover warning comes first.
+        await page.waitForSelector("#profileSwitchDialog[open]");
+        await page.locator("#profileSwitchConfirm").click();
         await page.waitForFunction(() => document.getElementById("accountButtonLabel").textContent !== "Sign in", null, {
             timeout: 20_000
         });
-        await page.waitForFunction(() => /sync|account|round/i.test(document.getElementById("cloudStatus").textContent), null, {
-            timeout: 20_000
-        });
+        // Wait for the reconcile to finish, not merely to start: a capture
+        // taken mid-sync shows a spinner and a board still easing between the
+        // guest round and the account's.
+        await page.waitForFunction(() => {
+            const status = document.getElementById("cloudStatus");
+            return status.getAttribute("aria-busy") !== "true" && /sync|account|round/i.test(status.textContent);
+        }, null, { timeout: 20_000 });
+        await settleTransitions(page);
         await page.screenshot({ path: path.join(outputDirectory, "desktop-cloud-signed-in.png") });
         report.push({ name: "desktop-cloud-signed-in", live: true, errors: [] });
 
@@ -220,12 +258,14 @@ try {
         await page.waitForFunction(() => document.getElementById("leaderboardNote").textContent !== "Loading…", null, {
             timeout: 20_000
         });
+        await settleTransitions(page);
         await page.screenshot({ path: path.join(outputDirectory, "desktop-cloud-leaderboard.png") });
         report.push({ name: "desktop-cloud-leaderboard", live: true, errors: [] });
         await page.locator("#leaderboardClose").click();
 
         await page.locator("#accountButton").click();
         await page.waitForSelector("#accountDialog[open]");
+        await settleTransitions(page);
         await page.screenshot({ path: path.join(outputDirectory, "desktop-cloud-account.png") });
         report.push({ name: "desktop-cloud-account", live: true, errors: [] });
 

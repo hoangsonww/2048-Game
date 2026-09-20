@@ -9,9 +9,12 @@
 // (layout, focus, actual touch-action behaviour).
 
 const ELEMENT_IDS = [
-    "gridContainer", "score", "highScore", "undoButton", "newGameButton",
+    "gridContainer", "score", "highScore", "undoButton", "newGameButton", "soundButton",
     "newGameDialog", "confirmNewGame", "gameMessage", "messageKicker",
-    "messageTitle", "messageBody", "messagePrimary", "messageSecondary", "statusLine"
+    "profileSwitchDialog", "profileSwitchTitle", "profileSwitchBody",
+    "profileSwitchConfirm", "profileSwitchCancel",
+    "messageTitle", "messageBody", "messagePrimary", "messageSecondary", "statusLine",
+    "authDialog", "accountDialog", "leaderboardDialog"
 ];
 
 class FakeClassList {
@@ -54,7 +57,12 @@ class FakeElement {
     replaceChildren(...next) { this.children = next; }
     focus() { this.focusCount += 1; }
     showModal() { this.open = true; }
-    close() { this.open = false; }
+    /** Mirrors a real <dialog>: closing fires `close`, however it was closed. */
+    close() {
+        if (!this.open) return;
+        this.open = false;
+        this.dispatch("close", {});
+    }
 
     addEventListener(type, handler, options) {
         if (!this.listeners.has(type)) this.listeners.set(type, []);
@@ -99,10 +107,15 @@ class FakeStorage {
  * @param {object} [options]
  * @param {object} [options.storage] initial localStorage entries
  * @param {() => number} [options.random] deterministic replacement for Math.random
+ * @param {boolean} [options.withSounds=true] load sounds.js; false covers the no-op fallback
+ * @param {string[]} [options.omitIds] element ids to leave missing from the page
  * @returns a handle with the elements, storage, and helpers for driving input
  */
-function loadController({ storage = {}, random = () => 0 } = {}) {
-    const elements = Object.fromEntries(ELEMENT_IDS.map(id => [id, new FakeElement()]));
+function loadController({ storage = {}, random = () => 0, withSounds = true, omitIds = [] } = {}) {
+    const omitted = new Set(omitIds);
+    const elements = Object.fromEntries(
+        ELEMENT_IDS.filter(id => !omitted.has(id)).map(id => [id, new FakeElement()])
+    );
     // These two carry `hidden` in index.html, so the controller starts with the
     // end-of-round panel down. Defaulting them to visible would make the very
     // first render look like a finished game.
@@ -119,10 +132,17 @@ function loadController({ storage = {}, random = () => 0 } = {}) {
 
     const documentStub = {
         fullscreenElement: null,
+        activeElement: null,
         documentElement: { requestFullscreen: () => { fullscreen.requested += 1; } },
         exitFullscreen: () => { fullscreen.exited += 1; },
         createElement: tagName => new FakeElement(tagName),
         getElementById: id => elements[id] ?? null,
+        querySelector(selector) {
+            if (selector === "dialog[open]") {
+                return Object.values(elements).find(el => el.open) ?? null;
+            }
+            return null;
+        },
         querySelectorAll: selector => (selector === "[data-direction]" ? directionButtons : []),
         addEventListener(type, handler) {
             if (!documentListeners.has(type)) documentListeners.set(type, []);
@@ -159,6 +179,15 @@ function loadController({ storage = {}, random = () => 0 } = {}) {
     }
 
     // The controller is an IIFE, so a fresh require is what re-runs it.
+    // Load sounds first so mute/unmute is the real module under test, not a stub.
+    if (withSounds) {
+        const soundsPath = require.resolve("../../../Web-Version/sounds.js");
+        delete require.cache[soundsPath];
+        run(() => {
+            require(soundsPath);
+            windowStub.Game2048Sounds = require(soundsPath);
+        });
+    }
     const modulePath = require.resolve("../../../Web-Version/script.js");
     delete require.cache[modulePath];
     run(() => require(modulePath));
@@ -193,6 +222,11 @@ function loadController({ storage = {}, random = () => 0 } = {}) {
             save: () => run(() => windowStub.Game2048Game.getSave()),
             applySave: save => run(() => windowStub.Game2048Game.applySave(save)),
             newGame: () => run(() => windowStub.Game2048Game.newGame()),
+            getProfile: () => run(() => windowStub.Game2048Game.getProfile()),
+            hasProgress: () => run(() => windowStub.Game2048Game.hasProgress()),
+            beginAccountSession: options => run(() => windowStub.Game2048Game.beginAccountSession(options)),
+            endAccountSession: () => run(() => windowStub.Game2048Game.endAccountSession()),
+            adoptCareerBest: best => run(() => windowStub.Game2048Game.adoptCareerBest(best)),
             subscribe: listener => run(() => windowStub.Game2048Game.subscribe(listener))
         },
 
@@ -213,7 +247,8 @@ function loadController({ storage = {}, random = () => 0 } = {}) {
             grid.dispatch("touchend", { changedTouches: [{ clientX: 100 + dx, clientY: 100 + dy }] });
         },
 
-        saved: () => JSON.parse(localStorage.getItem("game2048-state-v2"))
+        saved: () => JSON.parse(localStorage.getItem("game2048-state-v2")),
+        savedAccount: () => JSON.parse(localStorage.getItem("game2048-state-account-v1"))
     };
 }
 

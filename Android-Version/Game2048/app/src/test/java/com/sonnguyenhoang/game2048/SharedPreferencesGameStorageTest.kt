@@ -1,6 +1,5 @@
 package com.sonnguyenhoang.game2048
 
-import android.content.SharedPreferences
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -13,13 +12,13 @@ import org.junit.Test
  * player's round on the next launch, which is exactly the failure the local-only
  * design is supposed to make impossible.
  *
- * The fake below implements [SharedPreferences] directly rather than mocking
- * it, so the test needs no Android runtime.
+ * [FakeSharedPreferences] implements the platform interface directly rather
+ * than mocking it, so the test needs no Android runtime.
  */
 class SharedPreferencesGameStorageTest {
     @Test
     fun aSavedRoundIsReadBackExactly() {
-        val preferences = FakePreferences()
+        val preferences = FakeSharedPreferences()
         val storage = SharedPreferencesGameStorage(preferences)
         val saved = SavedGame(
             grid = listOf(
@@ -39,14 +38,14 @@ class SharedPreferencesGameStorageTest {
 
     @Test
     fun anEmptyStoreHasNothingToRestore() {
-        val storage = SharedPreferencesGameStorage(FakePreferences())
+        val storage = SharedPreferencesGameStorage(FakeSharedPreferences())
         assertNull(storage.load())
         assertEquals(0, storage.loadBest())
     }
 
     @Test
     fun theBestScoreIsReadableWithoutASavedRound() {
-        val preferences = FakePreferences()
+        val preferences = FakeSharedPreferences()
         val storage = SharedPreferencesGameStorage(preferences)
         storage.save(SavedGame(grid = fullGrid(), score = 10, best = 999, hasWon = false))
 
@@ -55,7 +54,7 @@ class SharedPreferencesGameStorageTest {
 
     @Test
     fun aGridOfTheWrongLengthIsRejected() {
-        val preferences = FakePreferences()
+        val preferences = FakeSharedPreferences()
         // Fifteen cells: a truncated write, or a save from an older layout.
         preferences.strings["saved_grid_v2"] = List(15) { "0" }.joinToString(",")
 
@@ -64,7 +63,7 @@ class SharedPreferencesGameStorageTest {
 
     @Test
     fun aGridWithUnparseableCellsIsRejectedRatherThanSilentlyShrunk() {
-        val preferences = FakePreferences()
+        val preferences = FakeSharedPreferences()
         // Non-numeric cells are dropped while parsing, which leaves fewer than
         // sixteen values — the length check is what turns that into a rejection
         // instead of a short, misaligned board.
@@ -75,7 +74,7 @@ class SharedPreferencesGameStorageTest {
 
     @Test
     fun anEmptyGridStringIsRejected() {
-        val preferences = FakePreferences()
+        val preferences = FakeSharedPreferences()
         preferences.strings["saved_grid_v2"] = ""
 
         assertNull(SharedPreferencesGameStorage(preferences).load())
@@ -83,7 +82,7 @@ class SharedPreferencesGameStorageTest {
 
     @Test
     fun aGridIsRestoredAsFourRowsOfFour() {
-        val preferences = FakePreferences()
+        val preferences = FakeSharedPreferences()
         preferences.strings["saved_grid_v2"] = (1..16).joinToString(",")
 
         val loaded = requireNotNull(SharedPreferencesGameStorage(preferences).load())
@@ -95,7 +94,7 @@ class SharedPreferencesGameStorageTest {
 
     @Test
     fun savingTwiceKeepsOnlyTheLatestRound() {
-        val storage = SharedPreferencesGameStorage(FakePreferences())
+        val storage = SharedPreferencesGameStorage(FakeSharedPreferences())
         storage.save(SavedGame(grid = fullGrid(2), score = 1, best = 1, hasWon = false))
         storage.save(SavedGame(grid = fullGrid(4), score = 2, best = 2, hasWon = true))
 
@@ -107,7 +106,7 @@ class SharedPreferencesGameStorageTest {
 
     @Test
     fun scoresAndWinStateFallBackToZeroWhenOnlyAGridWasStored() {
-        val preferences = FakePreferences()
+        val preferences = FakeSharedPreferences()
         preferences.strings["saved_grid_v2"] = List(16) { "0" }.joinToString(",")
 
         val loaded = requireNotNull(SharedPreferencesGameStorage(preferences).load())
@@ -116,58 +115,39 @@ class SharedPreferencesGameStorageTest {
         assertFalse(loaded.hasWon)
     }
 
+    @Test
+    fun twoPrefixedSlotsCannotSeeEachOther() {
+        // This is the whole mechanism behind "signing out restores exactly
+        // what you were playing": the guest and signed-in rounds share a
+        // preferences file and nothing else.
+        val preferences = FakeSharedPreferences()
+        val guest = SharedPreferencesGameStorage(preferences)
+        val account = SharedPreferencesGameStorage(preferences, SharedPreferencesGameStorage.ACCOUNT_PREFIX)
+
+        guest.save(SavedGame(grid = fullGrid(2), score = 10, best = 100, hasWon = false, moves = 3))
+        account.save(SavedGame(grid = fullGrid(8), score = 900, best = 900, hasWon = true, moves = 40))
+
+        assertEquals(10, requireNotNull(guest.load()).score)
+        assertEquals(100, guest.loadBest())
+        assertEquals(900, requireNotNull(account.load()).score)
+        assertEquals(900, account.loadBest())
+    }
+
+    @Test
+    fun clearingOneSlotLeavesTheOtherIntact() {
+        val preferences = FakeSharedPreferences()
+        val guest = SharedPreferencesGameStorage(preferences)
+        val account = SharedPreferencesGameStorage(preferences, SharedPreferencesGameStorage.ACCOUNT_PREFIX)
+        guest.save(SavedGame(grid = fullGrid(2), score = 10, best = 100, hasWon = false, moves = 3))
+        account.save(SavedGame(grid = fullGrid(8), score = 900, best = 900, hasWon = true, moves = 40))
+
+        account.clear()
+
+        assertNull(account.load())
+        assertEquals(0, account.loadBest())
+        assertEquals(10, requireNotNull(guest.load()).score)
+        assertEquals(100, guest.loadBest())
+    }
+
     private fun fullGrid(value: Int = 2) = List(4) { List(4) { value } }
-
-    /**
-     * A minimal in-memory [SharedPreferences]. Only the accessors the storage
-     * actually calls carry behaviour; the rest satisfy the interface.
-     */
-    private class FakePreferences : SharedPreferences {
-        val strings = mutableMapOf<String, String?>()
-        val ints = mutableMapOf<String, Int>()
-        val booleans = mutableMapOf<String, Boolean>()
-
-        override fun getAll(): MutableMap<String, *> = (strings + ints + booleans).toMutableMap()
-        override fun getString(key: String, defValue: String?): String? = strings[key] ?: defValue
-        override fun getStringSet(key: String, defValues: MutableSet<String>?): MutableSet<String>? = defValues
-        override fun getInt(key: String, defValue: Int): Int = ints[key] ?: defValue
-        override fun getLong(key: String, defValue: Long): Long = defValue
-        override fun getFloat(key: String, defValue: Float): Float = defValue
-        override fun getBoolean(key: String, defValue: Boolean): Boolean = booleans[key] ?: defValue
-        override fun contains(key: String): Boolean =
-            strings.containsKey(key) || ints.containsKey(key) || booleans.containsKey(key)
-
-        override fun edit(): SharedPreferences.Editor = FakeEditor(this)
-        override fun registerOnSharedPreferenceChangeListener(
-            listener: SharedPreferences.OnSharedPreferenceChangeListener
-        ) = Unit
-
-        override fun unregisterOnSharedPreferenceChangeListener(
-            listener: SharedPreferences.OnSharedPreferenceChangeListener
-        ) = Unit
-    }
-
-    /** Writes straight through, so `apply()` is observable immediately. */
-    private class FakeEditor(private val preferences: FakePreferences) : SharedPreferences.Editor {
-        override fun putString(key: String, value: String?) = apply { preferences.strings[key] = value }
-        override fun putStringSet(key: String, values: MutableSet<String>?) = this
-        override fun putInt(key: String, value: Int) = apply { preferences.ints[key] = value }
-        override fun putLong(key: String, value: Long) = this
-        override fun putFloat(key: String, value: Float) = this
-        override fun putBoolean(key: String, value: Boolean) = apply { preferences.booleans[key] = value }
-        override fun remove(key: String) = apply {
-            preferences.strings.remove(key)
-            preferences.ints.remove(key)
-            preferences.booleans.remove(key)
-        }
-
-        override fun clear() = apply {
-            preferences.strings.clear()
-            preferences.ints.clear()
-            preferences.booleans.clear()
-        }
-
-        override fun commit(): Boolean = true
-        override fun apply() = Unit
-    }
 }

@@ -80,18 +80,36 @@ class CloudStorageTest {
         assertFalse(store().promptDismissed)
     }
 
+    @Test
+    fun `a known revision is remembered across relaunches`() {
+        val preferences = FakePreferences()
+        SharedPreferencesCloudStore(preferences).knownRevision = 7
+
+        assertEquals(7, SharedPreferencesCloudStore(preferences).knownRevision)
+    }
+
+    @Test
+    fun `clearing the known revision removes it`() {
+        val store = store()
+        store.knownRevision = 3
+        store.knownRevision = null
+
+        assertNull(store.knownRevision)
+    }
+
     private class FakePreferences : SharedPreferences {
         val strings = mutableMapOf<String, String?>()
         val booleans = mutableMapOf<String, Boolean>()
+        val ints = mutableMapOf<String, Int>()
 
-        override fun getAll(): MutableMap<String, *> = (strings + booleans).toMutableMap()
+        override fun getAll(): MutableMap<String, *> = (strings + booleans + ints).toMutableMap()
         override fun getString(key: String, defValue: String?): String? = strings[key] ?: defValue
         override fun getStringSet(key: String, defValues: MutableSet<String>?): MutableSet<String>? = defValues
-        override fun getInt(key: String, defValue: Int): Int = defValue
+        override fun getInt(key: String, defValue: Int): Int = ints[key] ?: defValue
         override fun getLong(key: String, defValue: Long): Long = defValue
         override fun getFloat(key: String, defValue: Float): Float = defValue
         override fun getBoolean(key: String, defValue: Boolean): Boolean = booleans[key] ?: defValue
-        override fun contains(key: String): Boolean = strings.containsKey(key) || booleans.containsKey(key)
+        override fun contains(key: String): Boolean = strings.containsKey(key) || booleans.containsKey(key) || ints.containsKey(key)
         override fun edit(): SharedPreferences.Editor = FakeEditor(this)
         override fun registerOnSharedPreferenceChangeListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) = Unit
         override fun unregisterOnSharedPreferenceChangeListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) = Unit
@@ -101,18 +119,20 @@ class CloudStorageTest {
     private class FakeEditor(private val preferences: FakePreferences) : SharedPreferences.Editor {
         override fun putString(key: String, value: String?) = apply { preferences.strings[key] = value }
         override fun putStringSet(key: String, values: MutableSet<String>?) = this
-        override fun putInt(key: String, value: Int) = this
+        override fun putInt(key: String, value: Int) = apply { preferences.ints[key] = value }
         override fun putLong(key: String, value: Long) = this
         override fun putFloat(key: String, value: Float) = this
         override fun putBoolean(key: String, value: Boolean) = apply { preferences.booleans[key] = value }
         override fun remove(key: String) = apply {
             preferences.strings.remove(key)
             preferences.booleans.remove(key)
+            preferences.ints.remove(key)
         }
 
         override fun clear() = apply {
             preferences.strings.clear()
             preferences.booleans.clear()
+            preferences.ints.clear()
         }
 
         override fun commit(): Boolean = true

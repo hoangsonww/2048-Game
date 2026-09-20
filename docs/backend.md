@@ -62,9 +62,24 @@ All three clients speak the same shapes. Boards travel as a flat 16-element row-
 
 Nothing is silently discarded. Prefer the higher `moves` (then score) when both sides advanced.
 
+### What a client may offer
+
+A sign-in sends `save: null`. A round played before anyone signed in belongs
+to the device, not to the account that just signed in on it, so there is
+nothing to reconcile: the server either returns the account's own round
+(`downloaded`) or has none (`in_sync`, `save: null`) and the clean board the
+client just created stands. Clients keep that round in a storage slot of its
+own — see [ARCHITECTURE.md](../ARCHITECTURE.md#guest-and-account-profiles) —
+and a session's first upload happens on the first move made while signed in.
+
+Career statistics in `GET /api/v1/auth/me` are computed by the server from
+submitted rounds. Clients render them verbatim and never merge a local best
+score or highest tile into them.
+
 ## Auth
 
 - Register / login issue an access token (short TTL) and a refresh token (long TTL)
+- `POST /auth/reset-password` is an **interim** recovery path: a matching username and email set a new password and revoke every session. Knowing both is therefore account takeover, which is why it is gated behind `FEATURE_PASSWORD_RESET`, sits under the auth rate limiter, and answers identically whichever half is wrong. Replace it with a mailed single-use token before this service holds anything a person would mind losing.
 - Refresh rotates: the previous refresh hash is invalidated; concurrent refreshes are serialised on the client so two 401 retries cannot revoke each other
 - Access tokens live in memory or local storage per platform; see [privacy.md](privacy.md) for the deliberate Keychain / EncryptedSharedPreferences trade-offs
 - `Authorization: Bearer <access>` on protected routes; public leaderboard and health stay open
@@ -73,9 +88,14 @@ Nothing is silently discarded. Prefer the higher `moves` (then score) when both 
 
 | Client | Cloud module | Bridge into the rules engine |
 | --- | --- | --- |
-| Web | `Web-Version/cloud.js`, `account.js` | `Game2048Game` exposes `cloudSave` / `applyCloudSave` |
-| Android | `…/cloud/*` + `CloudController` | `GameViewModel` cloud save / apply |
-| iOS | `Game-2048/Cloud/*` + `CloudController` | `GameViewModel.cloudSave()` / `applyCloudSave(_:)` |
+| Web | `Web-Version/cloud.js`, `account.js` | `Game2048Game` exposes `cloudSave` / `applyCloudSave` plus `beginAccountSession` / `endAccountSession` |
+| Android | `…/cloud/*` + `CloudController` | `GameViewModel` cloud save / apply plus `beginAccountSession` / `endAccountSession` |
+| iOS | `Game-2048/Cloud/*` + `CloudController` | `GameViewModel.cloudSave()` / `applyCloudSave(_:)` plus `beginAccountSession(fresh:)` / `endAccountSession()` |
+
+Authenticating and adopting a round are separate calls on every client.
+`register` / `login` return a session and nothing more; the game then switches
+profile and asks the controller to adopt the account's round. Only the game
+knows which board is on screen, so only the game can decide what may be sent.
 
 Removing the cloud layer is a delete of those modules plus the header / banner wiring. The board and rules stay.
 

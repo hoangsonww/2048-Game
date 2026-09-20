@@ -27,6 +27,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.HelpOutline
 import androidx.compose.material.icons.automirrored.rounded.Undo
+import androidx.compose.material.icons.automirrored.rounded.VolumeOff
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Swipe
 import androidx.compose.material3.*
@@ -41,6 +43,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import kotlinx.coroutines.delay
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
@@ -57,9 +60,10 @@ import com.sonnguyenhoang.game2048.cloud.AuthSheet
 import com.sonnguyenhoang.game2048.cloud.CloudApi
 import com.sonnguyenhoang.game2048.cloud.CloudController
 import com.sonnguyenhoang.game2048.cloud.CloudStatusLine
-import com.sonnguyenhoang.game2048.cloud.GuestPrompt
+import com.sonnguyenhoang.game2048.cloud.GuestInviteToast
 import com.sonnguyenhoang.game2048.cloud.LeaderboardButton
 import com.sonnguyenhoang.game2048.cloud.LeaderboardSheet
+import com.sonnguyenhoang.game2048.cloud.ResetPasswordSheet
 import com.sonnguyenhoang.game2048.cloud.SharedPreferencesCloudStore
 import com.sonnguyenhoang.game2048.cloud.UrlConnectionTransport
 import com.sonnguyenhoang.game2048.ui.theme.*
@@ -102,7 +106,25 @@ private fun rememberCloudController(provided: CloudController?): CloudController
 @Composable
 fun GameScreen(providedViewModel: GameViewModel? = null, providedCloud: CloudController? = null, cloudEnabled: Boolean = true) {
     val context = LocalContext.current
-    val viewModel = providedViewModel ?: remember { GameViewModel(SharedPreferencesGameStorage(context.getSharedPreferences("game_2048", 0))) }
+    val viewModel = providedViewModel ?: remember {
+        val preferences = context.getSharedPreferences("game_2048", 0)
+        GameViewModel(
+            storage = SharedPreferencesGameStorage(preferences),
+            // The signed-in round lives in the same file under its own key
+            // prefix, so neither profile can read or overwrite the other.
+            accountStorage = SharedPreferencesGameStorage(
+                preferences,
+                SharedPreferencesGameStorage.ACCOUNT_PREFIX
+            )
+        )
+    }
+    val sounds = remember {
+        GameSounds(context.getSharedPreferences("game_2048_sound", 0))
+    }
+    // The mixer owns an audio device while cues are sounding; a screen that
+    // goes away must not leave it open.
+    DisposableEffect(sounds) { onDispose { sounds.release() } }
+    var soundOn by remember { mutableStateOf(sounds.isEnabled) }
     val haptics = LocalHapticFeedback.current
     var showHelp by remember { mutableStateOf(false) }
     var confirmRestart by remember { mutableStateOf(false) }
@@ -112,6 +134,29 @@ fun GameScreen(providedViewModel: GameViewModel? = null, providedCloud: CloudCon
     var authMode by remember { mutableStateOf<AuthMode?>(null) }
     var showAccount by remember { mutableStateOf(false) }
     var showLeaderboard by remember { mutableStateOf(false) }
+    var showReset by remember { mutableStateOf(false) }
+    // Closing one modal sheet and opening another in the same frame leaves
+    // two of them fighting over the same window, and neither goes away.
+    // Reopening on the next frame lets the first one finish leaving.
+    var reopenSignIn by remember { mutableStateOf(false) }
+    LaunchedEffect(reopenSignIn) {
+        if (!reopenSignIn) return@LaunchedEffect
+        reopenSignIn = false
+        authMode = AuthMode.LOGIN
+    }
+    // Session-only visibility — auto-hide must not reappear on recomposition
+    // when the prompt is still undismissed for the next cold start.
+    var showGuestToast by remember { mutableStateOf(false) }
+    LaunchedEffect(cloud?.showGuestPrompt, cloud?.isSignedIn) {
+        if (cloud?.isSignedIn == true) {
+            showGuestToast = false
+            return@LaunchedEffect
+        }
+        if (cloud?.showGuestPrompt != true) return@LaunchedEffect
+        showGuestToast = true
+        delay(5_500)
+        showGuestToast = false
+    }
 
     // The cloud observes the round; the round knows nothing about the cloud.
     // A move syncs, a finished round also submits, and an undo just syncs.
@@ -123,8 +168,10 @@ fun GameScreen(providedViewModel: GameViewModel? = null, providedCloud: CloudCon
                         cloud.submitRound(viewModel.cloudSave())
                         cloud.sync(viewModel::cloudSave, viewModel::applyCloudSave)
                     }
-                    // A round we just downloaded does not need uploading back.
-                    GameViewModel.RoundChange.RESTORED -> Unit
+                    // A round we just downloaded does not need uploading back,
+                    // and a profile switch reconciles explicitly straight after.
+                    GameViewModel.RoundChange.RESTORED,
+                    GameViewModel.RoundChange.PROFILE_CHANGED -> Unit
                     else -> cloud.sync(viewModel::cloudSave, viewModel::applyCloudSave)
                 }
             }
@@ -133,7 +180,22 @@ fun GameScreen(providedViewModel: GameViewModel? = null, providedCloud: CloudCon
     }
 
     LaunchedEffect(cloud) {
-        cloud?.restore(viewModel::cloudSave, viewModel::applyCloudSave)
+        val controller = cloud ?: return@LaunchedEffect
+        // Adopt the right profile before the network is asked. A stored
+        // session must never flash the guest board, and a guest move must
+        // never reach an account.
+        if (!controller.hasStoredSession) return@LaunchedEffect
+        val adopted = viewModel.beginAccountSession()
+        controller.restore { live ->
+            if (!live) {
+                viewModel.endAccountSession()
+            } else if (adopted == GameViewModel.SessionStart.RESTORED) {
+                // The cached round is this account's own, so it can be offered.
+                controller.sync(viewModel::cloudSave, viewModel::applyCloudSave)
+            } else {
+                adoptAccountRound(viewModel, controller)
+            }
+        }
     }
 
     Box(Modifier.fillMaxSize().background(Paper)) {
@@ -145,6 +207,10 @@ fun GameScreen(providedViewModel: GameViewModel? = null, providedCloud: CloudCon
             Header(
                 onHelp = { showHelp = true },
                 cloud = cloud,
+                soundOn = soundOn,
+                onToggleSound = {
+                    soundOn = sounds.toggle()
+                },
                 onAccount = { if (cloud?.isSignedIn == true) showAccount = true else authMode = AuthMode.REGISTER },
                 onLeaderboard = {
                     showLeaderboard = true
@@ -159,28 +225,43 @@ fun GameScreen(providedViewModel: GameViewModel? = null, providedCloud: CloudCon
                 ScoreCard("Score", viewModel.score, true, Modifier.weight(1f))
                 ScoreCard("Best", viewModel.highScore, false, Modifier.weight(1f))
             }
-            if (cloud != null && cloud.showGuestPrompt) {
-                GuestPrompt(
-                    onCreate = { authMode = AuthMode.REGISTER },
-                    onSignIn = { authMode = AuthMode.LOGIN },
-                    onDismiss = { cloud.dismissPrompt() }
-                )
-            }
             GameBoard(
                 grid = viewModel.grid,
                 gameOver = viewModel.isGameOver(),
                 showWin = viewModel.hasWon && !dismissWin,
                 score = viewModel.score,
                 onSwipe = { direction ->
+                    val scoreBefore = viewModel.score
+                    val wonBefore = viewModel.hasWon
                     val moved = viewModel.swipe(direction)
-                    haptics.performHapticFeedback(if (moved) HapticFeedbackType.TextHandleMove else HapticFeedbackType.LongPress)
+                    if (moved) {
+                        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        when {
+                            viewModel.isGameOver() -> sounds.gameOver()
+                            viewModel.hasWon && !wonBefore -> sounds.win()
+                            viewModel.score > scoreBefore -> sounds.merge(viewModel.score - scoreBefore)
+                            else -> sounds.move()
+                        }
+                    } else {
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        sounds.invalid()
+                    }
                 },
-                onRestart = { viewModel.restartGame(); dismissWin = false },
+                onRestart = { viewModel.restartGame(); dismissWin = false; sounds.newGame() },
                 onContinue = { dismissWin = true }
             )
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                GameAction("Undo", Icons.AutoMirrored.Rounded.Undo, !viewModel.canUndo, Modifier.weight(1f)) { viewModel.undo(); haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove) }
-                GameAction("New game", Icons.Rounded.Refresh, false, Modifier.weight(1f)) { if (viewModel.score > 0) confirmRestart = true else viewModel.restartGame() }
+                GameAction("Undo", Icons.AutoMirrored.Rounded.Undo, !viewModel.canUndo, Modifier.weight(1f)) {
+                    viewModel.undo()
+                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    sounds.undo()
+                }
+                GameAction("New game", Icons.Rounded.Refresh, false, Modifier.weight(1f)) {
+                    if (viewModel.score > 0) confirmRestart = true else {
+                        viewModel.restartGame()
+                        sounds.newGame()
+                    }
+                }
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Rounded.Swipe, contentDescription = null, tint = Muted, modifier = Modifier.size(18.dp))
@@ -189,6 +270,18 @@ fun GameScreen(providedViewModel: GameViewModel? = null, providedCloud: CloudCon
             }
             if (cloud != null) CloudStatusLine(cloud)
             Spacer(Modifier.height(10.dp))
+        }
+
+        if (cloud != null) {
+            GuestInviteToast(
+                visible = showGuestToast,
+                onCreate = { authMode = AuthMode.REGISTER },
+                onSignIn = { authMode = AuthMode.LOGIN },
+                onDismiss = {
+                    cloud.dismissPrompt()
+                    showGuestToast = false
+                }
+            )
         }
     }
 
@@ -199,19 +292,43 @@ fun GameScreen(providedViewModel: GameViewModel? = null, providedCloud: CloudCon
                 initialMode = mode,
                 onDismiss = { authMode = null; cloud.clearAuthError() },
                 onRegister = { username, email, password ->
-                    cloud.register(username, email, password, viewModel::cloudSave, viewModel::applyCloudSave)
+                    cloud.register(username, email, password) { adoptAccount(viewModel, cloud) }
                 },
                 onLogin = { identifier, password ->
-                    cloud.login(identifier, password, viewModel::cloudSave, viewModel::applyCloudSave)
-                }
+                    cloud.login(identifier, password) { adoptAccount(viewModel, cloud) }
+                },
+                // The board on screen belongs to this device, not to the
+                // account about to sign in. Say so before it leaves.
+                handsOverRound = viewModel.hasProgress,
+                onForgotPassword = { authMode = null; showReset = true }
             )
         }
+
+        if (showReset) ResetPasswordSheet(
+            controller = cloud,
+            onDismiss = { showReset = false; cloud.clearAuthError() },
+            onReset = { username, email, newPassword ->
+                cloud.resetPassword(username, email, newPassword) {
+                    // Every session was revoked, this one included, so the
+                    // device goes back to the round it owns.
+                    viewModel.endAccountSession()
+                    showReset = false
+                    reopenSignIn = true
+                }
+            }
+        )
 
         if (showAccount) AccountSheet(
             controller = cloud,
             onDismiss = { showAccount = false },
-            onSyncNow = { cloud.sync(viewModel::cloudSave, viewModel::applyCloudSave) },
-            onSignOut = { cloud.signOut(); showAccount = false }
+            onSyncNow = { cloud.syncNow(viewModel::cloudSave, viewModel::applyCloudSave) },
+            onSignOut = {
+                cloud.signOut()
+                // Back to the round this device was playing before the session
+                // started — board, score, and best score.
+                viewModel.endAccountSession()
+                showAccount = false
+            }
         )
 
         if (showLeaderboard) LeaderboardSheet(
@@ -226,7 +343,7 @@ fun GameScreen(providedViewModel: GameViewModel? = null, providedCloud: CloudCon
         icon = { Icon(Icons.Rounded.Refresh, contentDescription = null, tint = Accent, modifier = Modifier.size(24.dp)) },
         title = { Text("Start a fresh board?", fontWeight = FontWeight.Bold) },
         text = { Text("Your best score stays safe, but this round will be replaced.") },
-        confirmButton = { Button(onClick = { viewModel.restartGame(); dismissWin = false; confirmRestart = false }, colors = ButtonDefaults.buttonColors(containerColor = Accent)) { Text("New game") } },
+        confirmButton = { Button(onClick = { viewModel.restartGame(); dismissWin = false; confirmRestart = false; sounds.newGame() }, colors = ButtonDefaults.buttonColors(containerColor = Accent)) { Text("New game") } },
         dismissButton = { TextButton(onClick = { confirmRestart = false }) { Text("Keep playing") } }
     )
 
@@ -238,6 +355,19 @@ fun GameScreen(providedViewModel: GameViewModel? = null, providedCloud: CloudCon
             HelpRow("03", "Protect space", "Keep your largest tile in a corner and preserve empty cells.")
             Button(onClick = { showHelp = false }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Ink)) { Text("Got it") }
         }
+    }
+}
+
+/** Hands the device over to a session that has just been granted. */
+private fun adoptAccount(viewModel: GameViewModel, cloud: CloudController) {
+    viewModel.beginAccountSession(fresh = true)
+    adoptAccountRound(viewModel, cloud)
+}
+
+/** Pulls the account's round, then its career best for the Best card. */
+private fun adoptAccountRound(viewModel: GameViewModel, cloud: CloudController) {
+    cloud.adoptAccountRound(viewModel::applyCloudSave) {
+        viewModel.adoptCareerBest(cloud.user?.bestScore ?: 0)
     }
 }
 
@@ -253,7 +383,14 @@ private fun GridTexture() {
 }
 
 @Composable
-private fun Header(onHelp: () -> Unit, cloud: CloudController? = null, onAccount: () -> Unit = {}, onLeaderboard: () -> Unit = {}) {
+private fun Header(
+    onHelp: () -> Unit,
+    cloud: CloudController? = null,
+    soundOn: Boolean = true,
+    onToggleSound: () -> Unit = {},
+    onAccount: () -> Unit = {},
+    onLeaderboard: () -> Unit = {}
+) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         BrandMark(Modifier.size(36.dp)); Spacer(Modifier.width(10.dp))
         Text("2048", color = Ink, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.5).sp)
@@ -264,6 +401,18 @@ private fun Header(onHelp: () -> Unit, cloud: CloudController? = null, onAccount
             LeaderboardButton(onLeaderboard)
             Spacer(Modifier.width(6.dp))
         }
+        IconButton(
+            onClick = onToggleSound,
+            modifier = Modifier.size(44.dp).background(Color.White.copy(alpha = 0.68f), RoundedCornerShape(13.dp))
+        ) {
+            Icon(
+                if (soundOn) Icons.AutoMirrored.Rounded.VolumeUp else Icons.AutoMirrored.Rounded.VolumeOff,
+                contentDescription = if (soundOn) "Mute sound" else "Unmute sound",
+                modifier = Modifier.size(22.dp),
+                tint = Ink
+            )
+        }
+        Spacer(Modifier.width(6.dp))
         IconButton(onClick = onHelp, modifier = Modifier.size(44.dp).background(Color.White.copy(alpha = 0.68f), RoundedCornerShape(13.dp))) { Icon(Icons.AutoMirrored.Rounded.HelpOutline, contentDescription = "How to play", modifier = Modifier.size(22.dp), tint = Ink) }
     }
 }

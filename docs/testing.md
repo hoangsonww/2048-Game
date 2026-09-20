@@ -29,11 +29,12 @@ Two consequences follow, and both are deliberate:
 
 | Platform | Deterministic tests | UI / integration tests | Runner | Line coverage |
 | --- | --- | --- | --- | --- |
-| Web | 65 engine, controller, metadata, and asset tests + 2 tooling tests | 8 Chromium scenarios | Node test runner, Playwright | 100 % |
-| iOS | 80+ model/surface/cloud tests | 9 XCUITest flows | XCTest | 95.5 % |
-| Android | 75 ViewModel, storage, and surface tests | 5 Compose instrumentation tests | JUnit 4, Compose UI Test | 97.6 % (domain) |
+| Web | 239 engine, controller, cloud, sound, metadata, and asset tests + 2 tooling tests | 12 Chromium scenarios | Node test runner, Playwright | 100 % |
+| iOS | 170 model/surface/cloud/profile tests | 13 XCUITest flows | XCTest | 90.4 % (gated at 90 %) |
+| Android | 193 ViewModel, storage, sound, and surface tests | 19 Compose instrumentation tests | JUnit 4, Compose UI Test | 97.2 % (domain) |
+| Cloud API | 76 unit tests | 27 integration tests against a real MongoDB | Node test runner, supertest | — |
 
-The iOS UI suite reports ten executions because the launch test runs once per appearance mode.
+The iOS UI suite reports one extra execution because the launch test runs once per appearance mode. The Cloud API integration suite is skipped unless `MONGODB_TEST_URI` is set; see [backend.md](backend.md#local-development).
 
 All three deterministic suites prove the same behavioral contract from [`architecture.md`](architecture.md): every direction, merge ordering and the single-merge rule, scoring, weighted spawning, ineffective moves, undo semantics, restart, best-score retention, win and loss predicates, and rejection of invalid saved state.
 
@@ -44,6 +45,8 @@ Each platform additionally covers the layer above its rules engine:
 - **Android** — `SharedPreferencesGameStorage` serialisation against an in-memory `SharedPreferences`.
 - **Both native clients** — the server-driven surface layer: decoding, version gating, node pruning, source fallback, and the rule that every failure mode ends at the app's own native UI. The shipped `help.json` payload is validated like any other untrusted input, and a test asserts the iOS and Android copies have not drifted apart.
 - **Cloud clients (all three platforms)** — fake-transport unit tests for auth, token refresh, sync resolutions, and the guest-prompt / controller state machine. The live API is covered by `server/` unit and integration suites, not by device tests.
+- **Guest and account profiles (all three platforms)** — that signing in parks the guest round rather than uploading it, that playing signed in never writes to the guest slot, that signing out restores the guest round byte for byte, and that career statistics are never lifted from local storage. See [Profile separation](#profile-separation).
+- **Sound (all three platforms)** — that cues are dropped rather than queued when they cannot be played now. See [Sound timing](#sound-timing).
 
 Every suite enforces its own coverage floor; see the platform sections below.
 
@@ -188,6 +191,69 @@ Every client has now shipped a bug where a board swipe reached the surrounding c
 - **Android:** the Compose suite drives real swipes; the board must consume each pointer change so the parent scroll never sees it.
 
 When a swipe bug is reported, measure before theorising. Frame coordinates and the enabled state of Undo tell you whether input reached the game at all — a swipe that scrolls the page and a swipe that silently does nothing look identical to a user, and the second is the more serious defect.
+
+## Profile separation
+
+A device holds two independent rounds — the guest one and the signed-in one —
+and the bug class here is leakage in either direction: an account inheriting a
+board it never played, or a session overwriting the round a player had before
+they signed in. Both are silent, and both are only visible a step later, when
+the numbers on the account panel do not match anything the player did.
+
+Each client asserts the same five properties against its own storage:
+
+1. Starting a session parks the guest round untouched, and the account starts
+   on a clean board with no best score borrowed from the device.
+2. Playing signed in writes only to the account slot.
+3. Ending a session restores the guest round exactly — board, score, moves,
+   and best score — and clears the cached account round.
+4. A sign-in offers the server a **null** save, so nothing local can reach the
+   account.
+5. Career totals render the account's own figures, even when the device holds
+   a much higher local best.
+
+The web suite drives these through `window.Game2048Game`, iOS through
+`GameViewModel` against a scratch `UserDefaults` suite, and Android through
+two prefixed `SharedPreferencesGameStorage` slots over one fake preferences
+file. The warning dialog itself is covered at the UI level on all three:
+Playwright, XCTest's confirmation dialog, and the Compose suite.
+
+## Credential entry
+
+Three properties, asserted per client:
+
+1. The confirmation field exists on sign-up and not on sign-in, and a
+   mismatch is refused **before** any request is made.
+2. A reveal control flips only its own field, and closing a form hides every
+   password again.
+3. A reset sends the username, the email, and the new password; a refusal
+   keeps the form open with the reason on it, and a success revokes the
+   session this device held and lands the player back on sign-in.
+
+Web covers these in `account-ui.test.js` plus a Playwright pass over the real
+`<dialog>` stacking and the input `type` flip. iOS and Android assert the
+controller and API halves on the JVM / in XCTest, and the sheets themselves
+in the Compose and XCUITest suites. The server's own reset rules — that a
+mismatched pair is refused, that the refusal is indistinguishable from an
+unknown account, and that every session dies — are in
+`server/tests/integration/api.test.js`, which needs `MONGODB_TEST_URI`.
+
+## Sound timing
+
+The defect these guard is not "no sound" — it is sound arriving late and all
+at once. Silence is easy to notice; a backlog is easy to ship.
+
+- **Web:** a Playwright test instruments `AudioContext`, asserts no context
+  exists before the first gesture, that the one built inside a gesture is
+  already running, that nothing is ever scheduled against a stopped clock, and
+  that twelve cues land on at least six distinct clock readings rather than
+  one. The unit suite covers the voice cap and the drop-rather-than-queue rule.
+- **iOS:** the cue renderer is a pure `nonisolated` function, so the envelope,
+  the frequency slide, and the degenerate zero-length case are testable with
+  no audio device.
+- **Android:** the mixer writes through an injected `ToneSink`, so a JVM test
+  can pace it like a real `AudioTrack` and assert that two hundred cues
+  produce a fraction of a second of audio rather than ten seconds of backlog.
 
 ## Determinism
 

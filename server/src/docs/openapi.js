@@ -249,6 +249,29 @@ const authPaths = {
             responses: { "200": response("Changed.", { type: "object", properties: { changed: { type: "boolean" }, sessionsRevoked: { type: "integer" } } }), "401": errorResponse("The current password is wrong.") }
         })
     },
+    [`${BASE}/auth/reset-password`]: {
+        post: operation({
+            tag: "Authentication",
+            operationId: "resetPassword",
+            summary: "Reset a forgotten password",
+            description:
+                "Interim recovery path with no email round trip: a matching username and email address are enough to set a new password, and every session on the account is revoked. Knowing both is therefore account takeover, so this is gated behind `FEATURE_PASSWORD_RESET` and the auth rate limiter, and answers identically whichever half is wrong. Replace with a mailed single-use token before relying on it.",
+            requestBody: body({
+                type: "object",
+                required: ["username", "email", "newPassword"],
+                properties: {
+                    username: { type: "string", minLength: 3, maxLength: 24 },
+                    email: { type: "string", format: "email" },
+                    newPassword: { type: "string", minLength: 8 }
+                }
+            }),
+            responses: {
+                "200": response("Reset.", { type: "object", properties: { reset: { type: "boolean" }, sessionsRevoked: { type: "integer" } } }),
+                "401": errorResponse("The username and email do not match an account."),
+                "503": errorResponse("Password reset is disabled on this deployment.")
+            }
+        })
+    },
     [`${BASE}/auth/sessions`]: {
         get: operation({ tag: "Authentication", operationId: "listSessions", summary: "List signed-in devices", auth: true, responses: { "200": response("Sessions, newest first.", { type: "object", properties: { items: { type: "array", items: ref("Session") } } }) } })
     },

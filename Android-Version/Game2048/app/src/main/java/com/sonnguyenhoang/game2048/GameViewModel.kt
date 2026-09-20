@@ -9,10 +9,25 @@ import kotlin.random.Random
 
 class GameViewModel(
     private val storage: GameStorage? = null,
+    private val accountStorage: GameStorage? = null,
     private val randomIndex: (Int) -> Int = { Random.nextInt(it) },
     private val randomUnit: () -> Double = { Random.nextDouble() }
 ) : ViewModel() {
     enum class Direction { UP, DOWN, LEFT, RIGHT }
+
+    /**
+     * Where a round is kept.
+     *
+     * Two complete, independent rounds live on this device: the one played
+     * signed out and the one played signed in. They never touch. Signing in
+     * does not hand a guest board to an account, and signing out returns the
+     * guest board exactly as it was left, best score included. See
+     * ARCHITECTURE.md, "Guest and account profiles".
+     */
+    enum class Profile { GUEST, ACCOUNT }
+
+    /** What happened when a profile was adopted. */
+    enum class SessionStart { ACTIVE, RESTORED, FRESH }
 
     private data class Snapshot(val grid: List<List<Int>>, val score: Int, val hasWon: Boolean)
 
@@ -36,6 +51,16 @@ class GameViewModel(
     var moves by mutableStateOf(0)
         private set
 
+    /** Which storage profile the visible round belongs to. */
+    var profile by mutableStateOf(Profile.GUEST)
+        private set
+
+    /** Whether the visible round is something a player would mind losing. */
+    val hasProgress: Boolean get() = score > 0 || moves > 0
+
+    private val activeStorage: GameStorage?
+        get() = if (profile == Profile.GUEST) storage else accountStorage
+
     private var previous: Snapshot? = null
 
     /**
@@ -45,13 +70,22 @@ class GameViewModel(
      */
     var onRoundChanged: ((RoundChange) -> Unit)? = null
 
-    enum class RoundChange { MOVE, UNDO, NEW_GAME, GAME_OVER, RESTORED }
+    enum class RoundChange { MOVE, UNDO, NEW_GAME, GAME_OVER, RESTORED, PROFILE_CHANGED }
 
     init {
-        if (!restore()) restartGame()
+        if (!restore()) resetRound()
     }
 
     fun restartGame() {
+        resetRound()
+        notify(RoundChange.NEW_GAME)
+    }
+
+    /**
+     * A fresh board with no observer notification, for callers that send
+     * their own — a profile switch is not a new game the cloud should upload.
+     */
+    private fun resetRound() {
         var next = emptyGrid()
         next = addNewNumber(next)
         next = addNewNumber(next)
@@ -62,7 +96,66 @@ class GameViewModel(
         canUndo = false
         moves = 0
         persist()
-        notify(RoundChange.NEW_GAME)
+    }
+
+    /**
+     * Parks the guest round and switches to the signed-in one.
+     *
+     * The guest round is written to its own slot first and then left alone
+     * for the whole session, so signing out restores it exactly. Nothing from
+     * it is carried across: not the board, not the score, and not the best
+     * score.
+     *
+     * @param fresh true for a new sign-in, which discards whatever this
+     *   device last cached for an account — it is not necessarily *this*
+     *   account's, and uploading it would overwrite the real round.
+     */
+    fun beginAccountSession(fresh: Boolean = false): SessionStart {
+        if (profile != Profile.GUEST) return SessionStart.ACTIVE
+        persist()
+        if (fresh) accountStorage?.clear()
+        profile = Profile.ACCOUNT
+        return adoptProfile()
+    }
+
+    /**
+     * Discards the signed-in round and restores the guest one.
+     *
+     * The account's round lives on the server; the copy here is a cache, and
+     * keeping it would hand the next person to sign in on this device someone
+     * else's board.
+     */
+    fun endAccountSession(): Boolean {
+        if (profile != Profile.ACCOUNT) return false
+        accountStorage?.clear()
+        profile = Profile.GUEST
+        adoptProfile()
+        return true
+    }
+
+    /**
+     * Raises the signed-in profile's best score to the account's career best.
+     *
+     * An account whose saved round is gone still has a history, and showing
+     * "Best 0" to a player with nine thousand points behind them is the same
+     * class of wrong number as showing a guest's best on a brand-new account
+     * — just in the other direction.
+     */
+    fun adoptCareerBest(best: Int): Boolean {
+        if (profile != Profile.ACCOUNT || best <= highScore) return false
+        highScore = best
+        persist()
+        return true
+    }
+
+    private fun adoptProfile(): SessionStart {
+        highScore = (activeStorage?.loadBest() ?: 0).coerceAtLeast(0)
+        previous = null
+        canUndo = false
+        val restored = restore()
+        if (!restored) resetRound()
+        notify(RoundChange.PROFILE_CHANGED)
+        return if (restored) SessionStart.RESTORED else SessionStart.FRESH
     }
 
     fun swipe(direction: Direction): Boolean {
@@ -206,11 +299,11 @@ class GameViewModel(
     }
 
     private fun persist() {
-        storage?.save(SavedGame(grid, score, highScore, hasWon, moves))
+        activeStorage?.save(SavedGame(grid, score, highScore, hasWon, moves))
     }
 
     private fun restore(): Boolean {
-        val saved = storage?.load() ?: return false
+        val saved = activeStorage?.load() ?: return false
         if (!isValidGrid(saved.grid)) return false
         grid = saved.grid.map { it.toList() }
         score = saved.score.coerceAtLeast(0)

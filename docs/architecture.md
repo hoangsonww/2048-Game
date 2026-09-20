@@ -14,6 +14,7 @@ This document is the authoritative description of how the three clients are buil
 - [Terminal states](#terminal-states)
 - [Persistence and state validation](#persistence-and-state-validation)
 - [Application lifecycle](#application-lifecycle)
+- [Sound](#sound)
 - [Server-driven surfaces](#server-driven-surfaces)
 - [Optional cloud layer](#optional-cloud-layer)
 - [Web client](#web-client)
@@ -123,6 +124,26 @@ This matters because saved state is user-writable on every platform — browser 
 
 Input handling must guarantee **one move per discrete input**. A single continuous drag produces exactly one move, not a stream of them — enforced with a gesture threshold plus a per-gesture latch on all three clients.
 
+## Sound
+
+Cues are synthesised at runtime on all three clients — no audio assets — and
+mute is a single preference honoured before any audio device is opened.
+
+A cue must be heard **now or not at all**. Each client caps how many voices
+sound at once and drops the excess rather than queueing it, because every
+platform's obvious implementation is a queue that turns a fast run of moves
+into a burst arriving seconds later:
+
+- **Web** builds its `AudioContext` inside the first user gesture and drops any
+  cue scheduled while the context clock is not running. A context created
+  earlier is suspended, and a suspended context's `currentTime` never advances.
+- **iOS** round-robins across a pool of `AVAudioPlayerNode`s, interrupting each,
+  because a single node plays its scheduled buffers strictly in sequence.
+- **Android** keeps one streaming `AudioTrack` open and mixes the sounding
+  voices into it, instead of allocating a track and a thread per cue.
+
+See [ARCHITECTURE.md](../ARCHITECTURE.md#sound-architecture).
+
 ## Server-driven surfaces
 
 Both native clients carry a server-driven UI runtime. The web client does not:
@@ -158,9 +179,20 @@ client. The rules engine never imports them; a small bridge
 | Concern | Rule |
 | --- | --- |
 | Play without an account | Fully supported; guest prompt is dismissible |
+| Guest and account rounds | Separate storage profiles. Signing in warns, parks the guest round, and loads the account's own; signing out restores the guest round exactly |
+| Career statistics | Come from the account only — never lifted from the device's local round |
+| Credential entry | Sign-up confirms the password, every password field has its own reveal control, and closing a form hides them all again |
+| Forgotten passwords | Interim reset: a matching username and email set a new password and revoke every session. Deliberately weak, feature-flagged, and documented as temporary — see [ARCHITECTURE.md](../ARCHITECTURE.md#credential-entry) |
 | Sync conflicts | Prefer the further round; park the other — never last-writer-wins discard |
 | Offline | Moves never wait on the network |
+| In-flight requests | Auth, sync, leaderboard, and sign-out show a spinner and disable the control that started them; the board stays playable |
 | Layout (iOS) | Cloud UI must not push the board into a `ScrollView` |
+
+Authentication and reconciliation are deliberately separate steps. Signing in
+returns a session and nothing more; the game then decides which profile is
+active and asks the cloud layer to adopt the account's round. Only the game
+knows which board is on screen, so only the game can decide what may be
+offered to the server.
 
 Full contract: [backend.md](backend.md). Privacy: [privacy.md](privacy.md).
 

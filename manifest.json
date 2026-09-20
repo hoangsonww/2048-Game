@@ -32,7 +32,7 @@
   "screenshots": [
     {
       "src": "images/web-version-UI.png",
-      "sizes": "1440x1623",
+      "sizes": "1440x1570",
       "type": "image/png",
       "label": "2048 game board with guest invite, scores, and cloud controls"
     }

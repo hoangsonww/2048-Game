@@ -13,6 +13,7 @@ final class UserDefaultsCloudStore: TokenStoring {
         static let access = "cloudAccessTokenV1"
         static let refresh = "cloudRefreshTokenV1"
         static let prompt = "cloudPromptDismissedV1"
+        static let revision = "cloudKnownRevisionV1"
     }
 
     private let defaults: UserDefaults
@@ -48,5 +49,21 @@ final class UserDefaultsCloudStore: TokenStoring {
     var promptDismissed: Bool {
         get { defaults.bool(forKey: Key.prompt) }
         set { defaults.set(newValue, forKey: Key.prompt) }
+    }
+
+    /// Last revision this device successfully synced — sent as `baseRevision`.
+    var knownRevision: Int? {
+        get {
+            guard defaults.object(forKey: Key.revision) != nil else { return nil }
+            let value = defaults.integer(forKey: Key.revision)
+            return value > 0 ? value : nil
+        }
+        set {
+            if let newValue, newValue > 0 {
+                defaults.set(newValue, forKey: Key.revision)
+            } else {
+                defaults.removeObject(forKey: Key.revision)
+            }
+        }
     }
 }

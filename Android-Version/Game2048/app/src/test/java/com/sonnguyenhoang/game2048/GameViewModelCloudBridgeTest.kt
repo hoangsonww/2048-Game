@@ -23,6 +23,7 @@ class GameViewModelCloudBridgeTest {
             saved = game
             writes += 1
         }
+        override fun clear() { saved = null }
     }
 
     /** A deterministic model: every spawn is a 2 in the first empty cell. */

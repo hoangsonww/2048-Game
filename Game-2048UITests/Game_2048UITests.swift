@@ -111,14 +111,96 @@ final class Game_2048UITests: XCTestCase {
         assertScore(0, in: app)
     }
 
+    /// The account surface opens, swaps forms, and gets out of the way.
+    ///
+    /// No request leaves the simulator here: a signed-out launch never calls
+    /// the API, and none of these controls do either. What is being proved is
+    /// that every sheet is reachable and dismissible, which is the part a
+    /// unit test cannot see.
+    func testAccountSheetsOpenSwapAndDismiss() {
+        let app = launch()
+        XCTAssertTrue(app.otherElements["GameBoard"].waitForExistence(timeout: 15))
+
+        app.buttons["accountButton"].tap()
+        XCTAssertTrue(app.navigationBars["Create your account"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.textFields["usernameField"].exists)
+        XCTAssertTrue(app.textFields["emailField"].exists)
+        XCTAssertTrue(app.secureTextFields["passwordField"].exists)
+        XCTAssertTrue(app.secureTextFields["confirmPasswordField"].exists,
+                      "sign-up confirms the password; a typo there is unrecoverable")
+
+        // Revealing a password swaps the secure field for a plain one.
+        app.buttons["passwordFieldReveal"].tap()
+        XCTAssertTrue(app.textFields["passwordField"].waitForExistence(timeout: 3))
+        app.buttons["passwordFieldReveal"].tap()
+        XCTAssertTrue(app.secureTextFields["passwordField"].waitForExistence(timeout: 3))
+
+        // Sign-in has nothing to confirm.
+        app.buttons["authSwitch"].tap()
+        XCTAssertTrue(app.navigationBars["Welcome back"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.secureTextFields["confirmPasswordField"].exists)
+
+        app.buttons["authForgot"].tap()
+        XCTAssertTrue(app.navigationBars["Reset your password"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.textFields["resetUsernameField"].exists)
+        XCTAssertTrue(app.secureTextFields["resetPasswordField"].exists)
+        XCTAssertTrue(app.secureTextFields["resetConfirmField"].exists)
+
+        app.buttons["resetDismiss"].tap()
+        XCTAssertFalse(app.navigationBars["Reset your password"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.otherElements["GameBoard"].waitForExistence(timeout: 5))
+    }
+
+    /// A mismatched confirmation is refused before anything is sent.
+    func testSignUpRefusesAMismatchedConfirmation() {
+        let app = launch()
+        XCTAssertTrue(app.otherElements["GameBoard"].waitForExistence(timeout: 15))
+
+        app.buttons["accountButton"].tap()
+        XCTAssertTrue(app.navigationBars["Create your account"].waitForExistence(timeout: 5))
+        app.secureTextFields["passwordField"].tap()
+        app.secureTextFields["passwordField"].typeText("Password1")
+        app.secureTextFields["confirmPasswordField"].tap()
+        app.secureTextFields["confirmPasswordField"].typeText("Password2")
+        app.buttons["authSubmit"].tap()
+
+        XCTAssertTrue(app.staticTexts["passwordMismatch"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Create your account"].exists, "the form stays up to be corrected")
+    }
+
+    /// Signing in with a round on screen asks before taking it away.
+    func testSigningInMidRoundWarnsBeforeTheBoardLeavesTheScreen() {
+        let app = launch(state: "merge")
+        let board = app.otherElements["GameBoard"]
+        XCTAssertTrue(board.waitForExistence(timeout: 15))
+        board.swipeLeft()
+        XCTAssertTrue(app.buttons["Undo"].isEnabled)
+
+        app.buttons["accountButton"].tap()
+        XCTAssertTrue(app.navigationBars["Create your account"].waitForExistence(timeout: 5))
+        app.secureTextFields["passwordField"].tap()
+        app.secureTextFields["passwordField"].typeText("Password1")
+        app.secureTextFields["confirmPasswordField"].tap()
+        app.secureTextFields["confirmPasswordField"].typeText("Password1")
+        app.buttons["authSubmit"].tap()
+
+        let warning = app.alerts["Set this round aside?"]
+        XCTAssertTrue(warning.waitForExistence(timeout: 10))
+        warning.buttons["Keep playing"].tap()
+        XCTAssertTrue(app.navigationBars["Create your account"].waitForExistence(timeout: 5),
+                      "declining leaves the form up and the round alone")
+    }
+
     func testLaunchPerformance() {
         let app = XCUIApplication()
+        app.launchEnvironment["GAME2048_UI_TESTING"] = "1"
         measure(metrics: [XCTApplicationLaunchMetric()]) { app.launch() }
     }
 
     @discardableResult
     private func launch(state: String? = nil) -> XCUIApplication {
         let app = XCUIApplication()
+        app.launchEnvironment["GAME2048_UI_TESTING"] = "1"
         if let state { app.launchEnvironment["GAME2048_UI_TEST_STATE"] = state }
         app.launch()
         return app

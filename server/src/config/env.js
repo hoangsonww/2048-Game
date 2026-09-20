@@ -110,7 +110,11 @@ export const config = Object.freeze({
         cloudSaves: flag("FEATURE_CLOUD_SAVES", true),
         social: flag("FEATURE_SOCIAL", true),
         dailyChallenge: flag("FEATURE_DAILY_CHALLENGE", true),
-        events: flag("FEATURE_EVENTS", true)
+        events: flag("FEATURE_EVENTS", true),
+        // Self-service reset without an email round trip. See the endpoint's
+        // own comment: anyone who knows a username and its email address can
+        // take the account over, so this is a switch a deployment can throw.
+        passwordReset: flag("FEATURE_PASSWORD_RESET", true)
     }),
 
     logLevel: process.env.LOG_LEVEL ?? (isTest ? "silent" : "info")

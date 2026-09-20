@@ -2,13 +2,24 @@
     "use strict";
 
     const { SIZE, createEmptyBoard, isValidBoard, calculateMove, addRandomTile, isGameOver, availableMoves } = window.Game2048Engine;
-    const STORAGE_KEY = "game2048-state-v2";
-    const BEST_KEY = "highScore";
+    // Two completely separate rounds live on this device: the one played
+    // signed out, and the one played signed in. They never touch. A player
+    // who signs in does not hand their guest board to an account, and a
+    // player who signs out gets the guest board back exactly as they left it,
+    // best score included. See ARCHITECTURE.md, "Guest and account profiles".
+    const PROFILES = {
+        guest: { state: "game2048-state-v2", best: "highScore" },
+        account: { state: "game2048-state-account-v1", best: "game2048-best-account-v1" }
+    };
+    let profile = "guest";
+    const stateKey = () => PROFILES[profile].state;
+    const bestKey = () => PROFILES[profile].best;
     const gridElement = document.getElementById("gridContainer");
     const scoreElement = document.getElementById("score");
     const bestElement = document.getElementById("highScore");
     const undoButton = document.getElementById("undoButton");
     const newGameButton = document.getElementById("newGameButton");
+    const soundButton = document.getElementById("soundButton");
     const newGameDialog = document.getElementById("newGameDialog");
     const confirmNewGame = document.getElementById("confirmNewGame");
     const gameMessage = document.getElementById("gameMessage");
@@ -19,9 +30,19 @@
     const messageSecondary = document.getElementById("messageSecondary");
     const statusLine = document.getElementById("statusLine");
 
+    // Optional: tests and stripped embeds may omit sounds.js.
+    const sounds = window.Game2048Sounds?.createGameSounds?.() ?? {
+        isEnabled: () => true,
+        toggle() { return true; },
+        move() {}, merge() {}, undo() {}, newGame() {}, win() {}, gameOver() {}, invalid() {}
+    };
+
+    function readBest() {
+        return Number.parseInt(localStorage.getItem(bestKey()), 10) || 0;
+    }
+
     let state = {
-        board: createEmptyBoard(), score: 0,
-        best: Number.parseInt(localStorage.getItem(BEST_KEY), 10) || 0,
+        board: createEmptyBoard(), score: 0, best: readBest(),
         won: false, gameOver: false, history: null, moves: 0, startedAt: Date.now()
     };
     let touchStart = null;
@@ -48,7 +69,7 @@
 
     function loadGame() {
         try {
-            const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+            const saved = JSON.parse(localStorage.getItem(stateKey()));
             const validBoard = isValidBoard(saved?.board);
             if (validBoard) {
                 state.board = saved.board;
@@ -60,29 +81,76 @@
                 return true;
             }
         } catch (_) {
-            localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(stateKey());
         }
         return false;
     }
 
     function saveGame() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ board: state.board, score: state.score, best: state.best, won: state.won, moves: state.moves }));
-        localStorage.setItem(BEST_KEY, String(state.best));
+        localStorage.setItem(stateKey(), JSON.stringify({ board: state.board, score: state.score, best: state.best, won: state.won, moves: state.moves }));
+        localStorage.setItem(bestKey(), String(state.best));
     }
 
-    function startNewGame() {
+    /** A fresh board, with no announcement and no observer notification. */
+    function resetRound() {
         state.board = addRandomTile(addRandomTile(createEmptyBoard()));
         state.score = 0; state.won = false; state.gameOver = false; state.history = null;
         state.moves = 0; state.startedAt = Date.now();
         hideMessage(); saveGame(); render(true);
+    }
+
+    function startNewGame() {
+        resetRound();
+        sounds.newGame();
         announce("New game started. Two tiles are on the board.");
         notify("new-game");
+    }
+
+    function describeRoundComplete() {
+        showMessage("Round complete", "No more moves", `Final score: ${state.score.toLocaleString()}. Your best is ${state.best.toLocaleString()}.`, false);
+    }
+
+    /**
+     * Switches the active round to another profile's storage.
+     *
+     * The profile being left has already been written to its own keys, so
+     * nothing it holds is lost, and nothing it holds travels: `best` is
+     * re-read from the profile being entered rather than carried across,
+     * which is what keeps a guest best score out of an account's statistics.
+     */
+    function adoptProfile(next) {
+        profile = next;
+        state.best = readBest();
+        state.history = null;
+        state.startedAt = Date.now();
+        const restored = loadGame();
+        if (restored) {
+            hideMessage(); render(false);
+            if (state.gameOver) describeRoundComplete();
+        } else {
+            resetRound();
+        }
+        announce(profile === "account"
+            ? "Signed in. This board belongs to your account."
+            : "Signed out. The round you were playing on this device is back.");
+        notify("profile");
+        return restored;
+    }
+
+    function renderSoundButton() {
+        if (!soundButton) return;
+        const on = sounds.isEnabled();
+        soundButton.setAttribute("aria-pressed", String(on));
+        soundButton.setAttribute("aria-label", on ? "Mute sound" : "Unmute sound");
+        soundButton.title = on ? "Mute sound" : "Unmute sound";
+        soundButton.classList.toggle("icon-button--muted", !on);
     }
 
     function move(direction) {
         if (state.gameOver || !["up", "down", "left", "right"].includes(direction)) return false;
         const result = calculateMove(state.board, direction);
         if (result.board.every((value, index) => value === state.board[index])) {
+            sounds.invalid();
             announce(`No tiles can move ${direction}.`); return false;
         }
         state.history = cloneSnapshot(); state.board = result.board; state.score += result.gained;
@@ -91,12 +159,21 @@
         const reachedGoal = state.board.some(value => value >= 2048);
         state.gameOver = isGameOver(state.board);
         saveGame(); render(true);
-        if (reachedGoal && !state.won) {
+        // A board that both hits 2048 and has no moves left is game over — same
+        // priority as iOS and Android (keep-playing is meaningless with no moves).
+        if (state.gameOver) {
+            if (reachedGoal && !state.won) { state.won = true; saveGame(); }
+            sounds.gameOver();
+            describeRoundComplete();
+        } else if (reachedGoal && !state.won) {
             state.won = true; saveGame();
+            sounds.win();
             showMessage("Goal reached", "You made 2048", "Keep building, or start with a clean board.", true);
-        } else if (state.gameOver) {
-            showMessage("Round complete", "No more moves", `Final score: ${state.score.toLocaleString()}. Your best is ${state.best.toLocaleString()}.`, false);
-        } else announce(result.gained ? `${direction}. Merged for ${result.gained} points.` : `Moved ${direction}.`);
+        } else {
+            if (result.gained) sounds.merge(result.gained);
+            else sounds.move();
+            announce(result.gained ? `${direction}. Merged for ${result.gained} points.` : `Moved ${direction}.`);
+        }
         notify(state.gameOver ? "game-over" : "move");
         return true;
     }
@@ -108,7 +185,7 @@
         // The move count is not rewound. It measures the round the player
         // actually played, and a metric you can lower by pressing undo is not
         // a measurement.
-        hideMessage(); saveGame(); render(false); announce("Last move undone.");
+        hideMessage(); saveGame(); render(false); sounds.undo(); announce("Last move undone.");
         notify("undo");
     }
 
@@ -140,7 +217,7 @@
         state.history = null;
         state.startedAt = Date.now();
         hideMessage(); saveGame(); render(true);
-        if (state.gameOver) showMessage("Round complete", "No more moves", `Final score: ${state.score.toLocaleString()}.`, false);
+        if (state.gameOver) describeRoundComplete();
         announce("Restored the round from your account.");
         notify("restored");
         return true;
@@ -185,8 +262,18 @@
     function announce(message) { statusLine.textContent = message; }
     function requestNewGame() { if (state.score > 0 && !state.gameOver) newGameDialog.showModal(); else startNewGame(); }
 
+    function fieldOwnsKeyboard(node) {
+        if (!node || typeof node !== "object") return false;
+        const tag = node.tagName;
+        return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || Boolean(node.isContentEditable);
+    }
+
     function handleKey(event) {
-        if (newGameDialog.open) return;
+        // Auth (and every other) <dialog> owns the keyboard while open. Without
+        // this gate, WASD/arrows still drive the board under the sign-in form —
+        // including when focus is on a dialog button rather than an input.
+        if (fieldOwnsKeyboard(event.target) || fieldOwnsKeyboard(document.activeElement)) return;
+        if (document.querySelector("dialog[open]")) return;
         const keyMap = { ArrowUp: "up", w: "up", W: "up", ArrowDown: "down", s: "down", S: "down", ArrowLeft: "left", a: "left", A: "left", ArrowRight: "right", d: "right", D: "right" };
         if (keyMap[event.key]) { event.preventDefault(); move(keyMap[event.key]); }
         else if (event.key === "f" || event.key === "F") {
@@ -216,18 +303,33 @@
         move(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : (dy > 0 ? "down" : "up"));
     }, { passive: true });
 
+    // The Web Audio clock only runs after a user gesture, and a context built
+    // before one is stuck at time zero — which is what turned a stream of
+    // cues into a single burst. Build it here, inside the first real gesture,
+    // so the player's very first move is already audible.
+    const unlockSound = () => { sounds.unlock?.(); };
+    for (const gesture of ["pointerdown", "keydown", "touchstart"]) {
+        document.addEventListener(gesture, unlockSound, { capture: true, once: true, passive: true });
+    }
+
     document.addEventListener("keydown", handleKey);
     document.querySelectorAll("[data-direction]").forEach(button => button.addEventListener("click", () => move(button.dataset.direction)));
     undoButton.addEventListener("click", undo); newGameButton.addEventListener("click", requestNewGame);
-    confirmNewGame.addEventListener("click", startNewGame); messagePrimary.addEventListener("click", startNewGame);
+    confirmNewGame.addEventListener("click", () => startNewGame()); messagePrimary.addEventListener("click", () => startNewGame());
     messageSecondary.addEventListener("click", () => { hideMessage(); announce("Keep going—your next goal is 4096."); });
+    soundButton?.addEventListener("click", () => {
+        sounds.toggle();
+        renderSoundButton();
+        announce(sounds.isEnabled() ? "Sound on." : "Sound muted.");
+    });
+    renderSoundButton();
 
     window.render_game_to_text = () => JSON.stringify({
         coordinateSystem: "4x4 grid; origin top-left; rows increase downward, columns increase rightward",
         mode: state.gameOver ? "game-over" : (gameMessage.hidden ? "playing" : "won"),
         board: Array.from({ length: SIZE }, (_, row) => state.board.slice(row * SIZE, row * SIZE + SIZE)),
         score: state.score, best: state.best, canUndo: Boolean(state.history), moves: state.moves,
-        availableMoves: availableMoves(state.board)
+        profile, availableMoves: availableMoves(state.board)
     });
     window.advanceTime = () => render(false);
 
@@ -239,6 +341,69 @@
         getSave: cloudSave,
         applySave: applyRemoteSave,
         newGame: startNewGame,
+
+        /** Which storage profile the visible round belongs to. */
+        getProfile: () => profile,
+
+        /**
+         * Raises the signed-in profile's best score to the account's career
+         * best.
+         *
+         * An account whose saved round is gone still has a history, and
+         * showing "Best 0" to a player with nine thousand points behind them
+         * is the same class of wrong number as showing a guest's best on a
+         * brand-new account — just in the other direction.
+         */
+        adoptCareerBest(best) {
+            if (profile !== "account") return false;
+            const value = Number.isInteger(best) && best > 0 ? best : 0;
+            if (value <= state.best) return false;
+            state.best = value;
+            saveGame();
+            render(false);
+            return true;
+        },
+
+        /** Whether the visible round is something a player would mind losing. */
+        hasProgress: () => state.score > 0 || state.moves > 0,
+
+        /**
+         * Parks the guest round and switches to the signed-in one.
+         *
+         * The guest round is written to its own keys first and then left
+         * alone for the whole session, so signing out restores it exactly.
+         * Nothing from it is carried into the account: not the board, not the
+         * score, and not the best score.
+         */
+        beginAccountSession({ fresh = false } = {}) {
+            if (profile === "account") return "active";
+            saveGame();
+            // A brand-new sign-in starts from nothing on purpose. Whatever
+            // this browser last cached for *an* account is not necessarily
+            // this account's, and syncing it up would upload a stranger's
+            // board over the round the player actually has.
+            if (fresh) {
+                localStorage.removeItem(PROFILES.account.state);
+                localStorage.removeItem(PROFILES.account.best);
+            }
+            return adoptProfile("account") ? "restored" : "fresh";
+        },
+
+        /**
+         * Discards the signed-in round and restores the guest one.
+         *
+         * The account's round lives on the server; the copy on this device is
+         * a cache, and keeping it would hand the next person to sign in on
+         * this browser someone else's board.
+         */
+        endAccountSession() {
+            if (profile !== "account") return false;
+            localStorage.removeItem(PROFILES.account.state);
+            localStorage.removeItem(PROFILES.account.best);
+            adoptProfile("guest");
+            return true;
+        },
+
         subscribe(listener) {
             changeListeners.add(listener);
             tell(listener, "subscribed");
@@ -249,7 +414,7 @@
     if (!loadGame()) startNewGame();
     else {
         render(false); announce("Saved game restored. Continue when ready.");
-        if (state.gameOver) showMessage("Round complete", "No more moves", `Final score: ${state.score.toLocaleString()}.`, false);
+        if (state.gameOver) describeRoundComplete();
         notify("loaded");
     }
 })();

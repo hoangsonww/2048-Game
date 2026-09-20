@@ -65,7 +65,8 @@ test("fresh game renders two valid tiles and accessible vector controls", async 
     assert.equal(await page.locator("#gridContainer .cell").count(), 16);
     assert.equal(await page.locator('#gridContainer > [role="row"]').count(), 4);
     assert.equal(await page.locator('#gridContainer > [role="row"] > [role="gridcell"]').count(), 16);
-    assert.equal(await page.locator("#undoButton svg, #newGameButton svg").count(), 2);
+    assert.equal(await page.locator("#undoButton svg.solid-icon, #newGameButton svg.solid-icon").count(), 2);
+    assert.equal(await page.locator("#soundButton").count(), 1);
     assert.equal(await page.locator("#undoButton").isDisabled(), true);
     assert.deepEqual(errors, []);
     await context.close();
@@ -200,6 +201,32 @@ test("new-game confirmation supports cancel and confirmed reset", async () => {
     await context.close();
 });
 
+test("auth dialog owns WASD and arrows so the board stays still", async () => {
+    const seeded = { board: [2, 2, 0, 0, ...Array(12).fill(0)], score: 10, best: 12, won: false };
+    const { context, page, errors } = await scenario({ state: seeded });
+    await page.locator("#accountButton").click();
+    assert.equal(await page.locator("#authDialog").evaluate(dialog => dialog.open), true);
+
+    await page.locator("#authUsername").fill("player");
+    await page.keyboard.press("a");
+    await page.keyboard.press("w");
+    await page.keyboard.press("ArrowLeft");
+    assert.deepEqual((await state(page)).board.flat(), seeded.board, "keys in the auth form must not move tiles");
+
+    // Focus a dialog control that is not an input — still must not drive the board.
+    await page.locator("#authCancel").focus();
+    await page.keyboard.press("d");
+    await page.keyboard.press("ArrowRight");
+    assert.deepEqual((await state(page)).board.flat(), seeded.board, "keys while the auth dialog is open must not move tiles");
+
+    await page.locator("#authCancel").click();
+    assert.equal(await page.locator("#authDialog").evaluate(dialog => dialog.open), false);
+    await page.keyboard.press("a");
+    assert.equal((await state(page)).board.flat().includes(4), true, "closing auth restores keyboard moves");
+    assert.deepEqual(errors, []);
+    await context.close();
+});
+
 test("2048 win overlay can continue and game-over restore can restart", async () => {
     const win = await scenario({ state: { board: [1024, 1024, 0, 0, ...Array(12).fill(0)], score: 0, best: 0, won: false } });
     await win.page.keyboard.press("ArrowLeft");
@@ -229,6 +256,136 @@ test("corrupt saved state is discarded and fullscreen shortcut uses the browser 
     });
     await page.keyboard.press("f");
     assert.equal(await page.evaluate(() => window.__fullscreenRequested), true);
+    assert.deepEqual(errors, []);
+    await context.close();
+});
+
+test("sound cues follow the real audio clock instead of piling up behind it", async () => {
+    // The defect this guards: an AudioContext built at load is suspended, its
+    // `currentTime` frozen at zero, and every cue scheduled against it lands
+    // on the same instant — silence during play, then the whole backlog at
+    // once when the context finally resumes.
+    const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    await context.addInitScript(() => {
+        window.__scheduled = [];
+        window.__contexts = 0;
+        const Real = window.AudioContext;
+        window.AudioContext = class extends Real {
+            constructor(...args) {
+                super(...args);
+                window.__contexts += 1;
+                window.__bornSuspended = this.state === "suspended";
+            }
+            createOscillator() {
+                const oscillator = super.createOscillator();
+                const start = oscillator.start.bind(oscillator);
+                oscillator.start = when => {
+                    window.__scheduled.push({ when, clock: this.currentTime, state: this.state });
+                    return start(when);
+                };
+                return oscillator;
+            }
+        };
+    });
+    const page = await context.newPage();
+    const errors = [];
+    page.on("pageerror", error => errors.push(error.message));
+    await page.goto(baseURL);
+    await page.waitForFunction(() => Boolean(window.render_game_to_text));
+
+    // Nothing may exist before the player has touched the page.
+    assert.equal(await page.evaluate(() => window.__contexts), 0);
+    assert.deepEqual(await page.evaluate(() => window.__scheduled), []);
+
+    for (let index = 0; index < 12; index += 1) {
+        await page.keyboard.press(index % 2 ? "ArrowLeft" : "ArrowUp");
+        await page.waitForTimeout(70);
+    }
+
+    const scheduled = await page.evaluate(() => window.__scheduled);
+    assert.equal(await page.evaluate(() => window.__contexts), 1, "exactly one context, built on the first gesture");
+    assert.equal(await page.evaluate(() => window.__bornSuspended), false, "a context born in a gesture is already running");
+    assert.ok(scheduled.length > 0, "cues must actually reach the mixer");
+    assert.ok(scheduled.every(cue => cue.state === "running"), "nothing is scheduled against a stopped clock");
+    // Every cue lands within a render quantum of the clock reading taken when
+    // it was made, never at a fixed instant shared with all the others.
+    assert.ok(scheduled.every(cue => cue.when >= cue.clock - 0.02 && cue.when <= cue.clock + 0.35));
+    const distinct = new Set(scheduled.map(cue => Math.round(cue.clock * 100)));
+    assert.ok(distinct.size >= 6, `cues spread across the timeline, got ${distinct.size} distinct instants`);
+
+    assert.deepEqual(errors, []);
+    await context.close();
+});
+
+test("the sign-in handover warning is on the page and reachable", async () => {
+    const { context, page, errors } = await scenario();
+    const dialog = page.locator("#profileSwitchDialog");
+    await page.locator("#accountButton").click();
+    assert.equal(await page.locator("#authDialog").evaluate(node => node.open), true);
+    assert.equal(await dialog.evaluate(node => node.open), false, "nothing to warn about on a fresh board");
+
+    await page.keyboard.press("Escape");
+    await page.locator("#gridContainer").waitFor();
+    await page.keyboard.press("ArrowLeft");
+    await page.keyboard.press("ArrowUp");
+
+    await page.locator("#accountButton").click();
+    await page.locator("#authSubmit").click();
+    assert.equal(await dialog.evaluate(node => node.open), true, "a played round is warned about before it leaves the screen");
+    assert.match(await page.locator("#profileSwitchBody").textContent(), /comes back the moment you sign out/);
+
+    await page.locator("#profileSwitchCancel").click();
+    assert.equal(await dialog.evaluate(node => node.open), false);
+    assert.ok((await state(page)).moves > 0, "declining leaves the round exactly where it was");
+    assert.deepEqual(errors, []);
+    await context.close();
+});
+
+test("password fields confirm, reveal, and offer a way back in", async () => {
+    const { context, page, errors } = await scenario();
+
+    await page.locator("#accountButton").click();
+    await page.waitForSelector("#authDialog[open]");
+
+    // Sign-up confirms; sign-in has nothing to confirm.
+    assert.equal(await page.locator("#authConfirmField").isVisible(), true);
+    await page.locator("#authSwitch").click();
+    assert.equal(await page.locator("#authConfirmField").isVisible(), false);
+    await page.locator("#authSwitch").click();
+
+    // Each reveal control flips only its own field.
+    const reveal = page.locator('[data-reveal="authPassword"]');
+    await page.fill("#authPassword", "Password1");
+    await page.fill("#authConfirm", "Password1");
+    assert.equal(await page.locator("#authPassword").getAttribute("type"), "password");
+    await reveal.click();
+    assert.equal(await page.locator("#authPassword").getAttribute("type"), "text");
+    assert.equal(await page.locator("#authConfirm").getAttribute("type"), "password");
+    assert.equal(await reveal.getAttribute("aria-pressed"), "true");
+    assert.equal(await reveal.getAttribute("aria-label"), "Hide password");
+    await reveal.click();
+    assert.equal(await page.locator("#authPassword").getAttribute("type"), "password");
+
+    // A mismatch is caught before anything is sent.
+    await page.fill("#authConfirm", "Password2");
+    await page.locator("#authSubmit").click();
+    assert.equal(await page.locator("#authError").isVisible(), true);
+    assert.match(await page.locator("#authError").textContent(), /do not match/);
+    assert.equal(await page.locator("#authDialog").evaluate(node => node.open), true);
+
+    // Forgot password swaps to the reset form and back.
+    await page.locator("#authForgot").click();
+    assert.equal(await page.locator("#authDialog").evaluate(node => node.open), false);
+    assert.equal(await page.locator("#resetDialog").evaluate(node => node.open), true);
+    await page.locator('[data-reveal="resetPassword"]').click();
+    assert.equal(await page.locator("#resetPassword").getAttribute("type"), "text");
+    await page.locator("#resetCancel").click();
+    assert.equal(await page.locator("#resetDialog").evaluate(node => node.open), false);
+    assert.equal(await page.locator("#authDialog").evaluate(node => node.open), true);
+    assert.equal(await page.locator("#authTitle").textContent(), "Welcome back");
+    // Closing a form puts every password back behind dots.
+    assert.equal(await page.locator("#resetPassword").getAttribute("type"), "password");
+
     assert.deepEqual(errors, []);
     await context.close();
 });

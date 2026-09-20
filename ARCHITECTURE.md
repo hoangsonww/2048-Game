@@ -582,15 +582,40 @@ The best score survives a new game and never decreases. There is a subtle trap h
 
 ## Persistence and corrupt state
 
-Each client stores one saved round and one best score under platform-native keys:
+Each client stores one saved round and one best score **per profile**, under platform-native keys:
 
-| Client | Mechanism | Round key | Best-score key |
-| --- | --- | --- | --- |
-| Web | `localStorage` | `game2048-state-v2` (JSON) | `highScore` |
-| iOS | `UserDefaults` | `savedGridV2`, `savedScoreV2`, `savedHasWonV2` | `highScore` |
-| Android | `SharedPreferences` | `saved_grid_v2` (CSV), `saved_score_v2`, `saved_won_v2` | `high_score` |
+| Client | Mechanism | Guest round key | Guest best key | Account round key | Account best key |
+| --- | --- | --- | --- | --- | --- |
+| Web | `localStorage` | `game2048-state-v2` (JSON) | `highScore` | `game2048-state-account-v1` | `game2048-best-account-v1` |
+| iOS | `UserDefaults` | `savedGridV2`, `savedScoreV2`, `savedHasWonV2`, `savedMovesV2` | `highScore` | the same names prefixed `account…V1` | `accountHighScoreV1` |
+| Android | `SharedPreferences` | `saved_grid_v2` (CSV), `saved_score_v2`, `saved_won_v2`, `saved_moves_v2` | `high_score` | the same keys prefixed `account_` | `account_high_score` |
 
-The keys are intentionally *not* unified — each is idiomatic for its platform, and the saves never travel between clients. The `v2` suffix marks the current layout; an older `v1` entry is simply not read.
+The keys are intentionally *not* unified across clients — each is idiomatic for its platform, and the saves never travel between clients. The `v2` suffix marks the current layout; an older `v1` entry is simply not read.
+
+### Guest and account profiles
+
+Two complete, independent rounds live on a device: the one played signed out
+and the one played signed in. They never touch.
+
+| Event | What happens |
+| --- | --- |
+| Signing in with a round in progress | The player is warned first. The guest round is written to its own keys and left alone; the account profile becomes active. |
+| Signing in | The device offers the server **nothing** — `sync` is called with a null save, so the account's own round downloads, or the clean board stands. |
+| Playing signed in | Only the account keys are written. The guest round and the guest best score are frozen. |
+| Signing out | The account keys are cleared and the guest round is restored exactly — board, score, moves, and best score. |
+| Career statistics | Read from the account and from nowhere else. No local best score or highest tile is ever merged in. |
+
+The last row is the one that is easy to get wrong and hard to spot. Lifting a
+device's local best into an account's career totals produces a brand-new
+account advertising "Best 4,312 · 0 rounds · highest tile 128" — figures it
+never earned, from a round it never played.
+
+The reason the guest round is *parked* rather than uploaded is that an account
+is not a device. Two people can share a browser, and a round played before
+anyone signed in belongs to whoever was sitting there, not to whoever signs in
+next. Parking it also makes the promise reversible: signing out is not a
+destructive act, and a player who signs in to look at a leaderboard gets their
+board back untouched.
 
 Restoring is the one place the app ingests data it did not create, so every client validates before trusting:
 
@@ -775,6 +800,51 @@ The tile ramp is likewise identical across all three:
 Text flips to white at 8 and above, on every client. The ramp is warm-neutral through 4, heats through the oranges and reds to 64, shifts to gold for the 128–512 band, then goes dark for 1024 and above — so a player reads their progress by temperature, not by reading the number.
 
 **Changing a colour is a three-file edit.** This is the most common parity drift in the repository and the cheapest to catch: the values above are the reference.
+
+### Credential entry
+
+Three rules, identical on all three clients:
+
+| Rule | Why |
+| --- | --- |
+| Sign-up asks for the password twice; sign-in does not. | A typo at sign-up locks a player out of an account they cannot prove they own. A typo at sign-in is reported by the server on the next keystroke. |
+| Every password field has its own reveal control. | A password nobody can read is a password they mistype, and retyping it into a confirmation field they also cannot read does not help. Per-field, so revealing one does not expose the form to whoever is behind them. |
+| Closing a form hides every password again. | The next person to open it starts from dots. |
+
+The mismatch is caught on the client before anything is sent: a confirmation
+field is a UI affordance, and the server is never told what was typed into it.
+
+Recovery is `POST /auth/reset-password`, and it is **deliberately weak**: a
+matching username and email are the whole proof, because there is no mail
+infrastructure to build a real token flow on yet. Anyone who knows both can
+take the account over. It is gated behind `FEATURE_PASSWORD_RESET`, rate
+limited, uniform in its errors so it cannot be used to discover who has an
+account, and total — every session on the account is revoked, including the
+one on the device doing the resetting, which is why each client drops back to
+its guest round afterwards. The security note lives on the endpoint itself in
+`server/src/routes/auth.routes.js`; read it before relying on this.
+
+### Sound architecture
+
+Every cue is synthesised at runtime — a few oscillators on web, generated PCM
+on both native clients — so there are no audio assets to ship, localise, or
+keep in sync across three repositories' worth of build systems. Mute is one
+boolean in the platform's own preference store, and it is honoured before any
+device is opened.
+
+The design constraint that matters is **promptness under load**. A player
+holding an arrow key generates cues far faster than a cue lasts, and the
+obvious implementation of each platform's audio API turns that into a queue:
+
+| Client | The trap | What it does instead |
+| --- | --- | --- |
+| Web | An `AudioContext` built before a user gesture is suspended, and a suspended context's `currentTime` is frozen at zero. Every cue scheduled against it lands on the same instant and they all fire together when it unfreezes. | No context exists until `unlock()` runs inside a real gesture, so it is born running. A cue scheduled while the clock is not running is **dropped**, never queued. |
+| iOS | `AVAudioPlayerNode` is a queue: buffers scheduled on one node play strictly one after another. | A ring of eight player nodes, each cue interrupting the node it lands on, so cues overlap instead of lining up. |
+| Android | Allocating an `AudioTrack` per cue costs tens of milliseconds and a thread each time, so the backlog grows faster than it drains. | One streaming track and a mixer thread that sums the sounding voices; the blocking `write` is what paces it. |
+
+All three cap the number of simultaneous voices and **drop** the excess. That
+is the whole rule: a cue the player cannot hear now is worth less than nothing
+if the price is hearing it later, on top of twenty others.
 
 ### Motion architecture
 

@@ -84,10 +84,11 @@ kbd svg, .mobile-controls svg, .dialog-icon svg { width: 1rem; height: 1rem; fil
 .message-actions { display: flex; gap: .55rem; align-items: center; }
 @keyframes fade-in { from { opacity: 0; } }
 .button { min-height: 2.85rem; padding: .7rem 1.1rem; border: 0; border-radius: .55rem; font-weight: 700; cursor: pointer; transition: transform .2s ease, background .2s ease; }
-.button:hover { transform: translateY(-1px); }
-.button:active { transform: translateY(1px) scale(.98); }
+.button:hover:not(:disabled) { transform: translateY(-1px); }
+.button:active:not(:disabled) { transform: translateY(1px) scale(.98); }
+.button:disabled { opacity: .62; cursor: wait; }
 .button--primary { color: white; background: var(--accent); }
-.button--primary:hover { background: var(--accent-dark); }
+.button--primary:hover:not(:disabled) { background: var(--accent-dark); }
 .button--text { color: inherit; background: transparent; }
 .mobile-controls { display: none; }
 .status-line { min-height: 1.35rem; margin: .8rem 0 0; color: var(--muted); font-size: .78rem; text-align: center; }
@@ -104,7 +105,7 @@ footer p { margin: 0; }
 footer div { display: flex; gap: 1.5rem; }
 .confirm-dialog { width: min(calc(100% - 2rem),25rem); padding: 0; border: 0; border-radius: var(--radius-large); color: var(--ink); background: var(--white); box-shadow: 0 2rem 6rem rgba(40,33,24,.32); }
 .confirm-dialog::backdrop { background: rgba(36,35,31,.55); backdrop-filter: blur(.25rem); }
-.confirm-dialog form { padding: 2rem; text-align: center; }
+.confirm-dialog form, .confirm-dialog .dialog-body { padding: 2rem; text-align: center; }
 .dialog-icon { width: 3rem; height: 3rem; margin: 0 auto 1rem; display: grid; place-items: center; border-radius: .8rem; color: var(--accent); background: #fbe2da; }
 .dialog-icon svg { width: 1.35rem; height: 1.35rem; }
 .confirm-dialog h2 { margin: 0; font-size: 1.55rem; letter-spacing: -.035em; }
@@ -147,20 +148,71 @@ footer div { display: flex; gap: 1.5rem; }
 .account-button span { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .icon-button--ghost { border-color: transparent; background: transparent; }
+.icon-button .solid-icon--sound-off { display: none; }
+.icon-button--muted .solid-icon--sound-on { display: none; }
+.icon-button--muted .solid-icon--sound-off { display: block; }
 
-.cloud-banner { margin-top: 1rem; padding: .95rem 1.1rem; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: var(--radius-small); background: var(--white); }
-.cloud-banner[hidden] { display: none; }
-.cloud-banner__text { flex: 1 1 14rem; }
-.cloud-banner__text strong { display: block; font-size: .95rem; }
-.cloud-banner__text p { margin: .25rem 0 0; color: var(--muted); font-size: .85rem; line-height: 1.45; }
+/* Guest invite is a floating toast — never in the game column, never pushes the board. */
+.cloud-toast {
+    position: fixed;
+    z-index: 40;
+    left: 50%;
+    bottom: max(1.25rem, env(safe-area-inset-bottom, 0px) + .75rem);
+    width: min(calc(100% - 1.5rem), 28rem);
+    padding: .95rem 1.1rem;
+    display: flex;
+    gap: .85rem;
+    align-items: center;
+    flex-wrap: wrap;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius-small);
+    background: var(--white);
+    box-shadow: 0 12px 40px rgba(35, 31, 24, .14);
+    transform: translateX(-50%) translateY(0);
+    animation: cloud-toast-in .35s ease-out;
+}
+.cloud-toast[hidden] { display: none; }
+.cloud-toast__text { flex: 1 1 12rem; min-width: 0; }
+.cloud-toast__text strong { display: block; font-size: .95rem; }
+.cloud-toast__text p { margin: .25rem 0 0; color: var(--muted); font-size: .85rem; line-height: 1.45; }
 .cloud-banner__short { display: none; }
-.cloud-banner__actions { display: flex; gap: .4rem; align-items: center; }
-.cloud-banner__actions .button { min-height: 2.35rem; padding: .5rem .85rem; font-size: .85rem; }
+.cloud-toast__actions { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; }
+.cloud-toast__actions .button { min-height: 2.35rem; padding: .5rem .85rem; font-size: .85rem; }
+@keyframes cloud-toast-in {
+    from { opacity: 0; transform: translateX(-50%) translateY(.75rem); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
 
 .cloud-status { margin: .35rem 0 0; color: var(--muted); font-size: .82rem; line-height: 1.45; }
+.cloud-status.is-busy,
+.cloud-panel__muted.is-busy,
+.button.is-busy { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; }
+.cloud-status.is-busy::before,
+.cloud-panel__muted.is-busy::before,
+.button.is-busy::before {
+    content: "";
+    width: .85em;
+    height: .85em;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    flex: none;
+    animation: cloud-spin .7s linear infinite;
+}
+@keyframes cloud-spin { to { transform: rotate(360deg); } }
 
 .cloud-dialog { width: min(calc(100% - 2rem), 27rem); }
 .cloud-dialog--wide { width: min(calc(100% - 2rem), 34rem); }
+.cloud-dialog { position: relative; }
+.cloud-form { position: relative; }
+.cloud-dialog__close { position: absolute; top: .65rem; right: .65rem; z-index: 1; }
+.dialog-actions--stack { flex-direction: column-reverse; align-items: stretch; }
+.dialog-actions--stack .button { width: 100%; }
+@media (min-width: 28rem) {
+    .dialog-actions--stack { flex-direction: row; justify-content: stretch; }
+    .dialog-actions--stack .button { width: auto; flex: 1; }
+}
 .cloud-panel { padding: 2rem; text-align: center; }
 .cloud-panel h2 { margin: 0; font-size: 1.55rem; letter-spacing: -.035em; }
 .cloud-panel__muted { margin: .4rem 0 0; color: var(--muted); font-size: .88rem; }
@@ -175,12 +227,23 @@ footer div { display: flex; gap: 1.5rem; }
 .cloud-field input { min-height: 2.7rem; padding: .55rem .75rem; border: 1px solid var(--line); border-radius: .5rem; color: var(--ink); background: var(--paper); font: 500 .95rem "Outfit", sans-serif; }
 .cloud-field input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .cloud-field__hint { color: var(--muted); font-size: .76rem; }
+/* The reveal control sits inside the field, so the input keeps its own
+   focus ring and the button never changes the row's height. */
+.cloud-field__control { position: relative; display: flex; }
+.cloud-field__control input { width: 100%; padding-right: 2.9rem; }
+.reveal-button { position: absolute; top: 50%; right: .35rem; width: 2.1rem; height: 2.1rem; padding: 0; display: grid; place-items: center; transform: translateY(-50%); border: 0; border-radius: .4rem; color: var(--muted); background: transparent; cursor: pointer; }
+.reveal-button:hover { color: var(--ink); background: rgba(36,35,31,.07); }
+.reveal-button .solid-icon { width: 1.15rem; height: 1.15rem; display: block; fill: currentColor; stroke: none; }
+.reveal-button .solid-icon--reveal-off { display: none; }
+.reveal-button[aria-pressed="true"] .solid-icon--reveal-on { display: none; }
+.reveal-button[aria-pressed="true"] .solid-icon--reveal-off { display: block; }
 .button--link { width: 100%; margin-top: .4rem; padding: .5rem; color: var(--muted); background: transparent; font-size: .85rem; text-decoration: underline; text-underline-offset: .25em; }
 .button--link:hover { color: var(--ink); }
 
 .period-row { margin: 1.1rem 0; display: flex; gap: .4rem; justify-content: center; flex-wrap: wrap; }
 .period-button { min-height: 2.2rem; padding: .4rem .85rem; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: var(--white); font: 600 .82rem "Outfit", sans-serif; cursor: pointer; }
 .period-button[aria-pressed="true"] { color: var(--white); background: var(--ink); border-color: var(--ink); }
+.period-button:disabled { opacity: .55; cursor: wait; }
 
 .leaderboard-list { margin: 0; padding: 0; max-height: 22rem; overflow-y: auto; list-style: none; text-align: left; }
 .leaderboard-row { padding: .6rem .5rem; display: grid; grid-template-columns: 2.6rem 1fr auto auto; gap: .6rem; align-items: baseline; border-bottom: 1px solid var(--line); }
@@ -194,15 +257,12 @@ footer div { display: flex; gap: 1.5rem; }
 @media (max-width: 540px) {
     .account-button span { display: none; }
     .account-button { padding: .45rem .55rem; }
-    /* Once the banner stacks, `flex-basis` measures height rather than width,
-       which turned a two-line prompt into a 14rem block that pushed the board
-       off the first screen. The board comes first on a phone. */
-    .cloud-banner { padding: .75rem .85rem; gap: .6rem; flex-direction: column; align-items: stretch; }
-    .cloud-banner__text { flex: 0 0 auto; }
+    .cloud-toast { padding: .75rem .85rem; gap: .6rem; flex-direction: column; align-items: stretch; bottom: max(1rem, env(safe-area-inset-bottom, 0px) + .5rem); }
+    .cloud-toast__text { flex: 0 0 auto; }
     .cloud-banner__long { display: none; }
     .cloud-banner__short { display: inline; }
-    .cloud-banner__actions { width: 100%; }
-    .cloud-banner__actions .button:first-child { flex: 1; }
+    .cloud-toast__actions { width: 100%; }
+    .cloud-toast__actions .button:first-child { flex: 1; }
     .leaderboard-row { grid-template-columns: 2.2rem 1fr auto; }
     .leaderboard-tile { display: none; }
 }

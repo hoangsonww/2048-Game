@@ -126,6 +126,49 @@ suite("sign in works with either a username or an email address", async () => {
     await agent().post("/api/v1/auth/login").send({ identifier: account.username.toUpperCase(), password: account.password }).expect(200);
 });
 
+suite("a matching username and email resets the password and ends every session", async () => {
+    const { account, tokens } = await register();
+    const next = "Recovered123";
+
+    const reset = await agent()
+        .post("/api/v1/auth/reset-password")
+        .send({ username: account.username, email: account.email, newPassword: next })
+        .expect(200);
+
+    assert.equal(reset.body.reset, true);
+    assert.ok(reset.body.sessionsRevoked >= 1, "a reset that leaves other devices signed in is not a reset");
+    // The old refresh token is dead, the old password is dead, the new one works.
+    await agent().post("/api/v1/auth/refresh").send({ refreshToken: tokens.refreshToken }).expect(401);
+    await agent().post("/api/v1/auth/login").send({ identifier: account.username, password: account.password }).expect(401);
+    await agent().post("/api/v1/auth/login").send({ identifier: account.username, password: next }).expect(200);
+});
+
+suite("a reset cannot be used to discover who has an account here", async () => {
+    const { account } = await register();
+    const wrongEmail = await agent()
+        .post("/api/v1/auth/reset-password")
+        .send({ username: account.username, email: "someone-else@example.test", newPassword: "Recovered123" })
+        .expect(401);
+    const unknownUser = await agent()
+        .post("/api/v1/auth/reset-password")
+        .send({ username: "nobody-at-all", email: account.email, newPassword: "Recovered123" })
+        .expect(401);
+
+    assert.equal(wrongEmail.body.error.code, unknownUser.body.error.code);
+    assert.equal(wrongEmail.body.error.message, unknownUser.body.error.message);
+    // And the password it refused to reset still works.
+    await agent().post("/api/v1/auth/login").send({ identifier: account.username, password: account.password }).expect(200);
+});
+
+suite("a reset refuses a password the register endpoint would refuse", async () => {
+    const { account } = await register();
+    await agent()
+        .post("/api/v1/auth/reset-password")
+        .send({ username: account.username, email: account.email, newPassword: "short" })
+        .expect(422);
+    await agent().post("/api/v1/auth/login").send({ identifier: account.username, password: account.password }).expect(200);
+});
+
 suite("refreshing rotates the pair and replaying the old token kills the session", async () => {
     const { tokens } = await register();
     const refreshed = await agent().post("/api/v1/auth/refresh").send({ refreshToken: tokens.refreshToken }).expect(200);

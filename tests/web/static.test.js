@@ -67,10 +67,28 @@ test("About page, LLM discovery, error page, and contributor metadata are comple
 
 test("interactive controls use vector SVG icons instead of text glyphs", () => {
     const html = read("index.html");
-    for (const id of ["undoButton", "newGameButton"]) {
+    for (const id of ["undoButton", "newGameButton", "soundButton"]) {
         const button = html.match(new RegExp(`<button[^>]*id="${id}"[\\s\\S]*?</button>`))?.[0];
         assert.ok(button, `${id} should exist`);
         assert.match(button, /<svg[^>]*viewBox="0 0 24 24"/);
-        assert.doesNotMatch(button, /[↻↶↷←→↑↓⟲⟳]/);
+        assert.doesNotMatch(button, /[↻↶↷←→↑↓⟲⟳🔊🔇]/);
+    }
+    assert.match(html, /sounds\.js/);
+    // The muted glyph is swapped via CSS; an HTML `hidden` attribute would
+    // win over `.icon-button--muted .solid-icon--sound-off { display:block }`.
+    const mutedIcon = html.match(/<svg class="solid-icon solid-icon--sound-off"[^>]*>/)?.[0];
+    assert.ok(mutedIcon, "muted sound icon should exist");
+    assert.doesNotMatch(mutedIcon, /(?:^|\s)hidden(?:\s|=|>)/);
+});
+
+test("every form pattern compiles under the unicodeSets regex flag", () => {
+    // Chrome applies `v` semantics to `pattern`, where an unescaped `-` in a
+    // character class is a syntax error. A pattern that fails to compile is
+    // not a loose pattern — it is no validation at all, silently.
+    const html = read("index.html");
+    const patterns = [...html.matchAll(/\spattern="([^"]+)"/g)].map(match => match[1]);
+    assert.ok(patterns.length > 0, "there should be at least one pattern to check");
+    for (const pattern of patterns) {
+        assert.doesNotThrow(() => new RegExp(`^(?:${pattern})$`, "v"), `pattern ${pattern} must compile`);
     }
 });

@@ -286,11 +286,45 @@ final class CloudAPITests: XCTestCase {
         XCTAssertEqual(result.save?.revision, 9)
     }
 
+    func testResetPasswordPostsThePairUnauthenticatedAndDropsTheTokens() async throws {
+        let transport = FakeTransport([(200, #"{"reset":true,"sessionsRevoked":2}"#)])
+        let store = MemoryTokenStore(CloudTokens(accessToken: "tok", refreshToken: "r"))
+
+        try await api(transport, store: store).resetPassword(
+            username: "  ada  ",
+            email: "  ada@example.test  ",
+            newPassword: "Recovered1"
+        )
+
+        let call = transport.calls[0]
+        XCTAssertEqual(call.method, "POST")
+        XCTAssertTrue(call.url.absoluteString.hasSuffix("/api/v1/auth/reset-password"))
+        XCTAssertNil(call.headers["Authorization"], "a reset is not an authenticated request")
+        let body = try XCTUnwrap(JSONSerialization.jsonObject(with: try XCTUnwrap(call.body)) as? [String: Any])
+        XCTAssertEqual(body["username"] as? String, "ada")
+        XCTAssertEqual(body["email"] as? String, "ada@example.test")
+        XCTAssertEqual(body["newPassword"] as? String, "Recovered1")
+        // The server revoked every session, so the local pair is worthless.
+        XCTAssertNil(store.read())
+    }
+
     func testCurrentUserReturnsNilWithoutTokens() async throws {
         let transport = FakeTransport()
         let user = try await api(transport).currentUser()
         XCTAssertNil(user)
         XCTAssertTrue(transport.calls.isEmpty)
+    }
+
+    func testAProfileReplyCarryingNoUserIsNotReadAsABlankOne() async throws {
+        // Reading a user out of an empty body produces a blank display name
+        // and zeroed career totals, which then replace a good session on
+        // screen. No user object means no user.
+        let transport = FakeTransport([(200, "{}")])
+        let store = MemoryTokenStore(CloudTokens(accessToken: "tok", refreshToken: "r"))
+
+        let user = try await api(transport, store: store).currentUser()
+
+        XCTAssertNil(user)
     }
 
     func testAuthenticatedLeaderboardSendsBearer() async throws {

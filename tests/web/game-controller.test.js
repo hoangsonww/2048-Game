@@ -123,6 +123,47 @@ test("keys are ignored while the confirmation dialog is open", () => {
     assert.equal(event.prevented, 0, "the dialog owns the keyboard while it is up");
 });
 
+test("WASD and arrows do not move the board while the auth dialog is open", () => {
+    const app = loadController({ storage: savedGame({ 0: 2, 1: 2 }) });
+    const before = app.board();
+    app.elements.authDialog.open = true;
+
+    for (const key of ["a", "A", "w", "s", "d", "ArrowLeft", "ArrowUp"]) {
+        const event = app.key(key);
+        assert.equal(event.prevented, 0, `${key} must not drive the board under the auth modal`);
+    }
+    assert.deepEqual(app.board(), before);
+
+    app.elements.authDialog.open = false;
+    app.key("ArrowLeft");
+    assert.notDeepEqual(app.board(), before, "closing the modal restores keyboard moves");
+});
+
+test("account and leaderboard dialogs also block board keys", () => {
+    const app = loadController({ storage: savedGame({ 0: 2, 1: 2 }) });
+    const before = app.board();
+    app.elements.accountDialog.open = true;
+    app.key("a");
+    assert.deepEqual(app.board(), before);
+    app.elements.accountDialog.open = false;
+    app.elements.leaderboardDialog.open = true;
+    app.key("ArrowLeft");
+    assert.deepEqual(app.board(), before);
+});
+
+test("keys typed into an input field do not move the board", () => {
+    const app = loadController({ storage: savedGame({ 0: 2, 1: 2 }) });
+    const before = app.board();
+    app.key("a", { target: { tagName: "INPUT" } });
+    assert.deepEqual(app.board(), before);
+    app.key("s", { target: { tagName: "TEXTAREA" } });
+    assert.deepEqual(app.board(), before);
+    app.key("d", { target: { tagName: "SELECT" } });
+    assert.deepEqual(app.board(), before);
+    app.key("w", { target: { tagName: "DIV", isContentEditable: true } });
+    assert.deepEqual(app.board(), before);
+});
+
 test("f toggles fullscreen in both directions", () => {
     const app = loadController();
     app.key("f");
@@ -405,4 +446,71 @@ test("the state dump describes the board it renders", () => {
     assert.deepEqual(state.board.flat(), app.board());
     assert.ok(Array.isArray(state.availableMoves));
     assert.ok(state.availableMoves.includes("left"));
+});
+
+test("the sound toggle mutes and unmutes with an announcement", () => {
+    const app = loadController();
+    assert.equal(app.elements.soundButton.getAttribute("aria-pressed"), "true");
+
+    app.elements.soundButton.dispatch("click");
+    assert.equal(app.elements.soundButton.getAttribute("aria-pressed"), "false");
+    assert.match(app.status(), /muted/i);
+    assert.ok(app.elements.soundButton.classList.contains("icon-button--muted"));
+
+    app.elements.soundButton.dispatch("click");
+    assert.equal(app.elements.soundButton.getAttribute("aria-pressed"), "true");
+    assert.match(app.status(), /Sound on/);
+});
+
+test("the controller keeps working when sounds.js is absent", () => {
+    // Covers every no-op cue so a stripped embed still plays the round.
+    const app = loadController({
+        withSounds: false,
+        storage: savedGame({ 0: 2, 1: 2, 2: 4, 3: 8 })
+    });
+
+    app.key("ArrowLeft"); // merge
+    assert.equal(app.board()[0], 4);
+    app.elements.undoButton.dispatch("click");
+
+    const sliding = loadController({ withSounds: false, storage: savedGame({ 3: 2 }) });
+    sliding.key("ArrowLeft"); // plain move
+    assert.match(sliding.status(), /^Moved left\.$/);
+
+    const blocked = loadController({
+        withSounds: false,
+        storage: savedGame({ 0: 2, 1: 4, 2: 8, 3: 16 })
+    });
+    blocked.key("ArrowLeft"); // invalid
+    assert.match(blocked.status(), /No tiles can move left/);
+
+    app.elements.soundButton.dispatch("click");
+    assert.match(app.status(), /Sound on|muted/i);
+    app.elements.newGameButton.dispatch("click");
+    assert.equal(app.state().score, 0);
+});
+
+test("winning and losing still work without the sound module", () => {
+    const win = loadController({
+        withSounds: false,
+        storage: savedGame({ 0: 1024, 1: 1024 })
+    });
+    win.key("ArrowLeft");
+    assert.equal(win.state().mode, "won");
+
+    const nearlyLocked = [2, 4, 2, 4, 4, 2, 4, 2, 2, 4, 2, 4, 4, 0, 2, 4];
+    const lose = loadController({
+        withSounds: false,
+        storage: { [STORAGE_KEY]: JSON.stringify({ board: nearlyLocked, score: 500, best: 500, won: false }) },
+        random: () => 0
+    });
+    lose.key("ArrowLeft");
+    assert.equal(lose.state().mode, "game-over");
+});
+
+test("a page without a sound button still boots", () => {
+    const app = loadController({ omitIds: ["soundButton"] });
+    assert.equal(app.elements.soundButton, undefined);
+    app.key("ArrowLeft");
+    assert.ok(app.board().some(v => v > 0));
 });

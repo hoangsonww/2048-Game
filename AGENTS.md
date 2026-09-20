@@ -18,7 +18,7 @@ Read [ARCHITECTURE.md](ARCHITECTURE.md) for the whole-repository picture — the
 
 - `make help`: list supported workflows.
 - `make check`: fast syntax, repository, shell, SEO, and discovery checks.
-- `make serve`: serve the web app at `http://localhost:8080`.
+- `make serve`: serve the web app at `http://localhost:8080`. Set `GAME2048_API_BASE_URL` to point it at a locally running Cloud API.
 - `make test-web`: complete deterministic and browser web suite.
 - `make android-run`: build, install, and launch on a device or emulator.
 - `make android-build` / `android-install` / `android-devices` / `android-tasks` / `android-clean`.
@@ -62,6 +62,20 @@ Run the smallest relevant checks while iterating and the complete affected-platf
 - New game preserves the best score and requires confirmation when a round is active.
 - Reaching 2048 presents a win state and allows continued play. A full board with no merge presents game over.
 - Corrupt or structurally invalid saved state is discarded safely.
+- The guest round and the signed-in round are separate profiles. Signing in
+  warns before taking a round off the screen, parks the guest round untouched,
+  and loads the account's own; signing out restores the guest round exactly,
+  best score included. Career statistics come from the account and are never
+  lifted from local storage. See
+  [ARCHITECTURE.md](ARCHITECTURE.md#guest-and-account-profiles).
+- Sign-up confirms the password, every password field has its own reveal
+  control, and closing a form hides them again. Password recovery is an
+  interim username + email check that revokes every session — read the
+  security note on the endpoint before extending it. See
+  [ARCHITECTURE.md](ARCHITECTURE.md#credential-entry).
+- Sound cues are heard now or dropped. No client may queue a cue it cannot
+  play immediately — a backlog that arrives seconds later is worse than
+  silence. See [ARCHITECTURE.md](ARCHITECTURE.md#sound-architecture).
 
 ## UI and accessibility
 

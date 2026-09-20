@@ -4,12 +4,15 @@ import UIKit
 struct GameView: View {
     @StateObject private var viewModel: GameViewModel
     @StateObject private var cloud: CloudController
+    @StateObject private var sounds = GameSounds.shared
     @State private var showingHelp = false
     @State private var confirmingNewGame = false
     @State private var showingWin = false
     @State private var authMode: AuthMode?
     @State private var showingAccount = false
     @State private var showingLeaderboard = false
+    @State private var showingReset = false
+    @State private var showGuestToast = false
 
     private let paper = Color(red: 0.961, green: 0.941, blue: 0.902)
     private let ink = Color(red: 0.141, green: 0.137, blue: 0.122)
@@ -56,27 +59,89 @@ struct GameView: View {
                 }
                 .scrollIndicators(.hidden)
             }
+
+            if showGuestToast {
+                VStack {
+                    Spacer()
+                    GuestToast(
+                        onCreateAccount: { authMode = .register },
+                        onSignIn: { authMode = .login },
+                        onDismiss: {
+                            cloud.dismissPrompt()
+                            showGuestToast = false
+                        }
+                    )
+                    .padding(.horizontal, 18)
+                    .padding(.bottom, 18)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    // Only the card receives taps — the Spacer must not steal board
+                    // swipes or the Undo / New game buttons underneath.
+                    .allowsHitTesting(true)
+                }
+                .allowsHitTesting(false)
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: showGuestToast)
+        .task {
+            // UI tests drive the board themselves; the invite toast would eat
+            // swipes and button taps for the first few seconds of every case.
+            guard ProcessInfo.processInfo.environment["GAME2048_UI_TESTING"] != "1" else { return }
+            guard cloud.showGuestPrompt else { return }
+            showGuestToast = true
+            try? await Task.sleep(nanoseconds: 5_500_000_000)
+            showGuestToast = false
+        }
+        .onChange(of: cloud.isSignedIn) { _, signedIn in
+            if signedIn { showGuestToast = false }
         }
         .sheet(isPresented: $showingHelp) { HelpView() }
         .sheet(item: $authMode) { mode in
             AuthSheet(
                 cloud: cloud,
                 mode: mode,
+                // The board on screen belongs to this device, not to the
+                // account about to sign in. Say so before it leaves.
+                handsOverRound: viewModel.hasProgress,
                 onRegister: { username, email, password in
-                    Task { await cloud.register(username: username, email: email, password: password, save: viewModel.cloudSave, apply: { _ = viewModel.applyCloudSave($0) }) }
+                    Task {
+                        guard await cloud.register(username: username, email: email, password: password) else { return }
+                        await adoptAccount()
+                    }
                 },
                 onLogin: { identifier, password in
-                    Task { await cloud.login(identifier: identifier, password: password, save: viewModel.cloudSave, apply: { _ = viewModel.applyCloudSave($0) }) }
+                    Task {
+                        guard await cloud.login(identifier: identifier, password: password) else { return }
+                        await adoptAccount()
+                    }
+                },
+                onForgotPassword: {
+                    authMode = nil
+                    showingReset = true
                 }
             )
+        }
+        .sheet(isPresented: $showingReset) {
+            ResetPasswordSheet(cloud: cloud) { username, email, newPassword in
+                Task {
+                    guard await cloud.resetPassword(username: username, email: email, newPassword: newPassword) else { return }
+                    // Every session was revoked, this one included, so the
+                    // device goes back to the round it owns.
+                    viewModel.endAccountSession()
+                    showingReset = false
+                    authMode = .login
+                }
+            }
         }
         .sheet(isPresented: $showingAccount) {
             AccountSheet(
                 cloud: cloud,
-                onSyncNow: { Task { await cloud.sync(save: viewModel.cloudSave, apply: { _ = viewModel.applyCloudSave($0) }) } },
+                onSyncNow: { Task { await cloud.syncNow(save: viewModel.cloudSave, apply: { _ = viewModel.applyCloudSave($0) }) } },
                 onSignOut: {
                     Task {
                         await cloud.signOut()
+                        // Back to the round this device was playing before the
+                        // session started — board, score, and best score.
+                        viewModel.endAccountSession()
                         showingAccount = false
                     }
                 }
@@ -106,11 +171,8 @@ struct GameView: View {
             scoreBar
             board
             actionBar
-            // One row under the board: guest invitation or sync status. It
-            // replaces the old hint line rather than stacking under it — the
-            // layout has roughly thirteen points of slack, and spending them
-            // here would send the board into a ScrollView.
-            CloudBar(cloud: cloud, onCreateAccount: { authMode = .register })
+            // Sync status under the board — guest invite is a floating toast.
+            CloudBar(cloud: cloud)
         }
         .padding(.horizontal, 18)
         .padding(.top, 8)
@@ -128,6 +190,18 @@ struct GameView: View {
                 if cloud.isSignedIn { showingAccount = true } else { authMode = .register }
             }
             LeaderboardButton { showingLeaderboard = true }
+            Button {
+                sounds.toggle()
+            } label: {
+                Image(systemName: sounds.isEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                    .font(.system(size: 14, weight: .bold))
+                    .frame(width: 38, height: 38)
+                    .background(.white.opacity(0.65), in: RoundedRectangle(cornerRadius: 11))
+                    .overlay(RoundedRectangle(cornerRadius: 11).stroke(Color.black.opacity(0.08)))
+            }
+            .foregroundStyle(ink)
+            .accessibilityLabel(sounds.isEnabled ? "Mute sound" : "Unmute sound")
+            .accessibilityIdentifier("soundToggle")
             Button { showingHelp = true } label: { Image(systemName: "questionmark").font(.system(size: 15, weight: .bold)).frame(width: 38, height: 38).background(.white.opacity(0.65), in: RoundedRectangle(cornerRadius: 11)).overlay(RoundedRectangle(cornerRadius: 11).stroke(Color.black.opacity(0.08))) }
             .foregroundStyle(ink).accessibilityLabel("How to play")
         }
@@ -143,15 +217,45 @@ struct GameView: View {
                 case .gameOver:
                     await cloud.submitRound(viewModel.cloudSave())
                     await cloud.sync(save: viewModel.cloudSave, apply: { _ = viewModel.applyCloudSave($0) })
-                case .restored:
-                    // A round we just downloaded does not need uploading back.
+                case .restored, .profileChanged:
+                    // A round we just downloaded does not need uploading back,
+                    // and a profile switch reconciles explicitly straight after.
                     break
                 case .move, .undo, .newGame:
                     await cloud.sync(save: viewModel.cloudSave, apply: { _ = viewModel.applyCloudSave($0) })
                 }
             }
         }
-        await cloud.restore(save: viewModel.cloudSave, apply: { _ = viewModel.applyCloudSave($0) })
+
+        // Adopt the right profile before the network is asked. A stored
+        // session must never flash the guest board, and a guest move must
+        // never reach an account.
+        guard cloud.hasStoredSession else { return }
+        let adopted = viewModel.beginAccountSession()
+        guard await cloud.restore() else {
+            viewModel.endAccountSession()
+            return
+        }
+        if adopted == .restored {
+            // The cached round is this account's own, so it can be offered.
+            await cloud.sync(save: viewModel.cloudSave, apply: { _ = viewModel.applyCloudSave($0) })
+        } else {
+            await adoptAccountRound()
+        }
+    }
+
+    /// Hands the device over to a session that has just been granted.
+    @MainActor
+    private func adoptAccount() async {
+        viewModel.beginAccountSession(fresh: true)
+        await adoptAccountRound()
+    }
+
+    /// Pulls the account's round, then its career best for the Best card.
+    @MainActor
+    private func adoptAccountRound() async {
+        await cloud.adoptAccountRound(apply: { _ = viewModel.applyCloudSave($0) })
+        viewModel.adoptCareerBest(cloud.user?.statistics.bestScore ?? 0)
     }
 
     private var titleBlock: some View {
@@ -204,7 +308,11 @@ struct GameView: View {
 
     private var actionBar: some View {
         HStack(spacing: 10) {
-            ActionButton(title: "Undo", systemImage: "arrow.uturn.backward", disabled: !viewModel.canUndo) { viewModel.undo(); haptic(.soft) }
+            ActionButton(title: "Undo", systemImage: "arrow.uturn.backward", disabled: !viewModel.canUndo) {
+                viewModel.undo()
+                haptic(.soft)
+                sounds.undo()
+            }
             ActionButton(title: "New game", systemImage: "arrow.clockwise", disabled: false) { confirmingNewGame = viewModel.score > 0; if viewModel.score == 0 { restart() } }
         }
     }
@@ -213,10 +321,31 @@ struct GameView: View {
         let x = gesture.translation.width
         let y = gesture.translation.height
         let direction: GameViewModel.Direction = abs(x) > abs(y) ? (x > 0 ? .right : .left) : (y > 0 ? .down : .up)
-        if viewModel.swipe(direction: direction) { haptic(.light) } else { haptic(.rigid) }
+        let scoreBefore = viewModel.score
+        let wonBefore = viewModel.hasWon
+        if viewModel.swipe(direction: direction) {
+            haptic(.light)
+            if viewModel.isGameOver() {
+                sounds.gameOver()
+            } else if viewModel.hasWon && !wonBefore {
+                sounds.win()
+            } else if viewModel.score > scoreBefore {
+                sounds.merge(points: viewModel.score - scoreBefore)
+            } else {
+                sounds.move()
+            }
+        } else {
+            haptic(.rigid)
+            sounds.invalid()
+        }
     }
 
-    private func restart() { showingWin = false; viewModel.restartGame(); haptic(.medium) }
+    private func restart() {
+        showingWin = false
+        viewModel.restartGame()
+        haptic(.medium)
+        sounds.newGame()
+    }
     private func haptic(_ style: UIImpactFeedbackGenerator.FeedbackStyle) { UIImpactFeedbackGenerator(style: style).impactOccurred() }
 }
 

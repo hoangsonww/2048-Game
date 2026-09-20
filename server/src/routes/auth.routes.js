@@ -6,7 +6,7 @@ import { Score } from "../models/Score.js";
 import { UserAchievement } from "../models/UserAchievement.js";
 import { Follow } from "../models/Follow.js";
 import { GameEvent } from "../models/GameEvent.js";
-import { asyncHandler, noStore } from "../lib/http.js";
+import { asyncHandler, noStore, requireFeature } from "../lib/http.js";
 import { conflict, forbidden, invalidCredentials, notFound, unauthorized } from "../lib/errors.js";
 import { hashToken, issueTokenPair, newSessionId, verifyRefreshToken } from "../lib/tokens.js";
 import { clientSchema, displayNameSchema, emailSchema, passwordSchema, usernameSchema, validate, z } from "../lib/validate.js";
@@ -235,6 +235,62 @@ router.post(
         }
 
         noStore(res).json({ changed: true, sessionsRevoked: revoked });
+    })
+);
+
+/**
+ * Self-service password reset, with no email round trip.
+ *
+ * ## Security posture — read before relying on this
+ *
+ * Knowing a username and the email address on it is enough to set a new
+ * password here. That is account takeover for anyone who can guess or
+ * discover both, and an email address is not a secret. A real reset proves
+ * control of the inbox: the server mails a single-use, short-lived token and
+ * only that token authorises the change.
+ *
+ * This endpoint exists because the product asked for a recovery path before
+ * there is any mail infrastructure to build the real one on. It is therefore:
+ *
+ * - behind `FEATURE_PASSWORD_RESET`, so a deployment can turn it off;
+ * - behind the auth rate limiter, so the pair cannot be brute-forced quickly;
+ * - deliberately silent about *which* half was wrong, so it cannot be used to
+ *   discover which usernames exist or which address is on one;
+ * - total — every existing session is revoked, because a reset that leaves
+ *   other devices signed in is not a reset.
+ *
+ * Replace it with a token flow before this service holds anything a person
+ * would mind losing.
+ */
+const resetPasswordSchema = z.object({
+    username: usernameSchema,
+    email: emailSchema,
+    newPassword: passwordSchema
+});
+
+router.post(
+    "/reset-password",
+    requireFeature("passwordReset"),
+    validate({ body: resetPasswordSchema }),
+    asyncHandler(async (req, res) => {
+        const { username, email, newPassword } = req.valid.body;
+
+        const user = await User.findOne({ usernameLower: username.toLowerCase() }).select("+passwordHash");
+        // One error for every way of being wrong: a distinct "no such user"
+        // would turn this into a directory of who has an account here.
+        if (!user || user.email !== email) throw invalidCredentials("That username and email do not match an account.");
+        if (user.disabled) throw forbidden("This account has been disabled.");
+
+        user.passwordHash = await User.hashPassword(newPassword);
+        await user.save();
+
+        const result = await Session.updateMany(
+            { user: user._id, revokedAt: null },
+            { $set: { revokedAt: new Date() } }
+        );
+        req.log?.info("auth.password_reset", { userId: String(user._id) });
+
+        noStore(res).json({ reset: true, sessionsRevoked: result.modifiedCount ?? 0 });
     })
 );
 

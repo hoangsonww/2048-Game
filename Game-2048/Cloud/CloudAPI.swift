@@ -92,12 +92,23 @@ actor CloudAPI {
             let error = json["error"] as? [String: Any]
             throw CloudError(
                 code: (error?["code"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? "http_error",
-                message: (error?["message"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? "Request failed with status \(status).",
+                message: Self.humanMessage(error: error, status: status),
                 status: status
             )
         }
 
         return json
+    }
+
+    /// Prefer field-level validation hints over the generic 422 summary.
+    private static func humanMessage(error: [String: Any]?, status: Int) -> String {
+        if let details = error?["details"] as? [String: Any],
+           let issues = details["issues"] as? [[String: Any]] {
+            let lines = issues.compactMap { $0["message"] as? String }.filter { !$0.isEmpty }
+            if !lines.isEmpty { return lines.joined(separator: " ") }
+        }
+        if let message = error?["message"] as? String, !message.isEmpty { return message }
+        return "Request failed with status \(status)."
     }
 
     /// Runs an authenticated request, refreshing once on a 401.
@@ -156,9 +167,30 @@ actor CloudAPI {
         return adopt(json)
     }
 
+    /**
+     Sets a new password from a username and the email address on it.
+
+     Interim recovery, with no mailed token — see the endpoint's own comment
+     in `server/src/routes/auth.routes.js`. The server revokes every session
+     on the account, so the local tokens are dropped here whether or not this
+     device held one.
+     */
+    func resetPassword(username: String, email: String, newPassword: String) async throws {
+        _ = try await request("POST", "/api/v1/auth/reset-password", body: [
+            "username": username.trimmingCharacters(in: .whitespacesAndNewlines),
+            "email": email.trimmingCharacters(in: .whitespacesAndNewlines),
+            "newPassword": newPassword
+        ])
+        tokens.write(nil)
+    }
+
     func currentUser() async throws -> CloudUser? {
         guard tokens.read() != nil else { return nil }
-        return readUser(try await authed("GET", "/api/v1/auth/me")["user"] as? [String: Any])
+        // A reply carrying no user object is not a user. Reading one out of
+        // it anyway yields a blank name and zeroed career totals, which then
+        // replace a perfectly good session on screen.
+        guard let user = try await authed("GET", "/api/v1/auth/me")["user"] as? [String: Any] else { return nil }
+        return readUser(user)
     }
 
     func logout() async {

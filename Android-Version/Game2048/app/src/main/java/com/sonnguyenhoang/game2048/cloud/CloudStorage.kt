@@ -36,11 +36,24 @@ class SharedPreferencesCloudStore(private val preferences: SharedPreferences) : 
             preferences.edit().putBoolean(KEY_PROMPT, value).apply()
         }
 
+    override var knownRevision: Int?
+        get() {
+            if (!preferences.contains(KEY_REVISION)) return null
+            val value = preferences.getInt(KEY_REVISION, 0)
+            return if (value > 0) value else null
+        }
+        set(value) {
+            val editor = preferences.edit()
+            if (value != null && value > 0) editor.putInt(KEY_REVISION, value) else editor.remove(KEY_REVISION)
+            editor.apply()
+        }
+
     override val hasTokens: Boolean get() = read() != null
 
     private companion object {
         const val KEY_ACCESS = "cloud_access_token_v1"
         const val KEY_REFRESH = "cloud_refresh_token_v1"
         const val KEY_PROMPT = "cloud_prompt_dismissed_v1"
+        const val KEY_REVISION = "cloud_known_revision_v1"
     }
 }

@@ -21,15 +21,29 @@
     const TOKEN_KEY = "game2048-cloud-tokens-v1";
     const PROMPT_KEY = "game2048-cloud-prompt-v1";
     const DEVICE_KEY = "game2048-cloud-device-v1";
+    /** Last revision this device successfully synced — sent as `baseRevision`. */
+    const REVISION_KEY = "game2048-cloud-revision-v1";
 
     /** A failure a caller can show to a player. `code` is stable; the message is not. */
     class CloudError extends Error {
-        constructor(code, message, status) {
+        constructor(code, message, status, details) {
             super(message);
             this.name = "CloudError";
             this.code = code;
             this.status = status ?? 0;
+            this.details = details;
         }
+    }
+
+    /** Turn a Zod-style issue list into something a player can act on. */
+    function messageFromPayload(payload, status) {
+        const error = payload?.error;
+        const issues = error?.details?.issues;
+        if (Array.isArray(issues) && issues.length) {
+            const lines = issues.map(issue => issue?.message).filter(Boolean);
+            if (lines.length) return lines.join(" ");
+        }
+        return error?.message ?? `Request failed with status ${status}.`;
     }
 
     function readJSON(storage, key) {
@@ -106,6 +120,11 @@
         let lastResolution = null;
         let lastError = null;
         let refreshing = null;
+        let knownRevision = (() => {
+            const stored = readJSON(storage, REVISION_KEY);
+            const revision = stored?.revision;
+            return Number.isInteger(revision) && revision > 0 ? revision : null;
+        })();
         const listeners = new Set();
 
         function snapshot() {
@@ -132,10 +151,27 @@
             else storage.removeItem(TOKEN_KEY);
         }
 
+        function rememberRevision(revision) {
+            if (!Number.isInteger(revision) || revision < 1) return;
+            knownRevision = revision;
+            writeJSON(storage, REVISION_KEY, { revision });
+        }
+
+        function clearRevision() {
+            knownRevision = null;
+            try {
+                storage.removeItem(REVISION_KEY);
+            } catch (_) {
+                // Same rule as token storage: a full quota must not break play.
+            }
+        }
+
         function clearSession() {
             setTokens(null);
             user = null;
             lastResolution = null;
+            lastSync = null;
+            clearRevision();
             emit();
         }
 
@@ -171,7 +207,12 @@
 
             if (!response.ok) {
                 const error = payload?.error;
-                throw new CloudError(error?.code ?? "http_error", error?.message ?? `Request failed with status ${response.status}.`, response.status);
+                throw new CloudError(
+                    error?.code ?? "http_error",
+                    messageFromPayload(payload, response.status),
+                    response.status,
+                    error?.details
+                );
             }
 
             return payload;
@@ -297,6 +338,23 @@
                 );
             },
 
+            /**
+             * Sets a new password from a username and the email on it.
+             *
+             * Interim recovery, with no mailed token: see the endpoint's own
+             * comment in `server/src/routes/auth.routes.js`. It signs every
+             * device out, including this one, so the caller must treat the
+             * session as gone whether or not it held one.
+             */
+            async resetPassword({ username, email, newPassword }) {
+                const result = await send("/api/v1/auth/reset-password", {
+                    method: "POST",
+                    body: { username, email, newPassword }
+                });
+                clearSession();
+                return result;
+            },
+
             async logout() {
                 const refreshToken = tokens?.refreshToken;
                 clearSession();
@@ -321,26 +379,62 @@
              * @param {"auto"|"prefer-local"|"prefer-remote"} [strategy]
              */
             async sync(localSave, strategy = "auto") {
+                const stamped = localSave
+                    ? {
+                        ...localSave,
+                        // Prove this device already held the remote revision so a
+                        // continuation uploads instead of looking like a fork.
+                        ...(knownRevision != null || localSave.baseRevision != null
+                            ? { baseRevision: localSave.baseRevision ?? knownRevision }
+                            : {}),
+                        client: "web",
+                        deviceId: deviceId(storage, random)
+                    }
+                    : null;
+
                 const result = await authed("/api/v1/saves/sync", {
                     method: "POST",
                     body: {
                         slot: "current",
                         strategy,
-                        save: localSave
-                            ? { ...localSave, client: "web", deviceId: deviceId(storage, random) }
-                            : null
+                        save: stamped
                     }
                 });
 
                 lastSync = new Date(now()).toISOString();
                 lastResolution = result.resolution;
                 lastError = null;
+                if (result.save?.revision != null) rememberRevision(result.save.revision);
                 emit();
                 return result;
             },
 
+            /**
+             * Reloads the signed-in profile so career totals match the server.
+             *
+             * What comes back replaces what was held, with no local maximum
+             * merged in. Career statistics belong to the account, and folding
+             * a device's local best into them is how an account that has
+             * played nothing ends up claiming a best score and a highest tile
+             * it never earned.
+             */
+            async refreshUser() {
+                const result = await authed("/api/v1/auth/me");
+                // A reply carrying no user is not a user. Adopting one anyway
+                // replaces a perfectly good session with a blank.
+                if (result?.user) user = result.user;
+                lastError = null;
+                emit();
+                return user;
+            },
+
             async submitScore(round) {
-                return authed("/api/v1/scores", { method: "POST", body: { ...round, client: "web" } });
+                const result = await authed("/api/v1/scores", { method: "POST", body: { ...round, client: "web" } });
+                if (result?.statistics && user) {
+                    user = { ...user, statistics: { ...user.statistics, ...result.statistics } };
+                    emit();
+                }
+                return result;
             },
 
             leaderboard({ period = "all", limit = 10, offset = 0 } = {}) {
@@ -377,5 +471,5 @@
         };
     }
 
-    return { createCloudClient, CloudError, DEFAULT_BASE_URL, TOKEN_KEY, PROMPT_KEY, DEVICE_KEY };
+    return { createCloudClient, CloudError, DEFAULT_BASE_URL, TOKEN_KEY, PROMPT_KEY, DEVICE_KEY, REVISION_KEY };
 });

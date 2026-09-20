@@ -124,6 +124,10 @@ Guest play, auth, sync, and leaderboards — local-first; an account is never re
 | :---: | :---: | :---: |
 | ![Guest banner inviting account creation above the board](../images/web-cloud-guest.png) | ![Create-account dialog with username, email, and password](../images/web-cloud-signup.png) | ![Sign-in dialog with username-or-email and password](../images/web-cloud-signin.png) |
 
+| Handover warning | Reset password | |
+| :---: | :---: | :---: |
+| ![Dialog warning that signing in sets the current round aside](../images/web-cloud-handover.png) | ![Reset dialog asking for username, email, and a new password twice](../images/web-cloud-reset.png) | |
+
 | Signed in | Leaderboard | Account panel |
 | :---: | :---: | :---: |
 | ![Signed-in header and cloud sync status under the board](../images/web-cloud-signed-in.png) | ![Leaderboard dialog with Today / This week / All time periods](../images/web-cloud-leaderboard.png) | ![Account panel with profile summary, sync time, and sign out](../images/web-cloud-account.png) |
@@ -161,12 +165,15 @@ Regenerate web captures (and refresh `images/`) with `make screenshots-web`. QA-
 | On-screen direction controls | ✅ | — | — |
 | Fullscreen toggle | ✅ | — | — |
 | Haptic feedback | — | ✅ | ✅ |
+| Procedural sound cues with a mute toggle | ✅ | ✅ | ✅ |
+| Separate guest and signed-in rounds on one device | ✅ | ✅ | ✅ |
 | Reduced-motion support | ✅ | ✅ | ✅ |
 | Screen-reader announcements | ✅ | ✅ | ✅ |
 | Vector-only iconography | SVG | SF Symbols | Material vectors |
 | Installable / distributable | PWA | `.app` | `.apk` |
 | Works fully offline | ✅ | ✅ | ✅ |
 | Optional account, cloud save sync, leaderboards | ✅ | ✅ | ✅ |
+| Password confirmation, per-field reveal, and reset | ✅ | ✅ | ✅ |
 | Mandatory network for a move | ❌ | ❌ | ❌ |
 
 ---
@@ -213,6 +220,8 @@ These are the contract. Every client must satisfy all of them, and each one is c
 5. Reaching 2048 presents a win state that the player may dismiss to continue playing. A full board with no available merge presents game over.
 6. Persisted state is validated on load. Anything structurally invalid — wrong board length, non-power-of-two values, negative scores, malformed JSON — is discarded and replaced with a fresh game rather than crashing or restoring a corrupt board.
 7. Randomness is injectable in every client so tests are fully deterministic, while production always uses unbiased platform randomness.
+8. The guest round and the signed-in round are separate. Signing in warns before taking a round off the screen, parks it untouched, and loads the account's own; signing out restores it exactly, best score included. Career statistics come from the account and are never lifted from local storage.
+9. A sound cue is heard now or dropped. No client queues a cue it cannot play immediately — a backlog arriving seconds after the moves that caused it is worse than silence.
 
 ---
 
@@ -531,30 +540,37 @@ Every workflow has a stable `make` entry point. Prefer these over ad-hoc command
 
 Coverage is layered deliberately: pure rules logic is tested exhaustively and cheaply, while the expensive browser, simulator, and emulator suites focus on real user flows that unit tests cannot reach.
 
-### Web — 75 tests, 100 % line coverage
+### Web — 253 tests, 100 % line coverage
 
 - **23 deterministic engine tests** against `game-engine.js`, covering all four directions, merge ordering and the single-merge rule, scoring, weighted spawning at its exact boundary, ineffective moves, undo semantics, win and loss predicates, and rejection of structurally invalid boards.
-- **38 controller tests** against `script.js`, run on a hand-written DOM so keyboard, touch, on-screen buttons, rendering, message states, and persistence are all covered without a browser. Includes the gesture-ownership contract: the `touchmove` listener must be non-passive, must suppress scrolling only during a board swipe, and must forget a cancelled gesture.
-- **4 metadata and asset tests** for the manifest, sitemap, `robots.txt`, JSON-LD, and every referenced icon, plus **2 repository-tooling tests** asserting the project structure and npm script surface stay intact.
-- **8 Chromium interaction scenarios** driving the real page: arrow-key play, WASD play, touch swipe, the on-screen direction pad, undo, persistence across reload, restart confirmation, fullscreen, the win overlay, the loss overlay, recovery from a corrupt saved state, and that a board swipe suppresses page scrolling without blocking it anywhere else.
+- **45 controller tests** against `script.js`, run on a hand-written DOM so keyboard, touch, on-screen buttons, rendering, message states, and persistence are all covered without a browser. Includes the gesture-ownership contract: the `touchmove` listener must be non-passive, must suppress scrolling only during a board swipe, and must forget a cancelled gesture.
+- **34 cloud-bridge tests** for the guest and account storage profiles: that signing in parks the guest round rather than uploading it, that signed-in play never writes to the guest slot, and that signing out restores the guest round exactly.
+- **47 cloud-client tests** for auth, token refresh, sync resolutions, password reset, and the rule that career statistics are never lifted from local storage, plus **72 account-surface tests** for the dialogs, the handover warning, password confirmation, and the reveal controls.
+- **13 sound tests** proving a cue is dropped rather than queued whenever it cannot be played now.
+- **5 metadata and asset tests** for the manifest, sitemap, `robots.txt`, JSON-LD, form patterns, and every referenced icon, plus **2 repository-tooling tests** asserting the project structure and npm script surface stay intact.
+- **12 Chromium interaction scenarios** driving the real page: arrow-key play, WASD play, touch swipe, the on-screen direction pad, undo, persistence across reload, restart confirmation, fullscreen, the win overlay, the loss overlay, recovery from a corrupt saved state, that a board swipe suppresses page scrolling without blocking it anywhere else, that sound cues follow the real audio clock instead of piling up behind it, and that the password and handover dialogs behave.
 
-Coverage is **enforced** by `c8` across everything in `Web-Version/`, and the build fails below 100 % statements, 100 % lines, 100 % functions, or 95 % branches. Both files currently reach **100 % statements, lines, and functions with 98.8 % branches**.
+Coverage is **enforced** by `c8` across everything in `Web-Version/`, and the build fails below 100 % statements, 100 % lines, 100 % functions, or 95 % branches. It currently reaches **100 % statements, lines, and functions with 95.1 % branches**.
 
-### iOS — 89 tests, 95.5 % line coverage
+### iOS — 183 tests, 90.4 % gated line coverage
 
 - **80 deterministic model, surface, and render tests** covering every direction, merge ordering, scoring, spawn distribution and index clamping, restart, undo depth and win-state rewind, persistence round-trips, best-score retention, win and loss detection, and rejection of every shape of invalid saved state.
-- **9 XCUITest simulator tests** covering the help sheet, swipe gestures, the restart confirmation dialog, accessibility identifiers and labels, end-state recovery flows, launch performance, and that a vertical board swipe reaches the board without moving the screen. The suite reports ten executions because the launch test runs once per appearance mode.
+- **16 profile and sound tests** covering guest / account separation, the career-best seed, and the cue renderer's envelope and pitch slide.
+- **74 cloud tests** across the API client, the controller state machine, the token store, and the wire models — including password reset, every unexpected-failure path, and the rule that career statistics come from the account alone.
+- **12 XCUITest simulator tests** covering the help sheet, swipe gestures, the restart confirmation dialog, accessibility identifiers and labels, end-state recovery flows, launch performance, the account and reset sheets, the password confirmation and reveal controls, the sign-in handover warning, and that a vertical board swipe reaches the board without moving the screen. The suite reports thirteen executions because the launch test runs once per appearance mode.
 
-Coverage is **enforced**: `scripts/test-ios.sh` reads the `.xcresult` with `xccov` and fails below 90 % line coverage of the app target, currently **99.4 %**.
+Coverage is **enforced**: `scripts/test-ios.sh` reads the `.xcresult` with `xccov` and fails below 90 % line coverage of the app target (excluding `CloudViews.swift`).
 
-### Android — 80 tests, 97.6 % domain line coverage
+### Android — 212 tests, 97.2 % domain line coverage
 
-- **33 deterministic ViewModel tests** proving the same rules and persistence contract as the other two clients.
+- **49 deterministic ViewModel tests** proving the same rules and persistence contract as the other two clients, including the guest / account profile separation and the career-best seed.
 - **33 server-driven surface tests** covering decoding, version gating, node pruning, source fallback, and the rule that every failure mode ends at the app's own native UI.
-- **9 storage tests** covering `SharedPreferencesGameStorage` serialisation against an in-memory `SharedPreferences`, including truncated, non-numeric, and empty saved grids.
-- **5 Compose instrumentation tests** on an API 34 emulator covering the help sheet, swipe and undo, restart confirmation, and win/loss recovery.
+- **11 storage tests** covering `SharedPreferencesGameStorage` serialisation against an in-memory `SharedPreferences`, including truncated, non-numeric, and empty saved grids, and that the guest and account slots cannot see each other.
+- **80 cloud tests** across the API client, the controller state machine, and the token store — including password reset and the rule that career statistics come from the account alone.
+- **6 sound tests** proving a flood of cues is capped rather than buffered, and that an unavailable audio device costs the game nothing.
+- **19 Compose instrumentation tests** on an API 34 emulator covering the help sheet, swipe and undo, restart confirmation, win/loss recovery, the guest invite, the account surface, the sign-in handover warning, and the password confirmation, reveal, and reset flows.
 
-Coverage is **enforced** by JaCoCo: `make test-android` fails below 90 % line or 85 % branch coverage of the Kotlin rules engine and storage, currently **99.2 % lines and 91.3 % branches**. `MainActivity` is Compose and is measured by the device suite instead.
+Coverage is **enforced** by JaCoCo: `make test-android` fails below 90 % line or 85 % branch coverage of the Kotlin rules engine and storage, currently **97.2 % lines and 85.7 % branches**. `MainActivity` and `CloudUi` are Compose and are measured by the device suite instead.
 
 ### Static and repository checks
 

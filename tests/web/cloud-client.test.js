@@ -103,6 +103,37 @@ test("a rejected sign-in surfaces the server's message and code", async () => {
     assert.equal(cloud.isSignedIn(), false);
 });
 
+test("a 422 validation failure surfaces the field issues, not the generic summary", async () => {
+    const { cloud } = client([{
+        status: 422,
+        body: {
+            error: {
+                code: "validation_failed",
+                message: "The request body or query failed validation.",
+                details: {
+                    in: "body",
+                    issues: [
+                        { path: "password", message: "Include at least one letter and one number." },
+                        { path: "username", message: "A username needs at least 3 characters." }
+                    ]
+                }
+            }
+        }
+    }]);
+
+    await assert.rejects(
+        () => cloud.register({ username: "ab", email: "a@b.test", password: "password" }),
+        error => {
+            assert.equal(error.code, "validation_failed");
+            assert.equal(error.status, 422);
+            assert.match(error.message, /letter and one number/);
+            assert.match(error.message, /at least 3 characters/);
+            assert.doesNotMatch(error.message, /failed validation/);
+            return true;
+        }
+    );
+});
+
 test("an error response with no parsable body still produces a usable error", async () => {
     const { cloud } = client([{ status: 502, body: "<html>bad gateway</html>" }]);
 
@@ -258,7 +289,7 @@ test("an authenticated call without a session fails before touching the network"
 test("syncing sends the local save and records the resolution", async () => {
     const { cloud, fetch: doFetch } = client([
         { status: 201, body: SESSION },
-        { status: 200, body: { resolution: "uploaded", save: { board: [], score: 10 }, conflictSlot: null } }
+        { status: 200, body: { resolution: "uploaded", save: { board: [], score: 10, revision: 3 }, conflictSlot: null } }
     ]);
 
     await cloud.register({ username: "ada", email: "a@b.test", password: "Password1" });
@@ -273,6 +304,37 @@ test("syncing sends the local save and records the resolution", async () => {
     assert.equal(body.strategy, "auto");
     assert.equal(body.save.client, "web");
     assert.ok(body.save.deviceId.startsWith("web-"), "a save carries a local device identifier so a conflict can name it");
+});
+
+test("a successful sync remembers revision and sends it back as baseRevision", async () => {
+    const { cloud, fetch: doFetch, storage } = client([
+        { status: 201, body: SESSION },
+        { status: 200, body: { resolution: "uploaded", save: { board: new Array(16).fill(0), score: 10, revision: 4 } } },
+        { status: 200, body: { resolution: "in_sync", save: { board: new Array(16).fill(0), score: 10, revision: 4 } } }
+    ]);
+
+    await cloud.register({ username: "ada", email: "a@b.test", password: "Password1" });
+    await cloud.sync({ board: new Array(16).fill(0), score: 10, moves: 2 });
+    await cloud.sync({ board: new Array(16).fill(0), score: 20, moves: 3 });
+
+    assert.equal(doFetch.calls[2].body.save.baseRevision, 4);
+    assert.equal(JSON.parse(storage.getItem("game2048-cloud-revision-v1")).revision, 4);
+});
+
+test("syncing a round never edits the account's career statistics", async () => {
+    // Career totals are the server's to compute from submitted rounds. Lifting
+    // them from whatever board happened to be on this device is how an account
+    // with zero rounds ended up advertising a best score it never earned.
+    const { cloud } = client([
+        { status: 201, body: { ...SESSION, user: { ...SESSION.user, statistics: { bestScore: 0, gamesPlayed: 0, highestTile: 0 } } } },
+        { status: 200, body: { resolution: "uploaded", save: { board: [256, ...new Array(15).fill(0)], score: 500, bestScore: 900, revision: 1 } } }
+    ]);
+
+    await cloud.register({ username: "ada", email: "a@b.test", password: "Password1" });
+    await cloud.sync({ board: [256, ...new Array(15).fill(0)], score: 500, bestScore: 900, moves: 40 });
+
+    assert.equal(cloud.getState().user.statistics.bestScore, 0);
+    assert.equal(cloud.getState().user.statistics.highestTile, 0);
 });
 
 test("syncing with no local save sends null rather than an empty board", async () => {
@@ -357,6 +419,26 @@ test("signing out clears the session even when the server call fails", async () 
 
     assert.equal(cloud.isSignedIn(), false);
     assert.equal(storage.getItem(TOKEN_KEY), null, "the player asked to be signed out; a failed revoke does not change that");
+});
+
+test("signing out clears the remembered revision even when storage refuses the delete", async () => {
+    const storage = new FakeStorage();
+    const originalRemove = storage.removeItem.bind(storage);
+    storage.removeItem = key => {
+        if (key === "game2048-cloud-revision-v1") throw new Error("quota");
+        return originalRemove(key);
+    };
+    const { cloud } = client([
+        { status: 201, body: SESSION },
+        { status: 200, body: { resolution: "uploaded", save: { board: [], score: 1, revision: 3 } } },
+        { status: 200, body: {} }
+    ], { storage });
+
+    await cloud.register({ username: "ada", email: "a@b.test", password: "Password1" });
+    await cloud.sync({ board: new Array(16).fill(0), score: 1, moves: 1 });
+    await cloud.logout();
+
+    assert.equal(cloud.isSignedIn(), false);
 });
 
 test("signing out with nothing stored makes no request", async () => {
@@ -477,4 +559,99 @@ test("the daily challenge is authenticated once the player signs in", async () =
     await cloud.dailyChallenge();
 
     assert.equal(doFetch.calls[1].headers.authorization, "Bearer access-1");
+});
+
+test("refreshUser reloads the signed-in profile", async () => {
+    const { cloud, fetch: doFetch } = client([
+        { status: 201, body: SESSION },
+        { status: 200, body: { user: { ...SESSION.user, statistics: { bestScore: 900, gamesPlayed: 3, highestTile: 256 } } } }
+    ]);
+
+    await cloud.register({ username: "ada", email: "a@b.test", password: "Password1" });
+    const user = await cloud.refreshUser();
+
+    assert.equal(user.statistics.bestScore, 900);
+    assert.equal(cloud.getState().user.statistics.gamesPlayed, 3);
+    assert.equal(doFetch.calls[1].url, `${BASE}/api/v1/auth/me`);
+});
+
+test("refreshUser takes the server's statistics verbatim", async () => {
+    const highSession = {
+        ...SESSION,
+        user: { ...SESSION.user, statistics: { bestScore: 5000, gamesPlayed: 9, highestTile: 512 } }
+    };
+    const { cloud } = client([
+        { status: 201, body: highSession },
+        { status: 200, body: { user: { ...highSession.user, statistics: { bestScore: 40, gamesPlayed: 1, highestTile: 8 } } } }
+    ]);
+
+    await cloud.register({ username: "ada", email: "a@b.test", password: "Password1" });
+    await cloud.refreshUser();
+
+    // Lower is not "wrong" — an account whose scores were deleted really does
+    // have a lower best, and a client that refuses to come down is a client
+    // that shows a number nothing on the server agrees with.
+    assert.equal(cloud.getState().user.statistics.bestScore, 40);
+    assert.equal(cloud.getState().user.statistics.highestTile, 8);
+});
+
+test("refreshUser ignores a reply that carries no user", async () => {
+    const { cloud } = client([
+        { status: 201, body: SESSION },
+        { status: 200, body: {} }
+    ]);
+
+    await cloud.register({ username: "ada", email: "a@b.test", password: "Password1" });
+    const before = cloud.getState().user;
+
+    await cloud.refreshUser();
+
+    assert.deepEqual(cloud.getState().user, before, "a blank reply must not blank the session");
+});
+
+test("submitScore folds returned career statistics into the session", async () => {
+    const { cloud } = client([
+        { status: 201, body: SESSION },
+        { status: 201, body: { statistics: { bestScore: 400, gamesPlayed: 1, highestTile: 64 } } }
+    ]);
+
+    await cloud.register({ username: "ada", email: "a@b.test", password: "Password1" });
+    await cloud.submitScore({ board: new Array(16).fill(0), score: 400, moves: 20 });
+
+    assert.equal(cloud.getState().user.statistics.bestScore, 400);
+    assert.equal(cloud.getState().user.statistics.gamesPlayed, 1);
+});
+
+test("a password reset posts the pair and drops the local session", async () => {
+    const { cloud, fetch: doFetch, storage } = client([
+        { status: 201, body: SESSION },
+        { status: 200, body: { reset: true, sessionsRevoked: 3 } }
+    ]);
+
+    await cloud.register({ username: "ada", email: "a@b.test", password: "Password1" });
+    assert.equal(cloud.isSignedIn(), true);
+
+    const result = await cloud.resetPassword({ username: "ada", email: "a@b.test", newPassword: "Recovered1" });
+
+    assert.equal(result.sessionsRevoked, 3);
+    assert.equal(doFetch.calls[1].url, `${BASE}/api/v1/auth/reset-password`);
+    assert.deepEqual(doFetch.calls[1].body, { username: "ada", email: "a@b.test", newPassword: "Recovered1" });
+    assert.equal(doFetch.calls[1].headers.authorization, undefined, "a reset is not an authenticated request");
+    // The server revoked every session, this one included.
+    assert.equal(cloud.isSignedIn(), false);
+    assert.equal(storage.getItem("game2048-cloud-tokens-v1"), null);
+});
+
+test("a rejected reset leaves the session alone", async () => {
+    const { cloud } = client([
+        { status: 201, body: SESSION },
+        { status: 401, body: { error: { code: "invalid_credentials", message: "That username and email do not match an account." } } }
+    ]);
+
+    await cloud.register({ username: "ada", email: "a@b.test", password: "Password1" });
+    await assert.rejects(
+        () => cloud.resetPassword({ username: "ada", email: "wrong@b.test", newPassword: "Recovered1" }),
+        /do not match an account/
+    );
+    assert.equal(cloud.isSignedIn(), true);
 });

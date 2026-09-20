@@ -31,7 +31,9 @@
 		F4CCBB5C2BA9F8A0007AA07E /* CloudAPITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB5B2BA9F8A0007AA07E /* CloudAPITests.swift */; };
 		F4CCBB5E2BA9F8A0007AA07E /* CloudControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB5D2BA9F8A0007AA07E /* CloudControllerTests.swift */; };
 		F4CCBB602BA9F8A0007AA07E /* CloudStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB5F2BA9F8A0007AA07E /* CloudStoreTests.swift */; };
+		F4CCBB712BA9F8A0007AA07E /* GameProfileTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB702BA9F8A0007AA07E /* GameProfileTests.swift */; };
 		F4CCBB622BA9F8A0007AA07E /* CloudModelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB612BA9F8A0007AA07E /* CloudModelsTests.swift */; };
+		F4CCBB642BA9F8A0007AA080 /* GameSounds.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CCBB632BA9F8A0007AA080 /* GameSounds.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -80,7 +82,9 @@
 		F4CCBB5B2BA9F8A0007AA07E /* CloudAPITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudAPITests.swift; sourceTree = "<group>"; };
 		F4CCBB5D2BA9F8A0007AA07E /* CloudControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudControllerTests.swift; sourceTree = "<group>"; };
 		F4CCBB5F2BA9F8A0007AA07E /* CloudStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudStoreTests.swift; sourceTree = "<group>"; };
+		F4CCBB702BA9F8A0007AA07E /* GameProfileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameProfileTests.swift; sourceTree = "<group>"; };
 		F4CCBB612BA9F8A0007AA07E /* CloudModelsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudModelsTests.swift; sourceTree = "<group>"; };
+		F4CCBB632BA9F8A0007AA080 /* GameSounds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameSounds.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -137,6 +141,7 @@
 				F4CCBB052BA9F8A0007AA07E /* Preview Content */,
 				F4CCBB312BA9FA64007AA07E /* GameViewModel.swift */,
 				F4CCBB332BA9FA79007AA07E /* GameView.swift */,
+				F4CCBB632BA9F8A0007AA080 /* GameSounds.swift */,
 				F4CCBB5A2BA9F8A0007AA07E /* Cloud */,
 				F4CCBB482BA9F8A0007AA07E /* SDUI */,
 				F4CCBB492BA9F8A0007AA07E /* Surfaces */,
@@ -194,6 +199,7 @@
 				F4CCBB5D2BA9F8A0007AA07E /* CloudControllerTests.swift */,
 				F4CCBB5F2BA9F8A0007AA07E /* CloudStoreTests.swift */,
 				F4CCBB612BA9F8A0007AA07E /* CloudModelsTests.swift */,
+				F4CCBB702BA9F8A0007AA07E /* GameProfileTests.swift */,
 			);
 			path = "Game-2048Tests";
 			sourceTree = "<group>";
@@ -340,6 +346,7 @@
 			files = (
 				F4CCBB322BA9FA64007AA07E /* GameViewModel.swift in Sources */,
 				F4CCBB342BA9FA79007AA07E /* GameView.swift in Sources */,
+				F4CCBB642BA9F8A0007AA080 /* GameSounds.swift in Sources */,
 				F4CCBB512BA9F8A0007AA07E /* CloudModels.swift in Sources */,
 				F4CCBB532BA9F8A0007AA07E /* CloudAPI.swift in Sources */,
 				F4CCBB552BA9F8A0007AA07E /* CloudStore.swift in Sources */,
@@ -364,6 +371,7 @@
 				F4CCBB5C2BA9F8A0007AA07E /* CloudAPITests.swift in Sources */,
 				F4CCBB5E2BA9F8A0007AA07E /* CloudControllerTests.swift in Sources */,
 				F4CCBB602BA9F8A0007AA07E /* CloudStoreTests.swift in Sources */,
+				F4CCBB712BA9F8A0007AA07E /* GameProfileTests.swift in Sources */,
 				F4CCBB622BA9F8A0007AA07E /* CloudModelsTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

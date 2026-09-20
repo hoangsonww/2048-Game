@@ -50,12 +50,27 @@ class CloudApi(
             val error = payload?.optJSONObject("error")
             throw CloudException(
                 code = error?.optString("code").orEmpty().ifEmpty { "http_error" },
-                message = error?.optString("message").orEmpty().ifEmpty { "Request failed with status ${response.status}." },
+                message = humanMessage(error, response.status),
                 status = response.status
             )
         }
 
         return payload ?: JSONObject()
+    }
+
+    /** Prefer field-level validation hints over the generic 422 summary. */
+    private fun humanMessage(error: JSONObject?, status: Int): String {
+        val issues = error?.optJSONObject("details")?.optJSONArray("issues")
+        if (issues != null && issues.length() > 0) {
+            val lines = buildList {
+                for (i in 0 until issues.length()) {
+                    val message = issues.optJSONObject(i)?.optString("message").orEmpty()
+                    if (message.isNotBlank()) add(message)
+                }
+            }
+            if (lines.isNotEmpty()) return lines.joinToString(" ")
+        }
+        return error?.optString("message").orEmpty().ifEmpty { "Request failed with status $status." }
     }
 
     /** A body that is not JSON is treated as absent rather than fatal. */
@@ -129,9 +144,34 @@ class CloudApi(
     }
 
     /** Returns the account behind the stored tokens, or null when there is none. */
+    /**
+     * Sets a new password from a username and the email address on it.
+     *
+     * Interim recovery, with no mailed token — see the endpoint's own comment
+     * in `server/src/routes/auth.routes.js`. The server revokes every session
+     * on the account, so the local tokens are dropped here whether or not
+     * this device held one.
+     */
+    fun resetPassword(username: String, email: String, newPassword: String) {
+        request(
+            "POST",
+            "/api/v1/auth/reset-password",
+            JSONObject()
+                .put("username", username.trim())
+                .put("email", email.trim())
+                .put("newPassword", newPassword),
+            null
+        )
+        tokens.write(null)
+    }
+
     fun currentUser(): CloudUser? {
         if (tokens.read() == null) return null
-        return readUser(authed("GET", "/api/v1/auth/me").optJSONObject("user"))
+        // A reply carrying no user object is not a user. Reading one out of
+        // it anyway yields a blank name and zeroed career totals, which then
+        // replace a perfectly good session on screen.
+        val user = authed("GET", "/api/v1/auth/me").optJSONObject("user") ?: return null
+        return readUser(user)
     }
 
     fun logout() {

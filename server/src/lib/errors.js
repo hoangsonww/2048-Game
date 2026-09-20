@@ -35,7 +35,7 @@ export class ApiError extends Error {
 export const badRequest = (message, details) => new ApiError(400, "bad_request", message, details);
 export const validationFailed = details => new ApiError(422, "validation_failed", "The request body or query failed validation.", details);
 export const unauthorized = (message = "Authentication is required.") => new ApiError(401, "unauthorized", message);
-export const invalidCredentials = () => new ApiError(401, "invalid_credentials", "That email or password is not correct.");
+export const invalidCredentials = (message = "That email or password is not correct.") => new ApiError(401, "invalid_credentials", message);
 export const forbidden = (message = "You do not have access to this resource.") => new ApiError(403, "forbidden", message);
 export const notFound = (resource = "Resource") => new ApiError(404, "not_found", `${resource} was not found.`);
 export const conflict = (message, details) => new ApiError(409, "conflict", message, details);

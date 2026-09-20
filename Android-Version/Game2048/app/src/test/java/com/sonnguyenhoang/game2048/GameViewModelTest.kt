@@ -149,7 +149,7 @@ class GameViewModelTest {
         storage: GameStorage? = null,
         randomIndex: (Int) -> Int = { 0 },
         randomUnit: () -> Double = { 0.0 }
-    ) = GameViewModel(storage, randomIndex, randomUnit)
+    ) = GameViewModel(storage, randomIndex = randomIndex, randomUnit = randomUnit)
 
     private fun nonZero(game: GameViewModel) = game.grid.flatten().filter { it != 0 }
 
@@ -157,5 +157,6 @@ class GameViewModelTest {
         override fun load(): SavedGame? = saved
         override fun loadBest(): Int = saved?.best ?: 0
         override fun save(game: SavedGame) { saved = game }
+        override fun clear() { saved = null }
     }
 }
