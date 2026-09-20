@@ -21,21 +21,29 @@ enum CloudPalette {
 }
 
 /// The header's account control: a name when signed in, an invitation when not.
+///
+/// The label is capped rather than fixed. A `frame(maxWidth:)` reserves its
+/// width whatever is in it, so "Sign in" sat in the middle of a pill sized for
+/// a long display name, with a gap either side of it that looked like a
+/// mistake. Capping lets the control hug two words and still truncate a name.
 struct AccountButton: View {
     @ObservedObject var cloud: CloudController
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 5) {
+            HStack(spacing: 6) {
                 Image(systemName: cloud.isSignedIn ? "person.crop.circle.fill" : "person.crop.circle")
                     .font(.system(size: 14, weight: .semibold))
                 Text(cloud.user?.displayName ?? "Sign in")
                     .font(.system(size: 13, weight: .semibold, design: .rounded))
                     .lineLimit(1)
-                    .frame(maxWidth: 88)
+                    .truncationMode(.tail)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: 92, alignment: .leading)
             }
-            .padding(.horizontal, 11)
+            .fixedSize(horizontal: true, vertical: false)
+            .padding(.horizontal, 12)
             .frame(height: 38)
             .background(.white.opacity(0.65), in: Capsule())
             .overlay(Capsule().stroke(Color.black.opacity(0.08)))
@@ -77,14 +85,17 @@ struct CloudBar: View {
             if cloud.isBusy && cloud.activity != .loadingLeaderboard {
                 ProgressView().controlSize(.mini)
             }
+            // Quiet enough to read as a footnote to the board rather than a
+            // label crammed against the action bar.
             Text(cloud.status)
-                .font(.system(size: 12, weight: .medium, design: .rounded))
-                .foregroundStyle(CloudPalette.muted)
+                .font(.system(size: 11.5, weight: .medium, design: .rounded))
+                .foregroundStyle(CloudPalette.muted.opacity(0.85))
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
                 .accessibilityIdentifier("cloudStatus")
         }
         .frame(maxWidth: .infinity)
+        .padding(.top, 2)
         .animation(.easeInOut(duration: 0.2), value: cloud.status)
     }
 }

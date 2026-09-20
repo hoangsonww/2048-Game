@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,6 +30,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,19 +51,38 @@ import com.sonnguyenhoang.game2048.ui.theme.Paper
  * "Design tokens, shared by hand".
  */
 
-/** The header's account control: a name when signed in, an invitation when not. */
+/**
+ * The header's account control: a name when signed in, an invitation when not.
+ *
+ * Shaped like the icon buttons beside it — same 44dp height, same translucent
+ * white fill, same corner radius — because a bare text button next to three
+ * chips reads as something that was forgotten rather than something that
+ * belongs. It is wider than they are, so it takes a pill.
+ */
 @Composable
 fun AccountButton(controller: CloudController, onOpen: () -> Unit) {
     val label = controller.user?.displayName ?: "Sign in"
-    TextButton(
-        onClick = onOpen,
+    Row(
         modifier = Modifier
             .heightIn(min = 44.dp)
-            .semantics { contentDescription = if (controller.isSignedIn) "Account: $label" else "Sign in or create an account" }
+            .clip(RoundedCornerShape(22.dp))
+            .background(Color.White.copy(alpha = 0.68f))
+            .clickable(onClick = onOpen)
+            .padding(start = 12.dp, end = 15.dp)
+            .semantics { contentDescription = if (controller.isSignedIn) "Account: $label" else "Sign in or create an account" },
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(Icons.Rounded.Person, contentDescription = null, tint = Ink, modifier = Modifier.size(18.dp))
-        Spacer(Modifier.width(6.dp))
-        Text(label, color = Ink, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+        Spacer(Modifier.width(7.dp))
+        Text(
+            label,
+            color = Ink,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.widthIn(max = 104.dp)
+        )
     }
 }
 
@@ -170,18 +192,30 @@ fun GuestPrompt(onCreate: () -> Unit, onSignIn: () -> Unit, onDismiss: () -> Uni
     }
 }
 
+/**
+ * The sync status under the board.
+ *
+ * Centred and quieter than the swipe hint above it, so the two read as one
+ * block of secondary text. Left-aligned and full size it looked like a
+ * caption that had come loose from something else.
+ */
 @Composable
 fun CloudStatusLine(controller: CloudController) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         if (controller.isBusy && controller.activity != CloudController.Activity.LOADING_LEADERBOARD) {
-            CircularProgressIndicator(modifier = Modifier.size(13.dp), strokeWidth = 1.5.dp, color = Muted)
+            CircularProgressIndicator(modifier = Modifier.size(12.dp), strokeWidth = 1.5.dp, color = Muted)
             Spacer(Modifier.width(8.dp))
         }
         Text(
             controller.status,
-            color = Muted,
-            fontSize = 12.sp,
+            color = Muted.copy(alpha = 0.82f),
+            fontSize = 11.5.sp,
             lineHeight = 16.sp,
+            textAlign = TextAlign.Center,
             modifier = Modifier.semantics { contentDescription = "Sync status: ${controller.status}" }
         )
     }
@@ -377,15 +411,6 @@ fun AuthSheet(
                     .semantics { contentDescription = "Open password reset" }
             ) {
                 Text("Forgot your password?", color = Muted, fontSize = 13.sp)
-            }
-
-            TextButton(
-                onClick = onDismiss,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .semantics { contentDescription = "Dismiss sign in" }
-            ) {
-                Text("Not now — keep playing", color = Muted, fontSize = 13.sp)
             }
         }
     }

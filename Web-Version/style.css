@@ -91,7 +91,11 @@ kbd svg, .mobile-controls svg, .dialog-icon svg { width: 1rem; height: 1rem; fil
 .button--primary:hover:not(:disabled) { background: var(--accent-dark); }
 .button--text { color: inherit; background: transparent; }
 .mobile-controls { display: none; }
-.status-line { min-height: 1.35rem; margin: .8rem 0 0; color: var(--muted); font-size: .78rem; text-align: center; }
+/* The two live regions under the board read as one block: same alignment,
+   same weight, the sync line quieter than the move announcement above it.
+   Left-aligned and louder, the sync line looked like a caption that had come
+   loose from something else. */
+.status-line { min-height: 1.35rem; margin: 1.1rem 0 0; color: var(--muted); font-size: .78rem; text-align: center; }
 .guide-section { width: min(100% - 2rem,75rem); margin: 0 auto 7rem; padding-top: 6rem; border-top: 1px solid var(--line); display: grid; grid-template-columns: .75fr 1fr; gap: clamp(3rem,8vw,8rem); }
 .guide-section h2 { margin: 0; font-size: clamp(2.8rem,6vw,5rem); line-height: .95; letter-spacing: -.06em; }
 .steps { margin: 0; padding: 0; list-style: none; }
@@ -184,7 +188,7 @@ footer div { display: flex; gap: 1.5rem; }
     to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
-.cloud-status { margin: .35rem 0 0; color: var(--muted); font-size: .82rem; line-height: 1.45; }
+.cloud-status { margin: .2rem 0 0; color: var(--muted); font-size: .74rem; line-height: 1.45; text-align: center; opacity: .82; }
 .cloud-status.is-busy,
 .cloud-panel__muted.is-busy,
 .button.is-busy { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; }
