@@ -91,7 +91,6 @@
             authSubmit: byId("authSubmit"),
             authSwitch: byId("authSwitch"),
             authForgot: byId("authForgot"),
-            authCancel: byId("authCancel"),
             authDismiss: byId("authDismiss"),
             authError: byId("authError"),
 
@@ -852,7 +851,6 @@
             if (event?.preventDefault) event.preventDefault();
             setMode(mode === "register" ? "login" : "register");
         });
-        listen(elements.authCancel, "click", () => closeAuth());
         listen(elements.authDismiss, "click", () => closeAuth());
         // Backdrop click and Escape both leave the board alone.
         listen(elements.authDialog, "click", event => {

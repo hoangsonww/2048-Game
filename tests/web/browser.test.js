@@ -214,12 +214,12 @@ test("auth dialog owns WASD and arrows so the board stays still", async () => {
     assert.deepEqual((await state(page)).board.flat(), seeded.board, "keys in the auth form must not move tiles");
 
     // Focus a dialog control that is not an input — still must not drive the board.
-    await page.locator("#authCancel").focus();
+    await page.locator("#authSwitch").focus();
     await page.keyboard.press("d");
     await page.keyboard.press("ArrowRight");
     assert.deepEqual((await state(page)).board.flat(), seeded.board, "keys while the auth dialog is open must not move tiles");
 
-    await page.locator("#authCancel").click();
+    await page.locator("#authDismiss").click();
     assert.equal(await page.locator("#authDialog").evaluate(dialog => dialog.open), false);
     await page.keyboard.press("a");
     assert.equal((await state(page)).board.flat().includes(4), true, "closing auth restores keyboard moves");

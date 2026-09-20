@@ -19,7 +19,7 @@ const IDS = [
     "authDialog", "authForm", "authTitle", "authIntro", "authUsernameField", "authUsername",
     "authEmailField", "authEmail", "authIdentifierField", "authIdentifier", "authPassword",
     "authConfirmField", "authConfirm",
-    "authSubmit", "authSwitch", "authForgot", "authCancel", "authDismiss", "authError",
+    "authSubmit", "authSwitch", "authForgot", "authDismiss", "authError",
     "resetDialog", "resetForm", "resetUsername", "resetEmail", "resetPassword",
     "resetConfirm", "resetSubmit", "resetCancel", "resetDismiss", "resetError",
     "profileSwitchDialog", "profileSwitchTitle", "profileSwitchBody",
@@ -494,18 +494,9 @@ test("restoring a stored session shows a syncing status", async () => {
     assert.equal(app.elements.cloudStatus.classList.contains("is-busy"), false);
 });
 
-test("cancelling closes the dialog and changes nothing", async () => {
-    const app = mount();
-    await app.ui.start();
-
-    app.elements.accountButton.dispatch("click");
-    app.elements.authCancel.dispatch("click");
-
-    assert.equal(app.elements.authDialog.open, false);
-    assert.equal(app.cloud.isSignedIn(), false);
-});
-
 test("the dismiss control and backdrop click both close the auth dialog", async () => {
+    // The close icon is the only dismiss control the form carries; a second
+    // "not now" button underneath the submit said the same thing twice.
     const app = mount();
     await app.ui.start();
 
@@ -513,6 +504,7 @@ test("the dismiss control and backdrop click both close the auth dialog", async 
     assert.equal(app.elements.authDialog.open, true);
     app.elements.authDismiss.dispatch("click");
     assert.equal(app.elements.authDialog.open, false);
+    assert.equal(app.cloud.isSignedIn(), false, "dismissing changes nothing");
 
     app.elements.accountButton.dispatch("click");
     app.elements.authDialog.dispatch("click", { target: app.elements.authDialog });
@@ -1292,7 +1284,7 @@ test("closing a form hides every password again", async () => {
     app.reveal.authPassword.dispatch("click");
     app.reveal.authConfirm.dispatch("click");
 
-    app.elements.authCancel.dispatch("click");
+    app.elements.authDismiss.dispatch("click");
 
     assert.equal(app.elements.authPassword.type, "password");
     assert.equal(app.elements.authConfirm.type, "password");
