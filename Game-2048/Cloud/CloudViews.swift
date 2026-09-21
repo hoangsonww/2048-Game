@@ -145,11 +145,6 @@ struct GuestToast: View {
         .padding(14)
         .frame(maxWidth: 360)
         .background(.white.opacity(0.96), in: RoundedRectangle(cornerRadius: 14))
-        .overlay(alignment: .leading) {
-            RoundedRectangle(cornerRadius: 14)
-                .fill(CloudPalette.accent)
-                .frame(width: 3)
-        }
         .shadow(color: .black.opacity(0.12), radius: 16, y: 6)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("guestPrompt")

@@ -164,7 +164,10 @@ final class Game_2048UITests: XCTestCase {
         app.secureTextFields["confirmPasswordField"].typeText("Password2")
         app.buttons["authSubmit"].tap()
 
-        XCTAssertTrue(app.staticTexts["passwordMismatch"].waitForExistence(timeout: 5))
+        // SwiftUI exposes a `Label` as a static text on newer runtimes but as
+        // a combined accessibility element on iOS 18/Xcode 16. Query by the
+        // identifier rather than tying this assertion to either element type.
+        XCTAssertTrue(element(identifier: "passwordMismatch", in: app).waitForExistence(timeout: 5))
         XCTAssertTrue(app.navigationBars["Create your account"].exists, "the form stays up to be corrected")
     }
 
