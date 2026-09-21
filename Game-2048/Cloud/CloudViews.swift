@@ -209,6 +209,27 @@ struct RevealablePasswordField: View {
     }
 }
 
+/// A credential error that must remain visible while a form scrolls.
+///
+/// `Form` is lazy on older iOS releases: inserting an error row after the
+/// keyboard has scrolled the password fields can leave that row unrealised.
+/// Keeping the banner outside the form makes the reason for refusing a submit
+/// immediately visible and gives accessibility a stable element to announce.
+private struct PasswordMismatchBanner: View {
+    let identifier: String
+
+    var body: some View {
+        Label("Those passwords do not match.", systemImage: "exclamationmark.triangle.fill")
+            .font(.system(size: 13, weight: .medium, design: .rounded))
+            .foregroundStyle(CloudPalette.accent)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 10)
+            .background(CloudPalette.accent.opacity(0.1))
+            .accessibilityIdentifier(identifier)
+    }
+}
+
 /// Sign-up and sign-in in one sheet.
 ///
 /// Two sheets would double the surface for one decision a player makes once;
@@ -264,7 +285,12 @@ struct AuthSheet: View {
 
     var body: some View {
         NavigationStack {
-            Form {
+            VStack(spacing: 0) {
+                if mismatch && passwordsDisagree {
+                    PasswordMismatchBanner(identifier: "passwordMismatch")
+                }
+
+                Form {
                 Section {
                     Text(intro)
                         .font(.system(size: 14, design: .rounded))
@@ -322,17 +348,6 @@ struct AuthSheet: View {
                         .disabled(cloud.activity == .authenticating)
                     }
 
-                    // Keep the mismatch beside the fields it describes. A
-                    // separate section can be recycled once the keyboard
-                    // scrolls the confirmation field into view, leaving
-                    // neither the player nor accessibility with the reason
-                    // submission was refused.
-                    if mismatch && passwordsDisagree {
-                        Label("Those passwords do not match.", systemImage: "exclamationmark.triangle.fill")
-                            .font(.system(size: 13, design: .rounded))
-                            .foregroundStyle(CloudPalette.accent)
-                            .accessibilityIdentifier("passwordMismatch")
-                    }
                 } footer: {
                     Text("At least 8 characters, including one letter and one number.")
                 }
@@ -377,6 +392,7 @@ struct AuthSheet: View {
                     .disabled(cloud.activity == .authenticating)
                     .accessibilityIdentifier("authForgot")
                 }
+            }
             }
             .navigationTitle(registering ? "Create your account" : "Welcome back")
             .navigationBarTitleDisplayMode(.inline)
@@ -430,7 +446,12 @@ struct ResetPasswordSheet: View {
 
     var body: some View {
         NavigationStack {
-            Form {
+            VStack(spacing: 0) {
+                if mismatch && passwordsDisagree {
+                    PasswordMismatchBanner(identifier: "resetMismatch")
+                }
+
+                Form {
                 Section {
                     Text("Confirm the username and email on the account, then choose a new password. Every device signed in to it will be signed out.")
                         .font(.system(size: 14, design: .rounded))
@@ -467,12 +488,6 @@ struct ResetPasswordSheet: View {
                     RevealablePasswordField(title: "Confirm new password", text: $confirmPassword, identifier: "resetConfirmField")
                         .disabled(working)
 
-                    if mismatch && passwordsDisagree {
-                        Label("Those passwords do not match.", systemImage: "exclamationmark.triangle.fill")
-                            .font(.system(size: 13, design: .rounded))
-                            .foregroundStyle(CloudPalette.accent)
-                            .accessibilityIdentifier("resetMismatch")
-                    }
                 } footer: {
                     Text("At least 8 characters, including one letter and one number.")
                 }
@@ -496,6 +511,7 @@ struct ResetPasswordSheet: View {
                     .disabled(working)
                     .accessibilityIdentifier("resetSubmit")
                 }
+            }
             }
             .navigationTitle("Reset your password")
             .navigationBarTitleDisplayMode(.inline)
