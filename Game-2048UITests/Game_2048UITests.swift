@@ -158,10 +158,16 @@ final class Game_2048UITests: XCTestCase {
 
         app.buttons["accountButton"].tap()
         XCTAssertTrue(app.navigationBars["Create your account"].waitForExistence(timeout: 5))
-        app.secureTextFields["passwordField"].tap()
-        app.secureTextFields["passwordField"].typeText("Password1")
-        app.secureTextFields["confirmPasswordField"].tap()
-        app.secureTextFields["confirmPasswordField"].typeText("Password2")
+        // Xcode 16's UI runner intermittently sends only the first character
+        // to a SwiftUI SecureField. Reveal each field before typing so this
+        // test exercises an actual mismatch on every supported runner rather
+        // than accidentally submitting the equal pair "P" / "P".
+        app.buttons["passwordFieldReveal"].tap()
+        app.textFields["passwordField"].tap()
+        app.textFields["passwordField"].typeText("Password1")
+        app.buttons["confirmPasswordFieldReveal"].tap()
+        app.textFields["confirmPasswordField"].tap()
+        app.textFields["confirmPasswordField"].typeText("Password2")
         app.buttons["authSubmit"].tap()
 
         // SwiftUI exposes a `Label` as a static text on newer runtimes but as
