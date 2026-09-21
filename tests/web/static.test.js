@@ -19,8 +19,14 @@ test("web entry contains complete SEO and social metadata", () => {
     const structuredData = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
         .map(match => JSON.parse(match[1]));
     assert.equal(structuredData.length > 0, true);
-    assert.match(JSON.stringify(structuredData), /"VideoGame"/);
-    assert.match(JSON.stringify(structuredData), /"HowTo"/);
+    const graph = structuredData.flatMap(item => item["@graph"] ?? [item]);
+    const application = graph.find(item => (Array.isArray(item["@type"]) ? item["@type"] : [item["@type"]]).includes("SoftwareApplication"));
+    assert.ok(application, "the playable app should have SoftwareApplication metadata");
+    assert.equal(application.offers?.price, "0");
+    assert.equal(application.applicationCategory, "GameApplication");
+    assert.ok(graph.some(item => item["@type"] === "HowTo"));
+    const faq = graph.find(item => item["@type"] === "FAQPage");
+    assert.equal(faq?.mainEntity?.length, (html.match(/class="faq-item"/g) ?? []).length, "visible FAQs and FAQ metadata must stay aligned");
 });
 
 test("manifest, sitemap, robots, and referenced icon assets are valid", () => {
@@ -41,7 +47,10 @@ test("manifest, sitemap, robots, and referenced icon assets are valid", () => {
         assert.equal(screenshot.sizes, declared, `${screenshot.src} is ${declared}, manifest says ${screenshot.sizes}`);
     }
     assert.match(read("robots.txt"), /Sitemap: https:\/\//);
-    assert.match(read("sitemap.xml"), /<urlset/);
+    const sitemap = read("sitemap.xml");
+    assert.match(sitemap, /<urlset/);
+    assert.ok(sitemap.includes('xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"'));
+    assert.doesNotMatch(sitemap, /<image:title>/, "Google deprecated image:title; only advertise image locations");
     for (const asset of [
         "images/favicon.svg", "images/favicon.ico", "images/brand-mark.svg",
         "images/share-card.png", "images/2048-192x192.png", "images/2048-512x512.png"

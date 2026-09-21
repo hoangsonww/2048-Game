@@ -1,15 +1,69 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://hoangsonww.github.io/2048-Game/</loc>
-    <lastmod>2026-09-19</lastmod>
+    <lastmod>2026-09-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://hoangsonww.github.io/2048-Game/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://hoangsonww.github.io/2048-Game/"/>
+      <image:image>
+        <image:loc>https://hoangsonww.github.io/2048-Game/images/web-version-UI.png</image:loc>
+      </image:image>
+      <image:image>
+        <image:loc>https://hoangsonww.github.io/2048-Game/images/web-mobile-gameplay.png</image:loc>
+      </image:image>
+      <image:image>
+        <image:loc>https://hoangsonww.github.io/2048-Game/images/web-win.png</image:loc>
+      </image:image>
+      <image:image>
+        <image:loc>https://hoangsonww.github.io/2048-Game/images/web-loss.png</image:loc>
+      </image:image>
+      <image:image>
+        <image:loc>https://hoangsonww.github.io/2048-Game/images/web-restart-dialog.png</image:loc>
+      </image:image>
+      <image:image>
+        <image:loc>https://hoangsonww.github.io/2048-Game/images/web-cloud-guest.png</image:loc>
+      </image:image>
+      <image:image>
+        <image:loc>https://hoangsonww.github.io/2048-Game/images/web-cloud-signup.png</image:loc>
+      </image:image>
+      <image:image>
+        <image:loc>https://hoangsonww.github.io/2048-Game/images/web-cloud-signin.png</image:loc>
+      </image:image>
+      <image:image>
+        <image:loc>https://hoangsonww.github.io/2048-Game/images/web-cloud-reset.png</image:loc>
+      </image:image>
+      <image:image>
+        <image:loc>https://hoangsonww.github.io/2048-Game/images/web-cloud-handover.png</image:loc>
+      </image:image>
+      <image:image>
+        <image:loc>https://hoangsonww.github.io/2048-Game/images/web-cloud-signed-in.png</image:loc>
+      </image:image>
+      <image:image>
+        <image:loc>https://hoangsonww.github.io/2048-Game/images/web-cloud-account.png</image:loc>
+      </image:image>
+      <image:image>
+        <image:loc>https://hoangsonww.github.io/2048-Game/images/web-cloud-leaderboard.png</image:loc>
+      </image:image>
+      <image:image>
+        <image:loc>https://hoangsonww.github.io/2048-Game/images/IOS-UI.png</image:loc>
+      </image:image>
+      <image:image>
+        <image:loc>https://hoangsonww.github.io/2048-Game/images/android-ui.png</image:loc>
+      </image:image>
   </url>
   <url>
     <loc>https://hoangsonww.github.io/2048-Game/Web-Version/about.html</loc>
-    <lastmod>2026-09-19</lastmod>
+    <lastmod>2026-09-20</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://hoangsonww.github.io/2048-Game/Web-Version/about.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://hoangsonww.github.io/2048-Game/Web-Version/about.html"/>
+    <image:image>
+      <image:loc>https://hoangsonww.github.io/2048-Game/images/web-about.png</image:loc>
+    </image:image>
   </url>
 </urlset>

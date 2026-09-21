@@ -101,7 +101,7 @@ Removing the cloud layer is a delete of those modules plus the header / banner w
 
 ## Screenshots
 
-Canonical captures live under `images/` (`web-cloud-*`, `android-cloud-*`, `ios-cloud-guest.png`). Regenerate the web set with `make screenshots-web`.
+Canonical captures live under `images/` (`web-cloud-*`, `android-cloud-*`, and `ios-cloud-*`). Regenerate the browser set with `make screenshots-web` and the native set from booted simulators with `make screenshots-mobile`. QA-only native captures stay under `output/mobile/` when run through `make screenshots-mobile-qa`.
 
 ## Local development
 

@@ -1,6 +1,13 @@
 User-agent: *
 Allow: /
 
+# Nothing here is private; the whole repository is public and the game runs
+# entirely in the browser. Crawl the images too — they are the screenshots the
+# sitemap advertises.
+Allow: /images/
+
 Sitemap: https://hoangsonww.github.io/2048-Game/sitemap.xml
+
 # AI-readable project and interface documentation:
 # https://hoangsonww.github.io/2048-Game/llms.txt
+# https://hoangsonww.github.io/2048-Game/llms-full.txt

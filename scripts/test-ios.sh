@@ -21,8 +21,13 @@ derived_data="${TMPDIR:-/tmp}/Game2048Derived"
     test \
     -parallel-testing-enabled NO \
     -enableCodeCoverage YES \
+    -skip-testing:Game-2048UITests/ScreenshotTests \
     CODE_SIGNING_ALLOWED=NO)
 
+# `ScreenshotTests` is skipped on purpose: it drives the simulator to capture
+# `images/ios-*.png` and asserts nothing about behaviour, so a capture run must
+# never gate a merge. See `scripts/capture-mobile-screenshots.sh`.
+#
 # Coverage is collected above; report it and hold the app target to a floor so a
 # regression fails the run rather than being noticed later.
 #

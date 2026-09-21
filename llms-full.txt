@@ -18,13 +18,13 @@ The project contains three independently implemented clients — a static browse
 
 ## Interface map
 
-The page starts with a skip link and a compact header containing the 2048 brand, Sign in / account, Leaderboard, a “How to play” anchor, and an About link. The main game region has an editorial introduction alongside the functional game panel on wide screens; the layout stacks on compact screens.
+The page starts with a skip link and a compact header containing the 2048 brand, Sign in / account, Leaderboard, “How to play” and FAQ anchors, and an About link. The main game region has an editorial introduction alongside the functional game panel on wide screens; the layout stacks on compact screens.
 
 The game panel contains Score and Best cards, Undo and New game icon buttons, the labeled 4×4 board, compact directional controls, and a live cloud/sync status line. Guests see a dismissible invitation to create an account; signed-in players sync the round in the background. Undo uses an SVG history arrow; New game uses an SVG refresh arrow. These icons are vector artwork centered inside their controls rather than Unicode or font glyphs.
 
 The board communicates tile values visually and through an accessible grid. Win and loss messages appear over the board with a primary restart action. The win state also offers “Keep playing.” Starting a new game from active play opens a modal confirmation that preserves the best score. Auth, account, and leaderboard surfaces open as dialogs and never replace the board.
 
-Below the game, a visible three-step guide explains Slide, Match, and Protect space. The footer links to project details and source code. The separate About page expands the rules, strategy, and relationship among the three clients.
+Below the game, a visible three-step guide explains Slide, Match, and Protect space. A ten-question FAQ covers price, accounts, winning, strategy, offline play, profile separation, sync, native apps, scoring, and undo. The footer links to project details and source code. The separate About page expands the rules, strategy, and relationship among the three clients.
 
 ## User flows
 
@@ -77,4 +77,4 @@ The web app provides semantic headings, landmarks, navigation labels, a skip lin
 - `scripts/` and `Makefile`: stable setup, validation, test, server, and screenshot entry points.
 - `.agents/skills/`: repository-local workflows for coding agents.
 
-Use `make help` to discover commands, `make check` for the fast repository gate, and the relevant `make test-*` target for platform validation. Changes to game behavior should preserve parity across all affected clients and include deterministic tests.
+Use `make help` to discover commands, `make check` for the fast repository gate, and the relevant `make test-*` target for platform validation. `make screenshots-web` and `make screenshots-mobile` regenerate the reviewed canonical images; their `-qa` variants keep output local. Changes to game behavior should preserve parity across all affected clients and include deterministic tests.

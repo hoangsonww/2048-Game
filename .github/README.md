@@ -100,7 +100,7 @@ The result is a codebase where you can read one platform's implementation in iso
 
 ## Screenshots
 
-The same round, mid-game, on all three clients. Web shots are produced by `make screenshots-web` (which also promotes into `images/`). Native shots are captured from a simulator and emulator.
+The same experience on all three clients. `make screenshots-web` captures the browser states; `make screenshots-mobile` drives a booted iPhone simulator and Android emulator. Both commands promote the reviewed canonical set into `images/`.
 
 | Web | iOS | Android |
 | :---: | :---: | :---: |
@@ -140,7 +140,15 @@ Guest play, auth, sync, and leaderboards — local-first; an account is never re
 | :---: | :---: | :---: |
 | ![Android guest banner above the board](../images/android-cloud-guest.png) | ![Android leaderboard bottom sheet](../images/android-cloud-leaderboard.png) | ![Android sign-in bottom sheet](../images/android-cloud-signin.png) |
 
-Regenerate web captures (and refresh `images/`) with `make screenshots-web`. QA-only output without promoting: `make screenshots-web-qa` → `output/playwright/latest/`.
+| iOS create account | iOS handover warning | iOS password reset |
+| :---: | :---: | :---: |
+| ![iOS create-account sheet with password confirmation](../images/ios-cloud-signup.png) | ![iOS warning that the guest round will be set aside](../images/ios-cloud-handover.png) | ![iOS password-reset sheet](../images/ios-cloud-reset.png) |
+
+| Android handover warning | Android password reset | iOS leaderboard |
+| :---: | :---: | :---: |
+| ![Android warning that the guest round will be set aside](../images/android-cloud-handover.png) | ![Android password-reset bottom sheet](../images/android-cloud-reset.png) | ![iOS leaderboard sheet](../images/ios-cloud-leaderboard.png) |
+
+QA-only output without promotion: `make screenshots-web-qa` writes `output/playwright/latest/`; `make screenshots-mobile-qa` writes `output/mobile/`.
 
 ---
 
@@ -348,7 +356,7 @@ Full detail in [`ARCHITECTURE.md`](../ARCHITECTURE.md#server-driven-surfaces).
 └── .devcontainer/                      Node 22, JDK 17, Android SDK 34 container
 ```
 
-`output/` is generated locally by the QA and screenshot scripts and is intentionally not versioned — it is fully reproducible with `make test` and `make screenshots-web`.
+`output/` is generated locally by the QA and screenshot scripts and is intentionally not versioned — it is fully reproducible with `make test`, `make screenshots-web`, and `make screenshots-mobile` on a host with both native runtimes.
 
 ---
 
@@ -431,6 +439,8 @@ make screenshots-web
 ```
 
 Output lands in `output/playwright/` (gitignored) covering gameplay, the restart dialog, win, loss, and the About page at both breakpoints.
+
+With an iPhone simulator and Android emulator already booted, refresh the native canonical set with `make screenshots-mobile`. The script installs the current Android APK, captures both clients through accessibility-labelled controls, and exports the iOS frames from XCTest attachments.
 
 ---
 
@@ -532,6 +542,8 @@ Every workflow has a stable `make` entry point. Prefer these over ad-hoc command
 | `make test` | Every suite this host can support | Varies |
 | `make screenshots-web` | Deterministic desktop/mobile + cloud UI captures; promotes into `images/` | Node 22+, Chromium |
 | `make screenshots-web-qa` | Same captures into `output/` only (no promote) | Node 22+, Chromium |
+| `make screenshots-mobile` | iOS/Android game + cloud UI captures; promotes into `images/` | macOS, Xcode, SDK 34, booted simulator + emulator |
+| `make screenshots-mobile-qa` | Same native captures into `output/mobile/` only | Same as above |
 | `make clean-web` | Removes generated coverage and local screenshots | — |
 
 ---
@@ -548,7 +560,7 @@ Coverage is layered deliberately: pure rules logic is tested exhaustively and ch
 - **47 cloud-client tests** for auth, token refresh, sync resolutions, password reset, and the rule that career statistics are never lifted from local storage, plus **72 account-surface tests** for the dialogs, the handover warning, password confirmation, and the reveal controls.
 - **13 sound tests** proving a cue is dropped rather than queued whenever it cannot be played now.
 - **5 metadata and asset tests** for the manifest, sitemap, `robots.txt`, JSON-LD, form patterns, and every referenced icon, plus **2 repository-tooling tests** asserting the project structure and npm script surface stay intact.
-- **12 Chromium interaction scenarios** driving the real page: arrow-key play, WASD play, touch swipe, the on-screen direction pad, undo, persistence across reload, restart confirmation, fullscreen, the win overlay, the loss overlay, recovery from a corrupt saved state, that a board swipe suppresses page scrolling without blocking it anywhere else, that sound cues follow the real audio clock instead of piling up behind it, and that the password and handover dialogs behave.
+- **13 Chromium interaction scenarios** driving the real page: arrow-key play, WASD play, touch swipe, the on-screen direction pad, undo, persistence across reload, restart confirmation, fullscreen, the win overlay, the loss overlay, recovery from a corrupt saved state, board-swipe ownership, real-clock sound timing, account and password flows, and responsive layout from a 320 px phone through tablet widths.
 
 Coverage is **enforced** by `c8` across everything in `Web-Version/`, and the build fails below 100 % statements, 100 % lines, 100 % functions, or 95 % branches. It currently reaches **100 % statements, lines, and functions with 95.1 % branches**.
 

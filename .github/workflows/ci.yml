@@ -105,11 +105,14 @@ jobs:
             test-without-building -parallel-testing-enabled NO -only-testing:Game-2048Tests \
             -resultBundlePath "$RUNNER_TEMP/iOS-Unit.xcresult" CODE_SIGNING_ALLOWED=NO -enableCodeCoverage YES
 
+      # ScreenshotTests only drives the simulator to capture images/ios-*.png;
+      # it asserts nothing, so it is skipped here as it is locally.
       - name: Run iOS interaction and accessibility tests
         run: |
           xcodebuild -project "2048 Game.xcodeproj" -scheme "Game-2048" \
             -destination "$IOS_DESTINATION" -derivedDataPath "$RUNNER_TEMP/Game2048Derived" \
             test-without-building -parallel-testing-enabled NO -only-testing:Game-2048UITests \
+            -skip-testing:Game-2048UITests/ScreenshotTests \
             -resultBundlePath "$RUNNER_TEMP/iOS-UI.xcresult" CODE_SIGNING_ALLOWED=NO -enableCodeCoverage YES
 
       - name: Enforce app-target coverage

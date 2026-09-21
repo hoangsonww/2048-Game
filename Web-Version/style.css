@@ -51,7 +51,9 @@ kbd svg, .mobile-controls svg, .dialog-icon svg { width: 1rem; height: 1rem; fil
 .score-card--primary span { color: #bdb8ae; }
 .score-card strong { font: 500 clamp(1.45rem, 4vw, 1.85rem) "DM Mono", monospace; letter-spacing: -.06em; }
 .game-actions { display: grid; grid-template-columns: repeat(3, 3.25rem); gap: .45rem; }
-.icon-button { display: grid; place-items: center; border: 1px solid var(--line); border-radius: var(--radius-small); color: var(--ink); background: var(--white); cursor: pointer; transition: transform .2s ease, border-color .2s ease, background .2s ease; }
+/* A floor, not a size: the grid still stretches these, but a narrow viewport
+   can no longer squash them below a comfortable tap target. */
+.icon-button { min-width: 2.75rem; min-height: 2.75rem; display: grid; place-items: center; border: 1px solid var(--line); border-radius: var(--radius-small); color: var(--ink); background: var(--white); cursor: pointer; transition: transform .2s ease, border-color .2s ease, background .2s ease; }
 .icon-button svg { width: 1.35rem; height: 1.35rem; display: block; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .icon-button svg.solid-icon, .dialog-icon svg.solid-icon { fill: currentColor; stroke: none; }
 .icon-button:hover:not(:disabled) { border-color: var(--ink); transform: translateY(-2px); }
@@ -96,6 +98,20 @@ kbd svg, .mobile-controls svg, .dialog-icon svg { width: 1rem; height: 1rem; fil
    Left-aligned and louder, the sync line looked like a caption that had come
    loose from something else. */
 .status-line { min-height: 1.35rem; margin: 1.1rem 0 0; color: var(--muted); font-size: .78rem; text-align: center; }
+.faq-section { width: min(100% - 2rem,75rem); margin: 0 auto 7rem; padding-top: 6rem; border-top: 1px solid var(--line); display: grid; grid-template-columns: .75fr 1fr; gap: clamp(3rem,8vw,8rem); }
+.faq-section h2 { margin: 0; font-size: clamp(2.8rem,6vw,5rem); line-height: .95; letter-spacing: -.06em; }
+.faq-list { display: block; }
+.faq-item { border-top: 1px solid var(--line); }
+.faq-item:last-child { border-bottom: 1px solid var(--line); }
+/* The whole row is the control, and the padding is what makes it a
+   comfortable tap target rather than a 23px sliver of text. */
+.faq-item summary { padding: 1.15rem 0; display: flex; align-items: baseline; gap: .9rem; min-height: 2.75rem; cursor: pointer; list-style: none; }
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::after { content: "+"; margin-left: auto; color: var(--accent); font: 500 1.25rem "DM Mono", monospace; line-height: 1; }
+.faq-item[open] summary::after { content: "\2013"; }
+.faq-item summary h3 { margin: 0; font-size: 1.15rem; font-weight: 600; letter-spacing: -.01em; }
+.faq-item summary:focus-visible { outline: 3px solid rgba(233,99,69,.48); outline-offset: 4px; }
+.faq-item p { margin: -.2rem 0 1.25rem; color: var(--muted); line-height: 1.6; max-width: 60ch; }
 .guide-section { width: min(100% - 2rem,75rem); margin: 0 auto 7rem; padding-top: 6rem; border-top: 1px solid var(--line); display: grid; grid-template-columns: .75fr 1fr; gap: clamp(3rem,8vw,8rem); }
 .guide-section h2 { margin: 0; font-size: clamp(2.8rem,6vw,5rem); line-height: .95; letter-spacing: -.06em; }
 .steps { margin: 0; padding: 0; list-style: none; }
@@ -124,10 +140,10 @@ footer div { display: flex; gap: 1.5rem; }
     .intro-copy { margin-inline: auto; }
     .desktop-hint { display: none; }
     .game-panel { max-width: 32rem; margin-inline: auto; }
-    .guide-section { grid-template-columns: 1fr; gap: 2.5rem; }
+    .guide-section, .faq-section { grid-template-columns: 1fr; gap: 2.5rem; }
 }
 @media (max-width: 540px) {
-    .site-header, footer, .game-layout, .guide-section { width: min(100% - 1.25rem,75rem); }
+    .site-header, footer, .game-layout, .guide-section, .faq-section { width: min(100% - 1.25rem,75rem); }
     .header-links a:first-child { display: none; }
     .game-layout { padding-top: 2rem; gap: 2.25rem; }
     .eyebrow { font-size: .7rem; }
@@ -182,6 +198,7 @@ footer div { display: flex; gap: 1.5rem; }
 .cloud-toast__text p { margin: .25rem 0 0; color: var(--muted); font-size: .85rem; line-height: 1.45; }
 .cloud-banner__short { display: none; }
 .cloud-toast__actions { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; }
+.cloud-toast__actions .icon-button--ghost { min-width: 2.35rem; min-height: 2.35rem; }
 .cloud-toast__actions .button { min-height: 2.35rem; padding: .5rem .85rem; font-size: .85rem; }
 @keyframes cloud-toast-in {
     from { opacity: 0; transform: translateX(-50%) translateY(.75rem); }

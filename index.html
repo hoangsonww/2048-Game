@@ -5,7 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Play 2048 Online — Free Number Puzzle Game</title>
     <meta name="description" content="Play 2048 online for free. Swipe or use arrow keys to combine tiles and reach 2048. Your game saves on this device; an optional account syncs progress across devices.">
-    <meta name="keywords" content="2048 game, play 2048, number puzzle, sliding tile game, free puzzle game, 2048 leaderboard">
+    <meta name="keywords" content="2048 game, play 2048, 2048 online, number puzzle, sliding tile game, merge puzzle, free puzzle game, 2048 strategy, 2048 leaderboard, 2048 app">
+    <meta name="subject" content="2048 sliding number puzzle">
+    <meta name="rating" content="general">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta name="generator" content="Hand-written HTML, CSS, and JavaScript">
     <meta name="author" content="Son Nguyen">
     <meta name="creator" content="Son Nguyen">
     <meta name="publisher" content="Son Nguyen">
@@ -38,6 +42,7 @@
     <meta property="og:description" content="Combine matching tiles, chase a new best, and optionally sync your round across devices.">
     <meta property="og:url" content="https://hoangsonww.github.io/2048-Game/">
     <meta property="og:image" content="https://hoangsonww.github.io/2048-Game/images/share-card.png">
+    <meta property="og:image:secure_url" content="https://hoangsonww.github.io/2048-Game/images/share-card.png">
     <meta property="og:image:type" content="image/png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -47,49 +52,269 @@
     <meta name="twitter:description" content="Combine matching tiles, reach 2048, and optionally sync progress with a free account.">
     <meta name="twitter:image" content="https://hoangsonww.github.io/2048-Game/images/share-card.png">
     <meta name="twitter:image:alt" content="A warm ivory 2048 game board with colorful numbered tiles">
+    <meta name="twitter:label1" content="Price"><meta name="twitter:data1" content="Free">
+    <meta name="twitter:label2" content="Plays on"><meta name="twitter:data2" content="Web, iOS, Android">
+    <link rel="author" href="https://github.com/hoangsonww">
+    <link rel="license" href="https://github.com/hoangsonww/2048-Game/blob/main/LICENSE">
+    <link rel="help" href="Web-Version/about.html">
+    <link rel="preload" as="script" href="Web-Version/game-engine.js">
+    <link rel="dns-prefetch" href="https://game-2048-cloud-api.vercel.app">
     <script type="application/ld+json">
     {
-      "@context": "https://schema.org",
-      "@graph": [
-        {
-          "@type": "WebSite",
-          "@id": "https://hoangsonww.github.io/2048-Game/#website",
-          "url": "https://hoangsonww.github.io/2048-Game/",
-          "name": "2048 — The Number Puzzle",
-          "description": "A free, local-first sliding number puzzle for the browser, with optional account sync across devices.",
-          "inLanguage": "en"
-        },
-        {
-          "@type": "VideoGame",
-          "@id": "https://hoangsonww.github.io/2048-Game/#game",
-          "name": "2048",
-          "url": "https://hoangsonww.github.io/2048-Game/",
-          "mainEntityOfPage": { "@id": "https://hoangsonww.github.io/2048-Game/#website" },
-          "image": "https://hoangsonww.github.io/2048-Game/images/share-card.png",
-          "description": "A free single-player sliding number puzzle. Play offline on this device; an optional account syncs saves and scores.",
-          "genre": ["Puzzle", "Strategy"],
-          "applicationCategory": "GameApplication",
-          "gamePlatform": ["Web browser", "iOS", "Android"],
-          "operatingSystem": "Any modern web browser",
-          "playMode": "SinglePlayer",
-          "inLanguage": "en",
-          "isAccessibleForFree": true,
-          "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-          "author": { "@type": "Person", "name": "Son Nguyen", "url": "https://github.com/hoangsonww" }
-        },
-        {
-          "@type": "HowTo",
-          "@id": "https://hoangsonww.github.io/2048-Game/#how-to-play-2048",
-          "name": "How to play 2048",
-          "description": "Slide the board, combine matching tiles, and preserve open spaces until you create 2048.",
-          "totalTime": "PT1M",
-          "step": [
-            { "@type": "HowToStep", "position": 1, "name": "Slide", "text": "Move every tile up, down, left, or right." },
-            { "@type": "HowToStep", "position": 2, "name": "Match", "text": "Combine equal tiles that touch during a move." },
-            { "@type": "HowToStep", "position": 3, "name": "Protect space", "text": "Keep empty cells open and build the largest tile in a corner." }
+          "@context": "https://schema.org",
+          "@graph": [
+                {
+                      "@type": "WebSite",
+                      "@id": "https://hoangsonww.github.io/2048-Game/#website",
+                      "url": "https://hoangsonww.github.io/2048-Game/",
+                      "name": "2048 — The Number Puzzle",
+                      "alternateName": [
+                            "Play 2048",
+                            "2048 Game"
+                      ],
+                      "description": "A free, local-first sliding number puzzle for the browser, iOS, and Android, with optional account sync across devices.",
+                      "inLanguage": "en",
+                      "publisher": {
+                            "@id": "https://hoangsonww.github.io/2048-Game/#author"
+                      }
+                },
+                {
+                      "@type": "Person",
+                      "@id": "https://hoangsonww.github.io/2048-Game/#author",
+                      "name": "Son Nguyen",
+                      "url": "https://github.com/hoangsonww",
+                      "sameAs": [
+                            "https://github.com/hoangsonww",
+                            "https://github.com/hoangsonww/2048-Game"
+                      ]
+                },
+                {
+                      "@type": "WebPage",
+                      "@id": "https://hoangsonww.github.io/2048-Game/#webpage",
+                      "url": "https://hoangsonww.github.io/2048-Game/",
+                      "name": "Play 2048 Online — Free Number Puzzle Game",
+                      "isPartOf": {
+                            "@id": "https://hoangsonww.github.io/2048-Game/#website"
+                      },
+                      "about": {
+                            "@id": "https://hoangsonww.github.io/2048-Game/#game"
+                      },
+                      "primaryImageOfPage": {
+                            "@id": "https://hoangsonww.github.io/2048-Game/#screenshot-web"
+                      },
+                      "inLanguage": "en",
+                      "breadcrumb": {
+                            "@id": "https://hoangsonww.github.io/2048-Game/#breadcrumb"
+                      }
+                },
+                {
+                      "@type": "BreadcrumbList",
+                      "@id": "https://hoangsonww.github.io/2048-Game/#breadcrumb",
+                      "itemListElement": [
+                            {
+                                  "@type": "ListItem",
+                                  "position": 1,
+                                  "name": "Play 2048",
+                                  "item": "https://hoangsonww.github.io/2048-Game/"
+                            },
+                            {
+                                  "@type": "ListItem",
+                                  "position": 2,
+                                  "name": "How to play",
+                                  "item": "https://hoangsonww.github.io/2048-Game/#how-to-play"
+                            },
+                            {
+                                  "@type": "ListItem",
+                                  "position": 3,
+                                  "name": "FAQ",
+                                  "item": "https://hoangsonww.github.io/2048-Game/#faq"
+                            }
+                      ]
+                },
+                {
+                      "@type": "ImageObject",
+                      "@id": "https://hoangsonww.github.io/2048-Game/#screenshot-web",
+                      "url": "https://hoangsonww.github.io/2048-Game/images/web-version-UI.png",
+                      "contentUrl": "https://hoangsonww.github.io/2048-Game/images/web-version-UI.png",
+                      "caption": "The 2048 web app: a 4x4 board of warm-toned numbered tiles, score and best cards, and the optional account controls."
+                },
+                {
+                      "@type": [
+                            "VideoGame",
+                            "SoftwareApplication"
+                      ],
+                      "@id": "https://hoangsonww.github.io/2048-Game/#game",
+                      "name": "2048",
+                      "alternateName": "2048 — The Number Puzzle",
+                      "url": "https://hoangsonww.github.io/2048-Game/",
+                      "mainEntityOfPage": {
+                            "@id": "https://hoangsonww.github.io/2048-Game/#webpage"
+                      },
+                      "image": "https://hoangsonww.github.io/2048-Game/images/share-card.png",
+                      "screenshot": [
+                            "https://hoangsonww.github.io/2048-Game/images/web-version-UI.png",
+                            "https://hoangsonww.github.io/2048-Game/images/IOS-UI.png",
+                            "https://hoangsonww.github.io/2048-Game/images/android-ui.png"
+                      ],
+                      "description": "A free single-player sliding number puzzle. Combine matching tiles to reach 2048. Play offline on this device; an optional free account syncs saves and scores across web, iOS, and Android.",
+                      "genre": [
+                            "Puzzle",
+                            "Strategy",
+                            "Logic"
+                      ],
+                      "keywords": "2048, 2048 game, number puzzle, sliding tile puzzle, merge puzzle, free online game",
+                      "applicationCategory": "GameApplication",
+                      "applicationSubCategory": "Puzzle",
+                      "gamePlatform": [
+                            "Web browser",
+                            "iOS",
+                            "Android"
+                      ],
+                      "operatingSystem": "Any modern web browser, iOS 17+, Android 7+",
+                      "browserRequirements": "Requires JavaScript.",
+                      "softwareVersion": "2.1.0",
+                      "playMode": "SinglePlayer",
+                      "numberOfPlayers": {
+                            "@type": "QuantitativeValue",
+                            "value": 1
+                      },
+                      "inLanguage": "en",
+                      "isAccessibleForFree": true,
+                      "isFamilyFriendly": true,
+                      "license": "https://github.com/hoangsonww/2048-Game/blob/main/LICENSE",
+                      "offers": {
+                            "@type": "Offer",
+                            "price": "0",
+                            "priceCurrency": "USD",
+                            "availability": "https://schema.org/InStock"
+                      },
+                      "author": {
+                            "@id": "https://hoangsonww.github.io/2048-Game/#author"
+                      },
+                      "publisher": {
+                            "@id": "https://hoangsonww.github.io/2048-Game/#author"
+                      },
+                      "downloadUrl": "https://github.com/hoangsonww/2048-Game/releases/latest",
+                      "softwareHelp": "https://hoangsonww.github.io/2048-Game/Web-Version/about.html"
+                },
+                {
+                      "@type": "HowTo",
+                      "@id": "https://hoangsonww.github.io/2048-Game/#how-to-play-2048",
+                      "name": "How to play 2048",
+                      "description": "Slide the board, combine matching tiles, and preserve open spaces until you create 2048.",
+                      "totalTime": "PT1M",
+                      "image": "https://hoangsonww.github.io/2048-Game/images/share-card.png",
+                      "step": [
+                            {
+                                  "@type": "HowToStep",
+                                  "position": 1,
+                                  "name": "Slide",
+                                  "text": "Move every tile up, down, left, or right with the arrow keys, WASD, or a swipe.",
+                                  "url": "https://hoangsonww.github.io/2048-Game/#how-to-play"
+                            },
+                            {
+                                  "@type": "HowToStep",
+                                  "position": 2,
+                                  "name": "Match",
+                                  "text": "Equal tiles that touch during a move combine into one tile of twice the value.",
+                                  "url": "https://hoangsonww.github.io/2048-Game/#how-to-play"
+                            },
+                            {
+                                  "@type": "HowToStep",
+                                  "position": 3,
+                                  "name": "Protect space",
+                                  "text": "Keep empty cells open and build your largest tile in a corner so the board never fills.",
+                                  "url": "https://hoangsonww.github.io/2048-Game/#how-to-play"
+                            }
+                      ]
+                },
+                {
+                      "@type": "FAQPage",
+                      "@id": "https://hoangsonww.github.io/2048-Game/#faq-page",
+                      "mainEntity": [
+                            {
+                                  "@type": "Question",
+                                  "name": "Is 2048 free to play?",
+                                  "acceptedAnswer": {
+                                        "@type": "Answer",
+                                        "text": "Yes. Every version — web, iOS, and Android — is free, open source, and carries no ads, no trackers, and no in-app purchases. There is nothing to unlock and nothing to buy."
+                                  }
+                            },
+                            {
+                                  "@type": "Question",
+                                  "name": "Do I need an account to play?",
+                                  "acceptedAnswer": {
+                                        "@type": "Answer",
+                                        "text": "No. The game is local-first: your board, your score, and your best score live on the device you are playing on, and a round never waits on the network. An account is optional and only adds cross-device sync and the leaderboard."
+                                  }
+                            },
+                            {
+                                  "@type": "Question",
+                                  "name": "How do you win 2048?",
+                                  "acceptedAnswer": {
+                                        "@type": "Answer",
+                                        "text": "Combine matching tiles until one of them reads 2048. Every valid move slides every tile in one direction, merges each pair of equal neighbours once, and spawns a new 2 or 4. Reaching 2048 shows a win panel, and you can keep playing for 4096 and beyond."
+                                  }
+                            },
+                            {
+                                  "@type": "Question",
+                                  "name": "What is the best 2048 strategy?",
+                                  "acceptedAnswer": {
+                                        "@type": "Answer",
+                                        "text": "Pick one corner and never move your largest tile out of it. Keep your biggest tiles along a single edge, build that row in descending order, and avoid the direction that would empty the corner. Merging early keeps space free, and space is what you actually run out of."
+                                  }
+                            },
+                            {
+                                  "@type": "Question",
+                                  "name": "Can I play 2048 offline?",
+                                  "acceptedAnswer": {
+                                        "@type": "Answer",
+                                        "text": "Yes. The web version is an installable progressive web app and works with no connection at all; the iOS and Android apps never need one either. Only the optional account features talk to a server."
+                                  }
+                            },
+                            {
+                                  "@type": "Question",
+                                  "name": "What happens to my current game when I sign in?",
+                                  "acceptedAnswer": {
+                                        "@type": "Answer",
+                                        "text": "Nothing is lost. The round you are playing stays saved on that device, and the game warns you before it leaves the screen. Signing in loads the round saved to your account instead, and signing out brings your own round back exactly as you left it — board, score, and best score."
+                                  }
+                            },
+                            {
+                                  "@type": "Question",
+                                  "name": "Does my progress sync between devices?",
+                                  "acceptedAnswer": {
+                                        "@type": "Answer",
+                                        "text": "With a free account, yes. Each device uploads the round it is playing and downloads the one the account already had. When two devices disagree the further round wins and the other is kept in a recoverable slot, so nothing is silently thrown away."
+                                  }
+                            },
+                            {
+                                  "@type": "Question",
+                                  "name": "Is there a 2048 app for iPhone and Android?",
+                                  "acceptedAnswer": {
+                                        "@type": "Answer",
+                                        "text": "Yes. This project ships a native SwiftUI app for iOS and a native Jetpack Compose app for Android alongside the web version. All three follow the same rules, so a habit built in one transfers to the others."
+                                  }
+                            },
+                            {
+                                  "@type": "Question",
+                                  "name": "How is the score calculated?",
+                                  "acceptedAnswer": {
+                                        "@type": "Answer",
+                                        "text": "Only newly created tiles score, and each scores its own value. Merging two 8s adds 16. Sliding tiles without merging adds nothing, and a move that changes nothing on the board scores nothing and spawns nothing."
+                                  }
+                            },
+                            {
+                                  "@type": "Question",
+                                  "name": "Can I undo a move in 2048?",
+                                  "acceptedAnswer": {
+                                        "@type": "Answer",
+                                        "text": "One step, on every client. Undo restores the exact board and score from immediately before your last valid move. The snapshot is used up once you take it, so undo never rewinds further than a single move."
+                                  }
+                            }
+                      ]
+                }
           ]
-        }
-      ]
     }
     </script>
 </head>
@@ -98,7 +323,7 @@
     <a class="skip-link" href="#game">Skip to game</a>
     <header class="site-header" aria-label="Primary navigation">
         <a class="brand" href="index.html" aria-label="2048 home"><img src="images/brand-mark.svg" alt="" width="34" height="34"><span>2048</span></a>
-        <nav class="header-links" aria-label="Site links"><a href="#how-to-play">How to play</a><a href="Web-Version/about.html">About</a></nav>
+        <nav class="header-links" aria-label="Site links"><a href="#how-to-play">How to play</a><a href="#faq">FAQ</a><a href="Web-Version/about.html">About</a></nav>
         <button class="account-button" id="accountButton" type="button" aria-label="Sign in or create an account"><svg class="solid-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-3.34 0-10 1.67-10 5v3h20v-3c0-3.33-6.66-5-10-5Z"/></svg><span id="accountButtonLabel">Sign in</span></button>
     </header>
     <main>
@@ -145,6 +370,51 @@
                 <li><span>02</span><div><strong>Match</strong><p>Equal tiles touching in a move merge into one.</p></div></li>
                 <li><span>03</span><div><strong>Protect space</strong><p>Keep empty cells open and build your largest tile in a corner.</p></div></li>
             </ol>
+        </section>
+        <section class="faq-section" id="faq" aria-labelledby="faq-title">
+            <div><p class="eyebrow">Questions people actually ask</p><h2 id="faq-title">Everything else.</h2></div>
+            <div class="faq-list">
+                <details class="faq-item" open>
+                    <summary><h3>Is 2048 free to play?</h3></summary>
+                    <p>Yes. Every version — web, iOS, and Android — is free, open source, and carries no ads, no trackers, and no in-app purchases. There is nothing to unlock and nothing to buy.</p>
+                </details>
+                <details class="faq-item">
+                    <summary><h3>Do I need an account to play?</h3></summary>
+                    <p>No. The game is local-first: your board, your score, and your best score live on the device you are playing on, and a round never waits on the network. An account is optional and only adds cross-device sync and the leaderboard.</p>
+                </details>
+                <details class="faq-item">
+                    <summary><h3>How do you win 2048?</h3></summary>
+                    <p>Combine matching tiles until one of them reads 2048. Every valid move slides every tile in one direction, merges each pair of equal neighbours once, and spawns a new 2 or 4. Reaching 2048 shows a win panel, and you can keep playing for 4096 and beyond.</p>
+                </details>
+                <details class="faq-item">
+                    <summary><h3>What is the best 2048 strategy?</h3></summary>
+                    <p>Pick one corner and never move your largest tile out of it. Keep your biggest tiles along a single edge, build that row in descending order, and avoid the direction that would empty the corner. Merging early keeps space free, and space is what you actually run out of.</p>
+                </details>
+                <details class="faq-item">
+                    <summary><h3>Can I play 2048 offline?</h3></summary>
+                    <p>Yes. The web version is an installable progressive web app and works with no connection at all; the iOS and Android apps never need one either. Only the optional account features talk to a server.</p>
+                </details>
+                <details class="faq-item">
+                    <summary><h3>What happens to my current game when I sign in?</h3></summary>
+                    <p>Nothing is lost. The round you are playing stays saved on that device, and the game warns you before it leaves the screen. Signing in loads the round saved to your account instead, and signing out brings your own round back exactly as you left it — board, score, and best score.</p>
+                </details>
+                <details class="faq-item">
+                    <summary><h3>Does my progress sync between devices?</h3></summary>
+                    <p>With a free account, yes. Each device uploads the round it is playing and downloads the one the account already had. When two devices disagree the further round wins and the other is kept in a recoverable slot, so nothing is silently thrown away.</p>
+                </details>
+                <details class="faq-item">
+                    <summary><h3>Is there a 2048 app for iPhone and Android?</h3></summary>
+                    <p>Yes. This project ships a native SwiftUI app for iOS and a native Jetpack Compose app for Android alongside the web version. All three follow the same rules, so a habit built in one transfers to the others.</p>
+                </details>
+                <details class="faq-item">
+                    <summary><h3>How is the score calculated?</h3></summary>
+                    <p>Only newly created tiles score, and each scores its own value. Merging two 8s adds 16. Sliding tiles without merging adds nothing, and a move that changes nothing on the board scores nothing and spawns nothing.</p>
+                </details>
+                <details class="faq-item">
+                    <summary><h3>Can I undo a move in 2048?</h3></summary>
+                    <p>One step, on every client. Undo restores the exact board and score from immediately before your last valid move. The snapshot is used up once you take it, so undo never rewinds further than a single move.</p>
+                </details>
+            </div>
         </section>
     </main>
     <footer><p>Designed for quick breaks and long strategies.</p><div><a href="Web-Version/about.html">About this project</a><a href="https://github.com/hoangsonww/2048-Game">Source code</a><a href="https://github.com/hoangsonww/2048-Game/releases/latest">Download the apps</a><a href="https://game-2048-cloud-api.vercel.app/docs">Cloud API</a></div></footer>

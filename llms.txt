@@ -4,7 +4,7 @@
 
 ## Play and learn
 
-- [Play 2048](https://hoangsonww.github.io/2048-Game/): The canonical browser game and concise three-step guide.
+- [Play 2048](https://hoangsonww.github.io/2048-Game/): The canonical browser game, concise three-step guide, and visible gameplay FAQ.
 - [Rules, strategy, and project details](https://hoangsonww.github.io/2048-Game/Web-Version/about.html): Complete rules, practical strategy, and information about the native clients.
 - [Detailed interface and project context](https://hoangsonww.github.io/2048-Game/llms-full.txt): UI structure, controls, game behavior, accessibility, privacy, and contributor entry points.
 - [Cloud API reference](https://game-2048-cloud-api.vercel.app/docs): Optional accounts, saves, scores, and leaderboards (OpenAPI).
@@ -20,4 +20,4 @@
 ## Optional
 
 - [Web app manifest](https://hoangsonww.github.io/2048-Game/manifest.json): Installable-app metadata, icons, shortcuts, and screenshots.
-- [Sitemap](https://hoangsonww.github.io/2048-Game/sitemap.xml): Canonical public pages.
+- [Sitemap](https://hoangsonww.github.io/2048-Game/sitemap.xml): Canonical public pages and discoverable project screenshots.

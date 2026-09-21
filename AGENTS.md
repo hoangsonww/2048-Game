@@ -31,6 +31,8 @@ Read [ARCHITECTURE.md](ARCHITECTURE.md) for the whole-repository picture — the
 - `make test`: run every suite supported by the current host.
 - `make screenshots-web`: capture deterministic desktop/mobile game + cloud UI states and promote into `images/`.
 - `make screenshots-web-qa`: same captures into `output/playwright/latest/` only.
+- `make screenshots-mobile`: capture canonical iOS and Android game + cloud UI states from a booted simulator/emulator and promote into `images/`.
+- `make screenshots-mobile-qa`: same native captures into `output/mobile/` only.
 - `make version`: print the version and verify every client agrees with it.
 - `make version-sync`: rewrite the derived version fields from `VERSION`.
 - `make server-check` / `server-test`: Cloud API OpenAPI validation and unit tests (`server/`).

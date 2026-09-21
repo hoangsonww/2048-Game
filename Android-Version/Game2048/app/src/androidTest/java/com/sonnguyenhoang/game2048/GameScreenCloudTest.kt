@@ -107,7 +107,6 @@ class GameScreenCloudTest {
 
     @Test
     fun signingInReplacesTheInvitationWithTheAccountName() {
-        compose.mainClock.autoAdvance = false
         show(
             controller(
                 mapOf(
@@ -127,7 +126,6 @@ class GameScreenCloudTest {
 
     @Test
     fun aRejectedSignInExplainsItselfAndKeepsTheFormOpen() {
-        compose.mainClock.autoAdvance = false
         show(
             controller(
                 mapOf(
@@ -172,7 +170,6 @@ class GameScreenCloudTest {
 
     @Test
     fun signingInMidRoundWarnsBeforeTheBoardLeavesTheScreen() {
-        compose.mainClock.autoAdvance = false
         val game = playedRound()
         show(
             controller(
@@ -203,7 +200,6 @@ class GameScreenCloudTest {
 
     @Test
     fun continuingTheWarningHandsTheDeviceToTheAccount() {
-        compose.mainClock.autoAdvance = false
         val game = playedRound()
         show(
             controller(

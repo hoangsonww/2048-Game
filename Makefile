@@ -4,7 +4,7 @@ SHELL := /usr/bin/env bash
 
 
 .PHONY: help setup doctor serve check test test-web test-android test-android-device test-ios \
-	screenshots-web screenshots-web-qa clean-web android-build android-install android-run android-tasks \
+	screenshots-web screenshots-web-qa screenshots-mobile screenshots-mobile-qa clean-web android-build android-install android-run android-tasks \
 	android-clean android-devices gradle ios-build ios-run ios-boot ios-devices verify-devcontainer \
 	version version-sync server-test server-check
 
@@ -93,6 +93,12 @@ screenshots-web: ## Capture desktop/mobile gameplay, cloud UI, dialogs, win/loss
 
 screenshots-web-qa: ## Capture web UI into output/ only (no images/ promote)
 	npm run screenshots:web:qa
+
+screenshots-mobile: ## Capture iOS/Android UI from booted devices; promote into images/
+	./scripts/capture-mobile-screenshots.sh all --promote
+
+screenshots-mobile-qa: ## Capture iOS/Android UI into output/ only (no images/ promote)
+	./scripts/capture-mobile-screenshots.sh all
 
 clean-web: ## Remove generated web coverage and latest local screenshots
 	rm -rf -- "$(CURDIR)/coverage" "$(CURDIR)/output/playwright/latest" "$(CURDIR)/output/cloud"

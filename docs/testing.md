@@ -29,7 +29,7 @@ Two consequences follow, and both are deliberate:
 
 | Platform | Deterministic tests | UI / integration tests | Runner | Line coverage |
 | --- | --- | --- | --- | --- |
-| Web | 239 engine, controller, cloud, sound, metadata, and asset tests + 2 tooling tests | 12 Chromium scenarios | Node test runner, Playwright | 100 % |
+| Web | 238 engine, controller, cloud, sound, metadata, and asset tests + 2 tooling tests | 13 Chromium scenarios | Node test runner, Playwright | 100 % |
 | iOS | 170 model/surface/cloud/profile tests | 13 XCUITest flows | XCTest | 90.4 % (gated at 90 %) |
 | Android | 193 ViewModel, storage, sound, and surface tests | 19 Compose instrumentation tests | JUnit 4, Compose UI Test | 97.2 % (domain) |
 | Cloud API | 76 unit tests | 27 integration tests against a real MongoDB | Node test runner, supertest | — |
@@ -79,7 +79,7 @@ make test-web                     # or: npm test
 
 The controller is an IIFE that reads the document once on load, so `tests/web/helpers/fake-dom.js` stands in for the page: it captures the elements the controller looks up, records the listeners it registers, and lets a test fire a keypress, a swipe, or a click and read the result back. Each `loadController()` call re-requires the module, so tests never share state. The globals it installs are restored around every interaction, which is what keeps two loaded controllers independent.
 
-The eight Chromium scenarios cover arrow-key play, WASD play, touch swipe, the on-screen direction pad, undo, persistence across reload, restart confirmation, fullscreen, the win overlay, the loss overlay, recovery from a corrupt saved state, and that a board swipe suppresses page scrolling without blocking it elsewhere.
+The thirteen Chromium scenarios cover arrow-key play, WASD play, touch swipe, the on-screen direction pad, undo, persistence across reload, restart confirmation, fullscreen, the win overlay, the loss overlay, recovery from a corrupt saved state, sound timing, account and password flows, and responsive layout from a 320 px phone through tablet widths.
 
 Browser tests drive the page through real input events and read state back through `window.render_game_to_text()`. Keep that hook accurate when the state shape changes, or the browser suite silently loses its assertions.
 
@@ -87,9 +87,10 @@ Screenshots:
 
 ```bash
 make screenshots-web
+make screenshots-mobile       # requires booted iOS + Android runtimes
 ```
 
-Captures deterministic desktop and mobile views of gameplay, the restart dialog, win, loss, and the About page into `output/playwright/`. That directory is gitignored — it is local verification evidence, fully reproducible on demand, and must not be committed.
+`make screenshots-web` captures deterministic desktop and mobile views of gameplay, the restart dialog, win, loss, About, and the cloud surfaces. `make screenshots-mobile` drives the native clients through accessibility-labelled controls and promotes their game, guest, auth, handover, reset, and leaderboard states. The QA-only variants keep reproducible evidence under `output/playwright/latest/` and `output/mobile/`; those directories are gitignored and must not be committed.
 
 ## iOS
 
@@ -263,7 +264,7 @@ Tests may also drive state through launch arguments (iOS) or launch state (Andro
 
 ## Manual UI review
 
-Automated coverage does not replace looking at the screen. `make screenshots-web` captures classic game states and optional cloud surfaces at desktop and mobile widths, then promotes the canonical set into `images/`:
+Automated coverage does not replace looking at the screen. `make screenshots-web` captures browser states at desktop and mobile widths; `make screenshots-mobile` captures the native equivalents from a simulator and emulator. Both promote the canonical set into `images/`:
 
 | Gameplay | Restart confirmation | Win |
 | :---: | :---: | :---: |
@@ -280,6 +281,10 @@ Automated coverage does not replace looking at the screen. `make screenshots-web
 | Account panel | Android guest | Android auth sheet |
 | :---: | :---: | :---: |
 | ![Signed-in account panel](../images/web-cloud-account.png) | ![Android guest banner](../images/android-cloud-guest.png) | ![Android create-account sheet](../images/android-cloud-signup.png) |
+
+| iOS auth sheet | iOS handover | Native password reset |
+| :---: | :---: | :---: |
+| ![iOS create-account sheet](../images/ios-cloud-signup.png) | ![iOS warning shown before setting the guest round aside](../images/ios-cloud-handover.png) | ![Android password-reset sheet](../images/android-cloud-reset.png) |
 
 For every changed surface, inspect normal gameplay, help/about, restart confirmation, win, game-over, and any touched cloud dialogs where applicable, and check:
 

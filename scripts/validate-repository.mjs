@@ -34,6 +34,13 @@ function check(condition, message) {
     if (!condition) failures.push(message);
 }
 
+function localTarget(sourceFile, rawTarget) {
+    if (/^(?:[a-z]+:|#|\/\/)/i.test(rawTarget)) return null;
+    const clean = decodeURIComponent(rawTarget.replace(/^<|>$/g, "").split("#")[0].split("?")[0]);
+    if (!clean) return null;
+    return path.resolve(path.dirname(path.join(root, sourceFile)), clean);
+}
+
 for (const relativePath of requiredFiles) {
     check(fs.existsSync(path.join(root, relativePath)), `Missing required file: ${relativePath}`);
 }
@@ -67,6 +74,35 @@ for (const page of ["index.html", "Web-Version/about.html"]) {
             failures.push(`${page} contains invalid JSON-LD: ${error.message}`);
         }
     }
+
+    for (const match of html.matchAll(/\s(?:href|src)="([^"]+)"/g)) {
+        const target = localTarget(page, match[1]);
+        if (target) check(fs.existsSync(target), `${page} links to missing local file: ${match[1]}`);
+    }
+}
+
+function markdownUnder(relativeDirectory) {
+    const directory = path.join(root, relativeDirectory);
+    return fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
+        const relative = path.join(relativeDirectory, entry.name);
+        if (entry.isDirectory()) return markdownUnder(relative);
+        return entry.name.endsWith(".md") ? [relative] : [];
+    });
+}
+
+const documentationFiles = [...new Set([
+    ...fs.readdirSync(root).filter(name => name.endsWith(".md")),
+    ...markdownUnder(".github"),
+    ...markdownUnder("docs"),
+    "llms.txt",
+    "llms-full.txt"
+])];
+for (const document of documentationFiles) {
+    const markdown = read(document);
+    for (const match of markdown.matchAll(/!?\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g)) {
+        const target = localTarget(document, match[1]);
+        if (target) check(fs.existsSync(target), `${document} links to missing local file: ${match[1]}`);
+    }
 }
 
 const sitemap = read("sitemap.xml");
@@ -75,6 +111,9 @@ for (const expectedURL of [
     "https://hoangsonww.github.io/2048-Game/Web-Version/about.html"
 ]) {
     check(sitemap.includes(`<loc>${expectedURL}</loc>`), `Sitemap is missing ${expectedURL}`);
+}
+for (const match of sitemap.matchAll(/<image:loc>https:\/\/hoangsonww\.github\.io\/2048-Game\/([^<]+)<\/image:loc>/g)) {
+    check(fs.existsSync(path.join(root, decodeURIComponent(match[1]))), `Sitemap links to missing image: ${match[1]}`);
 }
 
 const robots = read("robots.txt");

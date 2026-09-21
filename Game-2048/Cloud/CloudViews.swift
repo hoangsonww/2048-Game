@@ -287,6 +287,18 @@ struct AuthSheet: View {
                     }
                 }
 
+                // Reported where every other credential problem is reported.
+                // A form footer sits below the fields, which a keyboard hides
+                // and a collection view may not have realised at all.
+                if mismatch && passwordsDisagree {
+                    Section {
+                        Label("Those passwords do not match.", systemImage: "exclamationmark.triangle.fill")
+                            .font(.system(size: 13, design: .rounded))
+                            .foregroundStyle(CloudPalette.accent)
+                            .accessibilityIdentifier("passwordMismatch")
+                    }
+                }
+
                 Section {
                     if registering {
                         TextField("Username", text: $username)
@@ -327,13 +339,7 @@ struct AuthSheet: View {
                         .disabled(cloud.activity == .authenticating)
                     }
                 } footer: {
-                    if mismatch && passwordsDisagree {
-                        Text("Those passwords do not match.")
-                            .foregroundStyle(CloudPalette.accent)
-                            .accessibilityIdentifier("passwordMismatch")
-                    } else {
-                        Text("At least 8 characters, including one letter and one number.")
-                    }
+                    Text("At least 8 characters, including one letter and one number.")
                 }
 
                 Section {
@@ -447,6 +453,15 @@ struct ResetPasswordSheet: View {
                     }
                 }
 
+                if mismatch && passwordsDisagree {
+                    Section {
+                        Label("Those passwords do not match.", systemImage: "exclamationmark.triangle.fill")
+                            .font(.system(size: 13, design: .rounded))
+                            .foregroundStyle(CloudPalette.accent)
+                            .accessibilityIdentifier("resetMismatch")
+                    }
+                }
+
                 Section {
                     TextField("Username", text: $username)
                         .textContentType(.username)
@@ -466,13 +481,7 @@ struct ResetPasswordSheet: View {
                     RevealablePasswordField(title: "Confirm new password", text: $confirmPassword, identifier: "resetConfirmField")
                         .disabled(working)
                 } footer: {
-                    if mismatch && passwordsDisagree {
-                        Text("Those passwords do not match.")
-                            .foregroundStyle(CloudPalette.accent)
-                            .accessibilityIdentifier("resetMismatch")
-                    } else {
-                        Text("At least 8 characters, including one letter and one number.")
-                    }
+                    Text("At least 8 characters, including one letter and one number.")
                 }
 
                 Section {
