@@ -564,14 +564,14 @@ Coverage is layered deliberately: pure rules logic is tested exhaustively and ch
 
 Coverage is **enforced** by `c8` across everything in `Web-Version/`, and the build fails below 100 % statements, 100 % lines, 100 % functions, or 95 % branches. It currently reaches **100 % statements, lines, and functions with 95.1 % branches**.
 
-### iOS — 183 tests, 90.4 % gated line coverage
+### iOS — 183 tests, 95.1 % domain line coverage
 
 - **80 deterministic model, surface, and render tests** covering every direction, merge ordering, scoring, spawn distribution and index clamping, restart, undo depth and win-state rewind, persistence round-trips, best-score retention, win and loss detection, and rejection of every shape of invalid saved state.
 - **16 profile and sound tests** covering guest / account separation, the career-best seed, and the cue renderer's envelope and pitch slide.
 - **74 cloud tests** across the API client, the controller state machine, the token store, and the wire models — including password reset, every unexpected-failure path, and the rule that career statistics come from the account alone.
 - **12 XCUITest simulator tests** covering the help sheet, swipe gestures, the restart confirmation dialog, accessibility identifiers and labels, end-state recovery flows, launch performance, the account and reset sheets, the password confirmation and reveal controls, the sign-in handover warning, and that a vertical board swipe reaches the board without moving the screen. The suite reports thirteen executions because the launch test runs once per appearance mode.
 
-Coverage is **enforced**: `scripts/test-ios.sh` reads the `.xcresult` with `xccov` and fails below 90 % line coverage of the app target (excluding `CloudViews.swift`).
+Coverage is **enforced**: `scripts/test-ios.sh` reads the `.xcresult` with `xccov` and fails below 90 % line coverage of stable app/domain code, currently **95.1 %**. `GameView.swift` and `CloudViews.swift` are exercised by the simulator suite instead: Xcode versions expose different generated executable-line counts for SwiftUI view builders, so including them would make the same source pass or fail according to the installed compiler.
 
 ### Android — 212 tests, 97.2 % domain line coverage
 

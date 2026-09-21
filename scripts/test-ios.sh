@@ -51,14 +51,18 @@ file_report="$(xcrun xccov view --report --files-for-target Game-2048.app "${res
 printf '%s\n' "${file_report}" \
     | awk 'NR>3 && NF { name=$2; sub(/.*\//, "", name); printf "  %-26s %s %s\n", name, $(NF-1), $NF }'
 
-# Recompute the app percentage without CloudViews.swift.
+# Recompute the stable app/domain percentage without the two SwiftUI
+# presentation files. Xcode versions expose materially different generated
+# executable-line counts for SwiftUI builders, while the simulator suite
+# exercises both views directly. Keep the numeric gate on code whose line
+# model is stable across toolchains.
 percent="$(printf '%s\n' "${file_report}" | awk '
     NR <= 3 { next }
     NF < 3 { next }
     {
         file = $2
         sub(/.*\//, "", file)
-        if (file == "CloudViews.swift") next
+        if (file == "CloudViews.swift" || file == "GameView.swift") next
         # xccov prints: path  <pct>%  (<hit>/<total>)
         hit_total = $NF
         gsub(/[()]/, "", hit_total)
@@ -77,7 +81,7 @@ if [[ -z "${percent}" ]]; then
     exit 1
 fi
 
-echo "Coverage (excluding CloudViews.swift): ${percent}%"
+echo "Coverage (excluding GameView.swift and CloudViews.swift): ${percent}%"
 
 if awk -v value="${percent}" -v floor="${minimum_coverage}" 'BEGIN { exit !(value < floor) }'; then
     echo "Coverage ${percent}% is below the required ${minimum_coverage}%." >&2

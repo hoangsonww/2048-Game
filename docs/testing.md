@@ -30,7 +30,7 @@ Two consequences follow, and both are deliberate:
 | Platform | Deterministic tests | UI / integration tests | Runner | Line coverage |
 | --- | --- | --- | --- | --- |
 | Web | 238 engine, controller, cloud, sound, metadata, and asset tests + 2 tooling tests | 13 Chromium scenarios | Node test runner, Playwright | 100 % |
-| iOS | 170 model/surface/cloud/profile tests | 13 XCUITest flows | XCTest | 90.4 % (gated at 90 %) |
+| iOS | 170 model/surface/cloud/profile tests | 13 XCUITest executions | XCTest | 95.1 % domain (gated at 90 %) |
 | Android | 193 ViewModel, storage, sound, and surface tests | 19 Compose instrumentation tests | JUnit 4, Compose UI Test | 97.2 % (domain) |
 | Cloud API | 76 unit tests | 27 integration tests against a real MongoDB | Node test runner, supertest | — |
 
@@ -102,9 +102,9 @@ Requires macOS with Xcode. The script selects an available iPhone simulator auto
 
 Model tests and UI tests run as separate targets (`Game-2048Tests` and `Game-2048UITests`) so a UI-harness failure never masks a rules regression. Preserve the `.xcresult` bundle when diagnosing a failure — it carries the failure screenshots, the full test log, and coverage data that the console output does not.
 
-**Coverage is a hard gate.** After the run, `scripts/test-ios.sh` reads the `.xcresult` with `xccov` and fails below 90 % line coverage of the `Game-2048.app` target (excluding `CloudViews.swift`, which is SwiftUI sheet chrome covered by posture rather than line count — same idea as Android excluding `CloudUi`). Override the floor with `IOS_MINIMUM_COVERAGE` only to raise it.
+**Coverage is a hard gate.** After the run, `scripts/test-ios.sh` reads the `.xcresult` with `xccov` and fails below 90 % line coverage of stable app/domain code, currently 95.1 %. `GameView.swift` and `CloudViews.swift` are excluded from the numeric gate because Xcode versions expose materially different generated executable-line counts for SwiftUI view builders. Their behavior is covered by the simulator suite, the same posture Android takes for `MainActivity` and `CloudUi`. Override the floor with `IOS_MINIMUM_COVERAGE` only to raise it.
 
-**Coverage must be measured on both suites together.** `GameView.swift` is 393 lines that only XCUITest exercises, so unit tests alone reach about 83 %. The local script runs one combined `xcodebuild test`, and CI — which runs the two targets separately so a UI-harness failure cannot mask a rules regression — collects coverage from both and merges the result bundles with `xcrun xcresulttool merge` before gating. Gate on one bundle and you are measuring something the other side of the fence is not.
+**Coverage must be measured on both suites together.** The local script runs one combined `xcodebuild test`, and CI — which runs the two targets separately so a UI-harness failure cannot mask a rules regression — collects coverage from both and merges the result bundles with `xcrun xcresulttool merge` before gating. UI-driven paths outside the excluded SwiftUI presentation files therefore still contribute to the domain gate.
 
 New test files must be added to the `Game-2048Tests` target in `2048 Game.xcodeproj` — the project does not use synchronised file groups, so a file that is merely on disk is silently never compiled or run.
 
@@ -117,7 +117,7 @@ make test-android          # unit tests, lint, debug APK
 make test-android-device   # adds Compose tests on a connected device
 ```
 
-**Coverage is a hard gate.** `make test-android` runs `jacocoCoverageVerification`, which fails below 90 % line or 85 % branch coverage of the Kotlin rules engine and its storage (`GameViewModel`, `GameStorage`, `SavedGame`, `SharedPreferencesGameStorage`, and the `sdui` package). Those currently sit at 97.6 % lines and 88.6 % branches. `SurfaceCatalog` is excluded for the same reason `MainActivity` is — it needs a real `Context`. The HTML report lands in `app/build/reports/jacoco/jacocoTestReport/`.
+**Coverage is a hard gate.** `make test-android` runs `jacocoCoverageVerification`, which fails below 90 % line or 85 % branch coverage of the Kotlin rules engine and its storage (`GameViewModel`, `GameStorage`, `SavedGame`, `SharedPreferencesGameStorage`, and the `sdui` package). Those currently sit at 97.2 % lines and 85.7 % branches. `SurfaceCatalog` is excluded for the same reason `MainActivity` is — it needs a real `Context`. The HTML report lands in `app/build/reports/jacoco/jacocoTestReport/`.
 
 `MainActivity` is Compose and is deliberately outside that gate: it can only be exercised on a device, which `make test-android-device` does. Holding the whole module to a JVM-only threshold would either fail on every machine without an emulator or push the number down to something meaningless.
 

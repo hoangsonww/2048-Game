@@ -129,15 +129,16 @@ jobs:
           printf '%s\n' "$file_report" \
             | awk 'NR>3 && NF { name=$2; sub(/.*\//, "", name); printf "  %-26s %s %s\n", name, $(NF-1), $NF }'
 
-          # Exclude CloudViews.swift — SwiftUI sheet chrome, same posture as
-          # Android excluding CloudUi from JaCoCo.
+          # Exclude SwiftUI presentation files from the numeric gate. Xcode
+          # versions expose different generated executable-line counts for
+          # view builders; the simulator suite exercises both views directly.
           percent="$(printf '%s\n' "$file_report" | awk '
             NR <= 3 { next }
             NF < 3 { next }
             {
               file = $2
               sub(/.*\//, "", file)
-              if (file == "CloudViews.swift") next
+              if (file == "CloudViews.swift" || file == "GameView.swift") next
               hit_total = $NF
               gsub(/[()]/, "", hit_total)
               split(hit_total, parts, "/")
@@ -149,7 +150,7 @@ jobs:
               printf "%.2f", (hit / total) * 100
             }
           ')"
-          echo "Game-2048.app line coverage (excluding CloudViews.swift): ${percent}%"
+          echo "Game-2048.app domain line coverage (excluding GameView.swift and CloudViews.swift): ${percent}%"
 
           if [ -z "$percent" ]; then
             echo "::error::Could not read a coverage percentage from the merged result bundle."
