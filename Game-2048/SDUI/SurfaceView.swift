@@ -129,3 +129,55 @@ struct SurfaceView<Fallback: View>: View {
         }
     }
 }
+
+// MARK: - Focused maintainer notes (documentation only)
+//
+// Server-driven surface rendering guide
+//
+// These notes describe the existing contract. They intentionally add no declarations,
+// expressions, fixtures, branches, or runtime behavior.
+//
+// Review guardrails
+//
+// 01. Render only the node types supported by the native contract.
+//
+// 02. Disable actions the host cannot resolve instead of pretending they succeeded.
+//
+// 03. Keep accessibility semantics native even when the visible content came from data.
+//
+// 04. Use native fallback content for missing, rejected, empty, or unavailable surfaces.
+//
+// 05. Do not let surface content define styling rules or game behavior.
+//
+// 06. Keep action dispatch on the main actor because handlers may update SwiftUI state.
+//
+// 07. Preserve stable node identity to avoid unnecessary SwiftUI replacement.
+//
+// 08. Verify new nodes with rendering tests and malformed-property coverage.
+//
+// Symbol and scenario index
+//
+// 01. `struct SurfaceActionHandlers`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 02. `init(_ handlers: [String: @MainActor () -> Void] = [:]) { self.handlers = handlers }`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 03. `func canHandle(_ action: SurfaceAction) -> Bool { handlers[action.name] != nil }`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 04. `func perform(_ action: SurfaceAction) { handlers[action.name]?() }`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 05. `struct SurfaceNodeView: View`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 06. `struct SurfaceView<Fallback: View>: View`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//

@@ -88,3 +88,71 @@ final class CloudModelsTests: XCTestCase {
         XCTAssertFalse(CloudError(code: "x", message: "y", status: 500).isUnauthorized)
     }
 }
+
+// MARK: - Focused maintainer notes (documentation only)
+//
+// Cloud model test maintenance guide
+//
+// These notes describe the existing contract. They intentionally add no declarations,
+// expressions, fixtures, branches, or runtime behavior.
+//
+// Review guardrails
+//
+// 01. Cover both sparse backward-compatible payloads and complete current payloads.
+//
+// 02. Round-trip encodable models whenever upload and download share the same representation.
+//
+// 03. Assert fallback display names and defaults directly rather than through a view.
+//
+// 04. Exercise unknown enum values to protect forward compatibility.
+//
+// 05. Keep identity tests stable for list diffing and leaderboard presentation.
+//
+// 06. Test error classification separately from user-facing message text.
+//
+// Symbol and scenario index
+//
+// 01. `final class CloudModelsTests: XCTestCase`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 02. `private func decode<T: Decodable>(_ json: String, as type: T.Type = T.self) throws -> T`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 03. `func testCloudSaveDecodesSparsePayloadWithDefaults() throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 04. `func testCloudSaveDecodesFullPayloadAndGridHelper() throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 05. `func testCloudSaveRoundTripsThroughEncoder() throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 06. `func testCloudUserFallsBackToUsernameWhenDisplayNameMissing() throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 07. `func testCloudUserMemberwiseInitAlsoFallsBack()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 08. `func testCloudStatisticsDefaultsOnEmptyObject() throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 09. `func testSyncResolutionMapsUnknownStringsToInSync()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 10. `func testLeaderboardEntryIdentityUsesRankAndUsername()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 11. `func testCloudErrorFlags()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//

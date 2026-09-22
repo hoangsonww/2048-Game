@@ -350,3 +350,153 @@ private final class NetworkOnRefreshTransport: HTTPTransport, @unchecked Sendabl
         throw CloudError.network
     }
 }
+
+// MARK: - Focused maintainer notes (documentation only)
+//
+// Cloud transport test maintenance guide
+//
+// These notes describe the existing contract. They intentionally add no declarations,
+// expressions, fixtures, branches, or runtime behavior.
+//
+// Review guardrails
+//
+// 01. Keep the fake transport deterministic and assert complete method, path, header, and body
+//     contracts.
+//
+// 02. Test token refresh as one retry only so authentication cannot enter an infinite loop.
+//
+// 03. Distinguish network loss from an authentication rejection when deciding whether to clear
+//     tokens.
+//
+// 04. Cover sparse and malformed server replies without relying on a live backend.
+//
+// 05. Assert that logout clears local credentials even when remote revocation fails.
+//
+// 06. Keep board serialization checks explicit because the server uses a flat representation.
+//
+// 07. Exercise signed-out public leaderboard access separately from authenticated requests.
+//
+// 08. Use readable fixture values that make payload mistakes obvious in a failure.
+//
+// Symbol and scenario index
+//
+// 01. `final class CloudAPITests: XCTestCase`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 02. `init(_ responses: [(Int, String)] = [])`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 03. `func send(method: String, url: URL, headers: [String: String], body: Data?) async throws -> (Int, Data)`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 04. `init(_ tokens: CloudTokens? = nil) { self.tokens = tokens }`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 05. `func read() -> CloudTokens? { tokens }`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 06. `func write(_ tokens: CloudTokens?)`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 07. `private func save(score: Int = 5600, moves: Int = 480, baseRevision: Int? = nil) -> CloudSave`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 08. `private func api(_ transport: FakeTransport, store: MemoryTokenStore = MemoryTokenStore()) -> CloudAPI`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 09. `private func json(_ data: Data?) -> [String: Any]`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 10. `func testRegisteringStoresTokensAndReturnsTheAccount() async throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 11. `func testWhitespaceIsTrimmedBeforeItBecomesAUsername() async throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 12. `func testPlayerWithNoDisplayNameIsShownByUsername() async throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 13. `func testRejectedSignInSurfacesServerCodeAndMessage() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 14. `func testUnparsableErrorBodyStillProducesUsableError() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 15. `func testDroppedConnectionIsNetworkFailureNotCrash() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 16. `func testAuthenticatedCallWithoutSessionFailsBeforeNetwork() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 17. `func testExpiredAccessTokenIsRefreshedOnceAndRetried() async throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 18. `func testRejectedRefreshSignsPlayerOutRatherThanLooping() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 19. `func testDroppedConnectionDuringRefreshDoesNotSignPlayerOut() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 20. `func testRefreshingWithHalfWrittenTokenFailsCleanly() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 21. `func testSyncSendsFlatBoardAndDeviceId() async throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 22. `func testLeaderboardIsReadableSignedOut() async throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 23. `func testLogoutClearsTokensEvenIfServerRevokeFails() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 24. `func testSubmitScoreSendsBoardUnderAuth() async throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 25. `func testConflictedSyncPreservesConflictSlot() async throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 26. `func testResetPasswordPostsThePairUnauthenticatedAndDropsTheTokens() async throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 27. `func testCurrentUserReturnsNilWithoutTokens() async throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 28. `func testAProfileReplyCarryingNoUserIsNotReadAsABlankOne() async throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 29. `func testAuthenticatedLeaderboardSendsBearer() async throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 30. `func send(method: String, url: URL, headers: [String: String], body: Data?) async throws -> (Int, Data)`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//

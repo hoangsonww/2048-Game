@@ -688,3 +688,216 @@ final class CloudControllerTests: XCTestCase {
         XCTAssertEqual(game.cloudSave().moves, movesAfter)
     }
 }
+
+// MARK: - Focused maintainer notes (documentation only)
+//
+// Cloud orchestration test maintenance guide
+//
+// These notes describe the existing contract. They intentionally add no declarations,
+// expressions, fixtures, branches, or runtime behavior.
+//
+// Review guardrails
+//
+// 01. Run controller assertions on the main actor to match production isolation.
+//
+// 02. Separate authentication, reconciliation, synchronization, leaderboard, and sign-out
+//     scenarios.
+//
+// 03. Assert published activity while asynchronous work is suspended, not only after completion.
+//
+// 04. Keep guest and account rounds independent in every session transition test.
+//
+// 05. Verify career totals come from the account and are never copied from local round state.
+//
+// 06. Cover network, server, and unexpected errors with user-readable messages.
+//
+// 07. Use deterministic fake APIs so ordering and revision behavior remain reproducible.
+//
+// 08. Assert both state changes and the absence of forbidden state changes.
+//
+// Symbol and scenario index
+//
+// 01. `final class CloudControllerTests: XCTestCase`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 02. `init(_ routes: [String: (Int, String)]) { self.routes = routes }`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 03. `func send(method: String, url: URL, headers: [String: String], body: Data?) async throws -> (Int, Data)`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 04. `func wait() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 05. `func open()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 06. `private func save(score: Int = 5600) -> CloudSave`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 07. `private func makeController(`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 08. `func testFreshControllerIsSignedOutAndInvitesPlayer()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 09. `func testDismissingInvitationHidesItAndRemembersChoice()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 10. `func testAlreadyDismissedInvitationStaysDismissed()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 11. `func testRegisteringSignsInWithoutTouchingTheNetworkAgain() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 12. `func testAdoptingAnAccountOffersTheServerNothing() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 13. `func testAdoptingAnAccountReportsAFailureRatherThanClaimingSuccess() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 14. `func testSigningInDiscardsARevisionFromAnEarlierSession() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 15. `func testCareerTotalsAreNeverLiftedFromTheLocalRound() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 16. `func testRejectedSignInReportsReasonAndStaysSignedOut() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 17. `func testInFlightAuthPublishesABusyActivityUntilTheRequestFinishes() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 18. `func testInFlightSyncAndLeaderboardPublishBusyActivities() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 19. `func testClearingAuthErrorResetsTheForm() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 20. `func testSyncNowPrefersLocalAndRemembersRevision() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 21. `func testRemoteWinningConflictReplacesBoard() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 22. `func testSignOutClearsKnownRevision() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 23. `func testDownloadedRoundReplacesBoardAndUploadDoesNot() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 24. `func testRestoreWithTokensFetchesProfileAndLeavesReconcilingToTheCaller() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 25. `func testRestoreWithoutTokensIsANoOp() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 26. `func testNetworkFailureDuringRestoreKeepsTokensAndReassures() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 27. `func testSignOutClearsSessionAndKeepsLocalRoundMessage() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 28. `func testSubmitRoundSkipsWhenSignedOutOrZeroScore() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 29. `func testLoadLeaderboardUpdatesEntriesAndNote() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 30. `func testConflictedSyncDescribesPreservation() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 31. `func testEmptyLeaderboardNoteInvitesFirstScore() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 32. `func testLeaderboardNetworkFailureSurfacesMessage() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 33. `func testResettingAPasswordEndsTheSessionThisDeviceHeld() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 34. `func testARejectedResetIsReportedAndChangesNothing() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 35. `func testAResetWorksWithoutASessionToBeginWith() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 36. `func testAnUnexpectedFailureDuringSignInIsStillReadable() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 37. `func testAnUnexpectedFailureWhileAdoptingIsStillReadable() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 38. `func testAnUnexpectedFailureWhileResettingIsStillReadable() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 39. `func testAnUnexpectedFailureWhileSyncingIsStillReadable() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 40. `func testAnUnexpectedFailureLoadingTheLeaderboardIsStillReadable() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 41. `func testAnUnexpectedFailureDuringRestoreLeavesTheSessionAlone() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 42. `func testRestoringAgainstAProfileThatIsNotThereSignsOut() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 43. `func testASubmittedRoundRefreshesTheAccountsCareerTotals() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 44. `func testCloudSaveFlattensBoardAndApplyRestoresIt()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 45. `func testApplyCloudSaveRejectsCorruptBoard()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 46. `func testMovesSurviveUndoAndFeedCloudSave()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//

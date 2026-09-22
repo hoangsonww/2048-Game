@@ -225,3 +225,112 @@ final class GameProfileTests: XCTestCase {
         XCTAssertTrue(sounds.isEnabled)
     }
 }
+
+// MARK: - Focused maintainer notes (documentation only)
+//
+// Profile and audio test maintenance guide
+//
+// These notes describe the existing contract. They intentionally add no declarations,
+// expressions, fixtures, branches, or runtime behavior.
+//
+// Review guardrails
+//
+// 01. Prove that guest and account rounds can be parked and restored without
+//     cross-contamination.
+//
+// 02. Assert best score ownership separately from active board ownership.
+//
+// 03. Keep profile tests deterministic by injecting tile position and value providers.
+//
+// 04. Exercise repeated session starts and ends as explicit no-op cases.
+//
+// 05. Verify sound buffers by shape and duration without requiring audible playback.
+//
+// 06. Keep mute preference tests isolated from gameplay persistence.
+//
+// 07. Use score-producing boards that make profile ownership easy to inspect.
+//
+// 08. Clean each UserDefaults suite after the test that owns it.
+//
+// Symbol and scenario index
+//
+// 01. `final class GameProfileTests: XCTestCase`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 02. `private func makeDefaults(_ label: String = #function) -> UserDefaults`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 03. `private func makeGame(_ defaults: UserDefaults) -> GameViewModel`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 04. `private func playUntilScored(_ game: GameViewModel) -> (grid: [[Int]], score: Int, best: Int, moves: Int)`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 05. `func testARoundStartsOnTheGuestProfile()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 06. `func testProgressIsAnythingAPlayerWouldMindLosing()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 07. `func testStartingAnAccountSessionParksTheGuestRoundUntouched()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 08. `func testPlayingSignedInNeverWritesToTheGuestProfile()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 09. `func testEndingAnAccountSessionRestoresTheGuestRoundExactly()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 10. `func testASessionStartedTwiceIsReportedAsAlreadyActive()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 11. `func testEndingASessionThatNeverStartedChangesNothing()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 12. `func testACachedAccountRoundIsRestoredRatherThanReplaced()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 13. `func testAFreshSignInDiscardsWhateverWasCachedForAnAccount()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 14. `func testAProfileSwitchIsAnnouncedSeparatelyFromANewGame()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 15. `func testABestScoreEarnedSignedInStaysWithTheAccount()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 16. `func testEveryCueRendersAShapedBurstOfTheRightLength()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 17. `func testASlidingCueChangesPitchAcrossItsLength()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 18. `func testAZeroLengthCueStillProducesAValidBuffer()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 19. `func testTheCueMixerHasRoomForOverlappingVoices()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 20. `func testMutingIsRememberedAndCuesAreSilentWhileMuted()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//

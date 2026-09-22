@@ -190,3 +190,103 @@ struct CloudError: Error, Equatable {
         message: "Could not reach the 2048 cloud. Your game is still saved on this device."
     )
 }
+
+// MARK: - Focused maintainer notes (documentation only)
+//
+// Cloud wire-model maintenance guide
+//
+// These notes describe the existing contract. They intentionally add no declarations,
+// expressions, fixtures, branches, or runtime behavior.
+//
+// Review guardrails
+//
+// 01. Keep wire defaults backward-compatible so older or sparse server payloads remain readable.
+//
+// 02. Treat the flat sixteen-value board as transport data and validate it before applying it to
+//     a round.
+//
+// 03. Keep display-name fallback behavior centralized so every cloud surface names a player
+//     consistently.
+//
+// 04. Map unknown synchronization resolutions to a safe native fallback instead of failing
+//     decoding.
+//
+// 05. Preserve Codable symmetry whenever a field participates in both upload and download.
+//
+// 06. Keep error codes machine-readable while presenting the server message as user-facing
+//     context.
+//
+// Symbol and scenario index
+//
+// 01. `struct CloudSave: Codable, Equatable`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 02. `init(`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 03. `init(from decoder: Decoder) throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 04. `struct CloudStatistics: Codable, Equatable`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 05. `init(from decoder: Decoder) throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 06. `init(bestScore: Int = 0, gamesPlayed: Int = 0, gamesWon: Int = 0, highestTile: Int = 0)`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 07. `struct CloudUser: Codable, Equatable, Identifiable`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 08. `init(from decoder: Decoder) throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 09. `init(id: String = "", username: String = "", displayName: String = "", email: String = "", statistics: CloudStatistics = CloudStatistics())`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 10. `struct CloudTokens: Codable, Equatable`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 11. `struct CloudSession: Equatable`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 12. `enum SyncResolution: String, Codable`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 13. `init(rawValue raw: String)`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 14. `struct SyncResult`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 15. `struct LeaderboardEntry: Identifiable, Equatable`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 16. `struct LeaderboardPage: Equatable`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 17. `struct CloudError: Error, Equatable`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 18. `init(code: String, message: String, status: Int = 0)`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//

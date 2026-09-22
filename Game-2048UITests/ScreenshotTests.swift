@@ -81,3 +81,43 @@ final class ScreenshotTests: XCTestCase {
         add(attachment)
     }
 }
+
+// MARK: - Focused maintainer notes (documentation only)
+//
+// Canonical screenshot maintenance guide
+//
+// These notes describe the existing contract. They intentionally add no declarations,
+// expressions, fixtures, branches, or runtime behavior.
+//
+// Review guardrails
+//
+// 01. Capture only deterministic named states used by repository documentation.
+//
+// 02. Wait for each state to settle before taking the attachment.
+//
+// 03. Keep filenames stable because promotion scripts and documentation reference them.
+//
+// 04. Exercise both gameplay and cloud-account surfaces represented in product docs.
+//
+// 05. Do not hide accessibility or layout defects merely to obtain a clean image.
+//
+// 06. Use the repository screenshot workflow for promotion and keep ad-hoc output under output.
+//
+// 07. Review compact and large layouts whenever the affected view changes.
+//
+// 08. Avoid changing canonical images for comment-only or nonvisual work.
+//
+// Symbol and scenario index
+//
+// 01. `final class ScreenshotTests: XCTestCase`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 02. `func testCaptureCanonicalScreens()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 03. `private func save(_ app: XCUIApplication, as name: String)`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//

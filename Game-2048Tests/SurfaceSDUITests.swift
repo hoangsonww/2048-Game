@@ -267,3 +267,132 @@ final class SurfaceSDUITests: XCTestCase {
     private static let paragraph = SurfaceNode(id: "body", type: .paragraph, properties: ["text": "Swipe to move."])
     private static let helpSurface = Surface(id: .help, revision: "test-1", nodes: [heading, paragraph])
 }
+
+// MARK: - Focused maintainer notes (documentation only)
+//
+// Surface contract test maintenance guide
+//
+// These notes describe the existing contract. They intentionally add no declarations,
+// expressions, fixtures, branches, or runtime behavior.
+//
+// Review guardrails
+//
+// 01. Round-trip every SurfaceValue case through JSON.
+//
+// 02. Reject object values because the contract intentionally permits only known scalar and list
+//     shapes.
+//
+// 03. Test contract version and minimum app version as separate compatibility gates.
+//
+// 04. Assert version comparison numerically for multi-digit components.
+//
+// 05. Cover duplicate identifiers, missing required properties, and unhandled actions.
+//
+// 06. Verify a bad node can be pruned while valid siblings survive.
+//
+// 07. Exercise source fallback order with missing, throwing, and successful sources.
+//
+// 08. Resolve the shipped help surface to guard the production asset contract.
+//
+// Symbol and scenario index
+//
+// 01. `final class SurfaceSDUITests: XCTestCase`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 02. `func testEveryValueCaseRoundTripsThroughJSON() throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 03. `func testABooleanDoesNotDecodeAsANumber() throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 04. `func testValueAccessorsAreTypeAware()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 05. `func testAnObjectValueIsRejected()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 06. `func testASurfaceDecodesFromPublishedJSON() throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 07. `func testAbsentOptionalFieldsDecodeAsEmpty() throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 08. `func testAnUnknownNodeTypeParsesRatherThanFailingThePayload() throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 09. `func testAPayloadBuiltForANewerContractIsRefusedWhole()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 10. `func testAPayloadRequiringANewerAppIsRefusedWhole()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 11. `func testAnEqualOrOlderMinimumVersionIsAccepted()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 12. `func testVersionComparisonIsComponentWiseNotLexicographic()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 13. `func testAnEmptySurfaceIsNothingToRender()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 14. `func testAnUnknownNodeIsPrunedAndItsSiblingsSurvive()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 15. `func testANodeMissingARequiredPropertyIsPruned()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 16. `func testDuplicateNodeIDsAreReported()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 17. `func testAnActionWithNoHandlerIsReportedButStillRenders()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 18. `func testAnInMemorySourceReturnsOnlyWhatItHolds() async throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 19. `func testABundledSourceDecodesJSONAndReportsAMissingFileAsNil() async throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 20. `func testAFallbackChainSkipsASourceThatThrows() async throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 21. `func testAGoodSurfaceResolvesToRender() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 22. `func testEveryFailureModeFallsBackRatherThanBlankingTheScreen() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 23. `func testResolutionPrunesBadNodesAndRendersTheRest() async`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 24. `func testTheShippedHelpSurfaceResolvesAndRendersEveryNode() async throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 25. `func testAnActionDispatchesOnlyToItsRegisteredHandler()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//

@@ -954,3 +954,88 @@ struct LeaderboardSheet: View {
         .tint(CloudPalette.accent)
     }
 }
+
+// MARK: - Focused maintainer notes (documentation only)
+//
+// Cloud presentation maintenance guide
+//
+// These notes describe the existing contract. They intentionally add no declarations,
+// expressions, fixtures, branches, or runtime behavior.
+//
+// Review guardrails
+//
+// 01. Keep sign-in and registration as distinct actions with labels that match the destination.
+//
+// 02. Give every password field its own reveal control and reset visibility when a form closes.
+//
+// 03. Preserve the native paper-card visual language without moving the game board into a
+//     ScrollView.
+//
+// 04. Keep validation messages close to the field or action that produced them.
+//
+// 05. Maintain Dynamic Type, VoiceOver labels, keyboard focus, and comfortable touch targets.
+//
+// 06. Treat controller activity as the source of truth for disabled and progress states.
+//
+// 07. Keep destructive account actions visibly distinct and confirmation-driven.
+//
+// 08. Use SF Symbols for button artwork and accessible text on the enclosing control.
+//
+// Symbol and scenario index
+//
+// 01. `enum CloudPalette`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 02. `struct AccountButton: View`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 03. `struct LeaderboardButton: View`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 04. `struct CloudBar: View`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 05. `struct GuestToast: View`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 06. `enum AuthMode: String, Identifiable`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 07. `enum Style`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 08. `struct RevealablePasswordField: View`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 09. `struct AuthSheet: View`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 10. `private func attempt()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 11. `private func submit()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 12. `struct ResetPasswordSheet: View`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 13. `struct AccountSheet: View`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 14. `struct LeaderboardSheet: View`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//

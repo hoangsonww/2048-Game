@@ -289,3 +289,100 @@ final class Game_2048UITests: XCTestCase {
         app.descendants(matching: .any).matching(identifier: identifier).firstMatch
     }
 }
+
+// MARK: - Focused maintainer notes (documentation only)
+//
+// End-to-end interaction test maintenance guide
+//
+// These notes describe the existing contract. They intentionally add no declarations,
+// expressions, fixtures, branches, or runtime behavior.
+//
+// Review guardrails
+//
+// 01. Launch each scenario with explicit deterministic state instead of depending on a previous
+//     test.
+//
+// 02. Keep accessibility identifiers as the primary query surface.
+//
+// 03. Assert vertical and horizontal board swipes reach the board without moving the screen.
+//
+// 04. Cover confirmation, cancellation, undo, win continuation, and game-over restart.
+//
+// 05. Exercise sign-in and registration as distinct entry points.
+//
+// 06. Verify password reveal controls independently for every secure field.
+//
+// 07. Wait on observable UI state rather than fixed delays.
+//
+// 08. Keep helpers strict enough that duplicate or missing elements fail clearly.
+//
+// Symbol and scenario index
+//
+// 01. `final class Game_2048UITests: XCTestCase`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 02. `func testGameOpensReadyToPlayWithAccessibleControls()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 03. `func testHelpSheetShowsCompleteRulesAndDismisses()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 04. `func testSwipeEnablesUndoAndUndoRestoresRound()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 05. `func testVerticalBoardSwipeReachesTheBoardAndDoesNotMoveTheScreen()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 06. `func testNewGameConfirmationSupportsCancelAndReset()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 07. `func testWinOverlayCanContinuePlaying()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 08. `func testGameOverOverlayCanStartFreshRound()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 09. `func testAccountSheetsOpenSwapAndDismiss()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 10. `func testSignUpRefusesAMismatchedConfirmation()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 11. `func testSigningInMidRoundWarnsBeforeTheBoardLeavesTheScreen()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 12. `func testLaunchPerformance()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 13. `private func launch(state: String? = nil) -> XCUIApplication`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 14. `private func openSignIn(in app: XCUIApplication)`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 15. `private func typeIntoRevealedPassword(identifier: String, text: String, in app: XCUIApplication)`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 16. `private func assertScore(_ expected: Int, in app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line)`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 17. `private func element(identifier: String, in app: XCUIApplication) -> XCUIElement`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//

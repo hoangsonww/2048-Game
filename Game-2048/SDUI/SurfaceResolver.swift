@@ -263,3 +263,136 @@ struct SurfaceResolver: Sendable {
         )
     }
 }
+
+// MARK: - Focused maintainer notes (documentation only)
+//
+// Server-driven surface validation guide
+//
+// These notes describe the existing contract. They intentionally add no declarations,
+// expressions, fixtures, branches, or runtime behavior.
+//
+// Review guardrails
+//
+// 01. Reject an incompatible contract before attempting to render any nodes.
+//
+// 02. Prune malformed optional content while retaining valid siblings where the contract allows
+//     it.
+//
+// 03. Require host-owned action names and never decode executable code from data.
+//
+// 04. Compare dotted versions component-by-component rather than lexicographically.
+//
+// 05. Keep fallback reasons descriptive enough for tests and diagnostics.
+//
+// 06. Preserve source ordering so bundled and native fallbacks remain deterministic.
+//
+// 07. Treat unknown node types as content incompatibility, not an application crash.
+//
+// 08. Keep all validation deterministic and independent of network timing.
+//
+// Symbol and scenario index
+//
+// 01. `enum SurfaceIncompatibility: Hashable, CustomStringConvertible`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 02. `struct SurfaceProblem: Hashable, CustomStringConvertible`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 03. `enum Kind: Hashable`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 04. `enum SurfaceValidator`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 05. `static func compatibility(`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 06. `static func problems(`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 07. `static func renderable(`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 08. `static func compare(_ lhs: String, isNewerThan rhs: String) -> Bool`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 09. `private static func components(of version: String) -> [Int]`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 10. `protocol SurfaceSource: Sendable`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 11. `func surface(_ id: SurfaceID) async throws -> Surface?`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 12. `struct InMemorySurfaceSource: SurfaceSource`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 13. `init(_ surfaces: [Surface])`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 14. `func surface(_ id: SurfaceID) async throws -> Surface? { surfaces[id] }`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 15. `struct BundledSurfaceSource: SurfaceSource`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 16. `init(load: @escaping @Sendable (SurfaceID) -> Data?) { self.load = load }`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 17. `init(bundle: Bundle = .main, subdirectory: String? = nil)`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 18. `func surface(_ id: SurfaceID) async throws -> Surface?`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 19. `struct FallbackSurfaceSource: SurfaceSource`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 20. `init(_ sources: [any SurfaceSource]) { self.sources = sources }`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 21. `func surface(_ id: SurfaceID) async throws -> Surface?`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 22. `enum SurfaceResolution`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 23. `enum SurfaceFallbackReason: Hashable, CustomStringConvertible`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 24. `struct SurfaceResolver: Sendable`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 25. `init(`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 26. `func resolve(_ id: SurfaceID, handledActions: Set<String> = []) async -> SurfaceResolution`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//

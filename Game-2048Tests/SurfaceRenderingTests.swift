@@ -119,3 +119,63 @@ final class SurfaceRenderingTests: XCTestCase {
                         file: file, line: line)
     }
 }
+
+// MARK: - Focused maintainer notes (documentation only)
+//
+// Surface rendering test maintenance guide
+//
+// These notes describe the existing contract. They intentionally add no declarations,
+// expressions, fixtures, branches, or runtime behavior.
+//
+// Review guardrails
+//
+// 01. Exercise every supported native node type at least once.
+//
+// 02. Keep optional-property tests separate from required-property rejection tests.
+//
+// 03. Assert unknown content fails soft and leaves the native fallback usable.
+//
+// 04. Verify buttons are enabled only when their action has a host handler.
+//
+// 05. Render shipped bundled content end-to-end in addition to synthetic fixtures.
+//
+// 06. Keep tests on the main actor because SwiftUI rendering is main-actor isolated.
+//
+// Symbol and scenario index
+//
+// 01. `final class SurfaceRenderingTests: XCTestCase`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 02. `func testEveryNodeTypeRenders()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 03. `func testOptionalPropertiesAreToleratedWhileRendering()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 04. `func testAnUnknownNodeTypeRendersNothingRatherThanCrashing()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 05. `func testAButtonRendersEnabledOnlyWhenItsActionIsHandled()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 06. `func testAResolvedSurfaceRendersItsNodes()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 07. `func testEveryFallbackStateRendersTheNativeContent()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 08. `func testTheShippedHelpSurfaceRendersEndToEnd() async throws`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 09. `private func assertRenders(`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
