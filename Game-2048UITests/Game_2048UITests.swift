@@ -121,15 +121,15 @@ final class Game_2048UITests: XCTestCase {
         let app = launch()
         XCTAssertTrue(app.otherElements["GameBoard"].waitForExistence(timeout: 15))
 
-        app.buttons["accountButton"].tap()
-        XCTAssertTrue(app.navigationBars["Welcome back"].waitForExistence(timeout: 5))
+        openSignIn(in: app)
+        XCTAssertTrue(app.staticTexts["Welcome back"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.textFields["identifierField"].exists)
         XCTAssertTrue(app.secureTextFields["passwordField"].exists)
         XCTAssertFalse(app.secureTextFields["confirmPasswordField"].exists,
                        "the header says Sign in, so it must open sign-in")
 
         app.buttons["authSwitch"].tap()
-        XCTAssertTrue(app.navigationBars["Create your account"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Create your account"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.textFields["usernameField"].exists)
         XCTAssertTrue(app.textFields["emailField"].exists)
         XCTAssertTrue(app.secureTextFields["passwordField"].exists)
@@ -144,17 +144,17 @@ final class Game_2048UITests: XCTestCase {
 
         // Return to sign-in for password recovery.
         app.buttons["authSwitch"].tap()
-        XCTAssertTrue(app.navigationBars["Welcome back"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Welcome back"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.secureTextFields["confirmPasswordField"].exists)
 
         app.buttons["authForgot"].tap()
-        XCTAssertTrue(app.navigationBars["Reset your password"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Reset your password"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.textFields["resetUsernameField"].exists)
         XCTAssertTrue(app.secureTextFields["resetPasswordField"].exists)
         XCTAssertTrue(app.secureTextFields["resetConfirmField"].exists)
 
         app.buttons["resetDismiss"].tap()
-        XCTAssertFalse(app.navigationBars["Reset your password"].waitForExistence(timeout: 2))
+        XCTAssertFalse(app.staticTexts["Reset your password"].waitForExistence(timeout: 2))
         XCTAssertTrue(app.otherElements["GameBoard"].waitForExistence(timeout: 5))
     }
 
@@ -167,10 +167,10 @@ final class Game_2048UITests: XCTestCase {
         // can elapse while a loaded simulator establishes its UI session.
         // Enter through the persistent Sign in control, then take the
         // explicit registration switch.
-        app.buttons["accountButton"].tap()
-        XCTAssertTrue(app.navigationBars["Welcome back"].waitForExistence(timeout: 5))
+        openSignIn(in: app)
+        XCTAssertTrue(app.staticTexts["Welcome back"].waitForExistence(timeout: 5))
         app.buttons["authSwitch"].tap()
-        XCTAssertTrue(app.navigationBars["Create your account"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Create your account"].waitForExistence(timeout: 5))
         // Xcode 16's UI runner intermittently sends only the first character
         // to a SwiftUI SecureField. Reveal each field before typing so this
         // test exercises an actual mismatch on every supported runner rather
@@ -187,7 +187,7 @@ final class Game_2048UITests: XCTestCase {
         // a combined accessibility element on iOS 18/Xcode 16. Query by the
         // identifier rather than tying this assertion to either element type.
         XCTAssertTrue(element(identifier: "passwordMismatch", in: app).waitForExistence(timeout: 5))
-        XCTAssertTrue(app.navigationBars["Create your account"].exists, "the form stays up to be corrected")
+        XCTAssertTrue(app.staticTexts["Create your account"].exists, "the form stays up to be corrected")
     }
 
     /// Signing in with a round on screen asks before taking it away.
@@ -198,8 +198,8 @@ final class Game_2048UITests: XCTestCase {
         board.swipeLeft()
         XCTAssertTrue(app.buttons["Undo"].isEnabled)
 
-        app.buttons["accountButton"].tap()
-        XCTAssertTrue(app.navigationBars["Welcome back"].waitForExistence(timeout: 5))
+        openSignIn(in: app)
+        XCTAssertTrue(app.staticTexts["Welcome back"].waitForExistence(timeout: 5))
         app.textFields["identifierField"].tap()
         app.textFields["identifierField"].typeText("ada")
         app.secureTextFields["passwordField"].tap()
@@ -209,7 +209,7 @@ final class Game_2048UITests: XCTestCase {
         let warning = app.alerts["Set this round aside?"]
         XCTAssertTrue(warning.waitForExistence(timeout: 10))
         warning.buttons["Keep playing"].tap()
-        XCTAssertTrue(app.navigationBars["Welcome back"].waitForExistence(timeout: 5),
+        XCTAssertTrue(app.staticTexts["Welcome back"].waitForExistence(timeout: 5),
                       "declining leaves the form up and the round alone")
     }
 
@@ -226,6 +226,19 @@ final class Game_2048UITests: XCTestCase {
         if let state { app.launchEnvironment["GAME2048_UI_TEST_STATE"] = state }
         app.launch()
         return app
+    }
+
+    /// Opens the credential sheet from a guest session.
+    ///
+    /// A leftover simulator login would otherwise open Account, and these
+    /// cases are about the sign-in / sign-up forms, not the signed-in panel.
+    private func openSignIn(in app: XCUIApplication) {
+        app.buttons["accountButton"].tap()
+        if app.buttons["signOutButton"].waitForExistence(timeout: 2) {
+            app.buttons["signOutButton"].tap()
+            XCTAssertTrue(app.otherElements["GameBoard"].waitForExistence(timeout: 5))
+            app.buttons["accountButton"].tap()
+        }
     }
 
     private func assertScore(_ expected: Int, in app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {

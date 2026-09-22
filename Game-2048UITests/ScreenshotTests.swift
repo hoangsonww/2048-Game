@@ -35,11 +35,17 @@ final class ScreenshotTests: XCTestCase {
         save(app, as: "ios-main")
 
         app.buttons["accountButton"].tap()
-        XCTAssertTrue(app.navigationBars["Welcome back"].waitForExistence(timeout: 10))
+        // A leftover simulator session opens Account instead of Sign in.
+        if app.buttons["signOutButton"].waitForExistence(timeout: 2) {
+            app.buttons["signOutButton"].tap()
+            XCTAssertTrue(board.waitForExistence(timeout: 5))
+            app.buttons["accountButton"].tap()
+        }
+        XCTAssertTrue(app.staticTexts["Welcome back"].waitForExistence(timeout: 10))
         save(app, as: "ios-signin")
 
         app.buttons["authSwitch"].tap()
-        XCTAssertTrue(app.navigationBars["Create your account"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Create your account"].waitForExistence(timeout: 10))
         save(app, as: "ios-signup")
 
         app.buttons["authSubmit"].tap()
@@ -49,10 +55,10 @@ final class ScreenshotTests: XCTestCase {
         }
 
         app.buttons["authSwitch"].tap()
-        XCTAssertTrue(app.navigationBars["Welcome back"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Welcome back"].waitForExistence(timeout: 10))
 
         app.buttons["authForgot"].tap()
-        XCTAssertTrue(app.navigationBars["Reset your password"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Reset your password"].waitForExistence(timeout: 10))
         save(app, as: "ios-reset")
         app.buttons["resetDismiss"].tap()
 
