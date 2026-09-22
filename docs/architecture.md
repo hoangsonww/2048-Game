@@ -14,7 +14,9 @@ This document is the authoritative description of how the three clients are buil
 - [Terminal states](#terminal-states)
 - [Persistence and state validation](#persistence-and-state-validation)
 - [Application lifecycle](#application-lifecycle)
+- [Sound](#sound)
 - [Server-driven surfaces](#server-driven-surfaces)
+- [Optional cloud layer](#optional-cloud-layer)
 - [Web client](#web-client)
 - [iOS client](#ios-client)
 - [Android client](#android-client)
@@ -23,7 +25,7 @@ This document is the authoritative description of how the three clients are buil
 
 ## Design principle
 
-The repository contains three offline-first clients. There is **no shared backend, no shared runtime library, and no generated cross-platform layer**. Each client is written idiomatically for its platform.
+The repository contains three local-first clients and an optional Cloud API. There is **no shared rules runtime** and **no generated cross-platform layer**. Each client is written idiomatically for its platform. Network access is never required to move a tile; accounts and sync live in additive modules documented in [backend.md](backend.md).
 
 That is a deliberate trade. A shared core would guarantee parity mechanically but would force a lowest-common-denominator architecture onto all three platforms and add a build step to a project that otherwise needs none. Instead, parity is maintained by three explicit mechanisms:
 
@@ -35,11 +37,11 @@ The cost of this approach is that a rules change must be made three times. That 
 
 ## The same contract, three presentations
 
-Each client renders the same board, score pair, and action bar with native idioms. Pixel identity is not the goal; equivalent capability, hierarchy, and feedback are.
+Each client renders the same board, score pair, and action bar with native idioms. Pixel identity is not the goal; equivalent capability, hierarchy, and feedback are. Optional cloud chrome (Sign in, leaderboard, guest invite) appears on all three.
 
 | Web | iOS | Android |
 | :---: | :---: | :---: |
-| ![The web client's board, score cards, and action bar](../images/web-version-UI.png) | ![The SwiftUI client showing the same layout on iPhone](../images/IOS-UI.png) | ![The Compose client showing the same layout on a Pixel](../images/android-ui.png) |
+| ![The web client's board, guest invite, and cloud controls](../images/web-version-UI.png) | ![The SwiftUI client with Sign in, leaderboard, and guest banner](../images/IOS-UI.png) | ![The Compose client with Sign in, leaderboard, and guest banner](../images/android-ui.png) |
 | Inline SVG icons | SF Symbols | Material vectors |
 
 ## Runtime boundaries
@@ -122,6 +124,26 @@ This matters because saved state is user-writable on every platform — browser 
 
 Input handling must guarantee **one move per discrete input**. A single continuous drag produces exactly one move, not a stream of them — enforced with a gesture threshold plus a per-gesture latch on all three clients.
 
+## Sound
+
+Cues are synthesised at runtime on all three clients — no audio assets — and
+mute is a single preference honoured before any audio device is opened.
+
+A cue must be heard **now or not at all**. Each client caps how many voices
+sound at once and drops the excess rather than queueing it, because every
+platform's obvious implementation is a queue that turns a fast run of moves
+into a burst arriving seconds later:
+
+- **Web** builds its `AudioContext` inside the first user gesture and drops any
+  cue scheduled while the context clock is not running. A context created
+  earlier is suspended, and a suspended context's `currentTime` never advances.
+- **iOS** round-robins across a pool of `AVAudioPlayerNode`s, interrupting each,
+  because a single node plays its scheduled buffers strictly in sequence.
+- **Android** keeps one streaming `AudioTrack` open and mixes the sounding
+  voices into it, instead of allocating a track and a thread per cue.
+
+See [ARCHITECTURE.md](../ARCHITECTURE.md#sound-architecture).
+
 ## Server-driven surfaces
 
 Both native clients carry a server-driven UI runtime. The web client does not:
@@ -148,9 +170,35 @@ changing this code:
 - **New iOS surface files must be added to the Xcode target.** The project has
   no synchronised groups, so a file only on disk never compiles.
 
+## Optional cloud layer
+
+Accounts, cross-device sync, and leaderboards are additive modules on each
+client. The rules engine never imports them; a small bridge
+(`cloudSave` / `applyCloudSave`) converts the board to the flat wire format.
+
+| Concern | Rule |
+| --- | --- |
+| Play without an account | Fully supported; guest prompt is dismissible |
+| Guest and account rounds | Separate storage profiles. Signing in warns, parks the guest round, and loads the account's own; signing out restores the guest round exactly |
+| Career statistics | Come from the account only — never lifted from the device's local round |
+| Credential entry | “Sign in” opens sign-in and “Create account” opens registration. Sign-up confirms the password, every password field has its own reveal control, and closing a form hides them all again |
+| Forgotten passwords | Interim reset: a matching username and email set a new password and revoke every session. Deliberately weak, feature-flagged, and documented as temporary — see [ARCHITECTURE.md](../ARCHITECTURE.md#credential-entry) |
+| Sync conflicts | Prefer the further round; park the other — never last-writer-wins discard |
+| Offline | Moves never wait on the network |
+| In-flight requests | Auth, sync, leaderboard, and sign-out show a spinner and disable the control that started them; the board stays playable |
+| Layout (iOS) | Cloud UI must not push the board into a `ScrollView` |
+
+Authentication and reconciliation are deliberately separate steps. Signing in
+returns a session and nothing more; the game then decides which profile is
+active and asks the cloud layer to adopt the account's round. Only the game
+knows which board is on screen, so only the game can decide what may be
+offered to the server.
+
+Full contract: [backend.md](backend.md). Privacy: [privacy.md](privacy.md).
+
 ## Web client
 
-Static files with no bundler, transpiler, or runtime dependencies. `game-engine.js` is pure and dual-target (browser and Node), which keeps enforced coverage cheap and fast. `script.js` owns DOM wiring, input handling, persistence, and the accessibility live region.
+Static files with no bundler, transpiler, or runtime dependencies. `game-engine.js` is pure and dual-target (browser and Node), which keeps enforced coverage cheap and fast. `script.js` owns DOM wiring, input handling, persistence, and the accessibility live region. Optional `cloud.js` / `account.js` own the account surface.
 
 Both files are covered at 100 % of lines. `script.js` is an IIFE that reads the document once on load and then talks to the page only through the elements it captured, which is exactly what lets `tests/web/helpers/fake-dom.js` stand in for the browser and unit-test it. Keep that property: a controller that reaches back into `document` mid-flight is a controller that can only be tested in a real browser.
 
@@ -164,7 +212,7 @@ The local development server intentionally disables caching so UI work reloads p
 
 ## iOS client
 
-SwiftUI, targeting iOS 17.4+ for both iPhone and iPad. Uses `UserDefaults` for persistence, `UINotificationFeedbackGenerator`-class haptics, SF Symbols for all control iconography, and accessibility identifiers on every interactive element so XCUITest can drive real flows.
+SwiftUI, targeting iOS 17.4+ for both iPhone and iPad. Uses `UserDefaults` for persistence, `UINotificationFeedbackGenerator`-class haptics, SF Symbols for all control iconography, and accessibility identifiers on every interactive element so XCUITest can drive real flows. Optional cloud code lives in `Game-2048/Cloud/` and must be listed in the Xcode project — same rule as surfaces.
 
 The board is exposed as an explicit accessibility container rather than a pile of individually focusable cells, which is what makes VoiceOver navigation coherent.
 
@@ -174,7 +222,7 @@ Layout is size-responsive rather than fixed — do not reintroduce hard-coded bo
 
 ## Android client
 
-Jetpack Compose with Material 3, `minSdk` 24 and `compileSdk`/`targetSdk` 34, Kotlin 1.9 with AGP 8.3.1 on Gradle 8.13. State lives in a `ViewModel`; persistence goes through `GameStorage.kt` over `SharedPreferences`.
+Jetpack Compose with Material 3, `minSdk` 24 and `compileSdk`/`targetSdk` 34, Kotlin 1.9 with AGP 8.3.1 on Gradle 8.13. State lives in a `ViewModel`; persistence goes through `GameStorage.kt` over `SharedPreferences`. Optional cloud code lives under `…/cloud/` and uses `HttpURLConnection` with a fake-transport seam for JVM unit tests.
 
 No JDK needs to be installed. `gradle/gradle-daemon-jvm.properties` pins daemon JVM criteria, so Gradle downloads and runs on its own Adoptium JDK 17 matching the host OS and architecture; `scripts/android.sh` additionally prefers a local JDK 17 when one exists.
 

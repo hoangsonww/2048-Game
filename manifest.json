@@ -12,7 +12,7 @@
   "background_color": "#f5f0e6",
   "theme_color": "#f5f0e6",
   "author": "Son Nguyen Hoang",
-  "description": "Slide, combine, and build your way to the 2048 tile.",
+  "description": "Slide, combine, and build your way to the 2048 tile. Local-first play with optional account sync.",
   "categories": ["games", "entertainment"],
   "prefer_related_applications": false,
   "shortcuts": [
@@ -32,9 +32,9 @@
   "screenshots": [
     {
       "src": "images/web-version-UI.png",
-      "sizes": "1440x1566",
+      "sizes": "1440x2456",
       "type": "image/png",
-      "label": "2048 game board, scores, and controls"
+      "label": "2048 game board with guest invite, scores, and cloud controls"
     }
   ],
   "icons": [

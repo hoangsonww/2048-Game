@@ -5,5 +5,6 @@ Repository: https://github.com/hoangsonww/2048-Game
 /* SITE */
 Language: English
 Standards: HTML5, CSS, JavaScript, Web App Manifest, JSON-LD
-Software: Static web application with native SwiftUI and Jetpack Compose counterparts
-Privacy: No accounts, analytics, advertising, or project-operated backend
+Software: Static web application with native SwiftUI and Jetpack Compose counterparts, plus an optional Cloud API
+Privacy: Local-first play; optional account for sync and leaderboards. No analytics or advertising SDKs
+Cloud API: https://game-2048-cloud-api.vercel.app/docs

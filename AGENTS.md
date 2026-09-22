@@ -18,7 +18,7 @@ Read [ARCHITECTURE.md](ARCHITECTURE.md) for the whole-repository picture — the
 
 - `make help`: list supported workflows.
 - `make check`: fast syntax, repository, shell, SEO, and discovery checks.
-- `make serve`: serve the web app at `http://localhost:8080`.
+- `make serve`: serve the web app at `http://localhost:8080`. Set `GAME2048_API_BASE_URL` to point it at a locally running Cloud API.
 - `make test-web`: complete deterministic and browser web suite.
 - `make android-run`: build, install, and launch on a device or emulator.
 - `make android-build` / `android-install` / `android-devices` / `android-tasks` / `android-clean`.
@@ -29,9 +29,13 @@ Read [ARCHITECTURE.md](ARCHITECTURE.md) for the whole-repository picture — the
 - `make ios-build` / `ios-boot` / `ios-devices`.
 - `make test-ios`: iOS unit and UI tests on an available simulator.
 - `make test`: run every suite supported by the current host.
-- `make screenshots-web`: capture deterministic desktop/mobile UI states.
+- `make screenshots-web`: capture deterministic desktop/mobile game + cloud UI states and promote into `images/`.
+- `make screenshots-web-qa`: same captures into `output/playwright/latest/` only.
+- `make screenshots-mobile`: capture canonical iOS and Android game + cloud UI states from a booted simulator/emulator and promote into `images/`.
+- `make screenshots-mobile-qa`: same native captures into `output/mobile/` only.
 - `make version`: print the version and verify every client agrees with it.
 - `make version-sync`: rewrite the derived version fields from `VERSION`.
+- `make server-check` / `server-test`: Cloud API OpenAPI validation and unit tests (`server/`).
 
 Never call `adb`, `xcrun`, or `./gradlew` bare from a script or Make target. Use `scripts/android.sh` and `scripts/ios.sh`, which resolve a JDK 17, an `adb` binary, and a simulator UDID. Bare `adb` is not on `PATH` on a default Android Studio install.
 
@@ -41,9 +45,9 @@ Run the smallest relevant checks while iterating and the complete affected-platf
 
 - Preserve existing user changes in a dirty working tree. Do not reset, discard, or rewrite unrelated work.
 - Treat audit, diagnosis, review, and test-only requests as read-only unless the user asks for implementation.
-- Do not add a backend, analytics, accounts, remote storage, or network calls without explicit product direction.
+- Do not add analytics SDKs, advertising, or mandatory network calls for core play without explicit product direction. The optional Cloud API (`server/`, [docs/backend.md](docs/backend.md)) is the approved account / sync / leaderboard path — keep game rules and the active round local-first.
 - Server-driven surfaces describe **content only**. Rules, styling, and behaviour stay in code, every surface keeps a native fallback, and actions are names the host resolves — never code carried in data. See [ARCHITECTURE.md](ARCHITECTURE.md#server-driven-surfaces).
-- Keep game state local. Validate persisted state before restoring it.
+- Keep the active round local-first. Validate persisted state (local and cloud) before restoring it.
 - Keep source code deterministic where tests inject a random tile provider.
 - Do not edit generated Xcode project identifiers or Gradle wrapper binaries unless the task requires it.
 - Never commit `local.properties`, signing files, tokens, build output, or local simulator data.
@@ -60,6 +64,21 @@ Run the smallest relevant checks while iterating and the complete affected-platf
 - New game preserves the best score and requires confirmation when a round is active.
 - Reaching 2048 presents a win state and allows continued play. A full board with no merge presents game over.
 - Corrupt or structurally invalid saved state is discarded safely.
+- The guest round and the signed-in round are separate profiles. Signing in
+  warns before taking a round off the screen, parks the guest round untouched,
+  and loads the account's own; signing out restores the guest round exactly,
+  best score included. Career statistics come from the account and are never
+  lifted from local storage. See
+  [ARCHITECTURE.md](ARCHITECTURE.md#guest-and-account-profiles).
+- A control labeled “Sign in” opens sign-in, never sign-up; explicit “Create
+  account” actions open registration. Sign-up confirms the password, every
+  password field has its own reveal control, and closing a form hides them again. Password recovery is an
+  interim username + email check that revokes every session — read the
+  security note on the endpoint before extending it. See
+  [ARCHITECTURE.md](ARCHITECTURE.md#credential-entry).
+- Sound cues are heard now or dropped. No client may queue a cue it cannot
+  play immediately — a backlog that arrives seconds later is worse than
+  silence. See [ARCHITECTURE.md](ARCHITECTURE.md#sound-architecture).
 
 ## UI and accessibility
 

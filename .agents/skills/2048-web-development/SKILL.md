@@ -13,4 +13,4 @@ A board swipe must not scroll the page. The board sets `touch-action: none`, `ht
 
 When changing public content or routes, update canonical/social metadata, JSON-LD, sitemap, robots, manifest, and `llms*.txt` where relevant. Do not add claims or structured data that are not visible and true on the page.
 
-Run `make check` and `make test-web`. For visible changes, run `make screenshots-web` and inspect desktop and mobile gameplay, restart, win, loss, and About captures.
+Run `make check` and `make test-web`. Optional cloud work lives in `Web-Version/cloud.js` and `account.js` — keep play local-first and see `docs/backend.md`. For visible changes, run `make screenshots-web` and inspect desktop and mobile gameplay, restart, win, loss, About, and cloud surfaces (guest banner, auth dialogs, leaderboard, account).

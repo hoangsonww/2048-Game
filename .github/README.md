@@ -1,6 +1,6 @@
 # 2048, Built Three Ways
 
-A polished, accessible, offline-first 2048 puzzle shipped as **three independent native clients** — a dependency-free progressive web app, a SwiftUI iOS app, and a Jetpack Compose Android app. They share no runtime code, yet every one of them is held to the same documented set of behavioral invariants and verified by the same four-job continuous integration pipeline.
+A polished, accessible, **local-first** 2048 puzzle shipped as **three independent native clients** — a dependency-free progressive web app, a SwiftUI iOS app, and a Jetpack Compose Android app — plus an optional Cloud API for accounts, cross-device save sync, and leaderboards. The clients share no runtime code, yet every one of them is held to the same documented set of behavioral invariants and verified by continuous integration. A move never requires the network.
 
 ![Server-Driven UI](https://img.shields.io/badge/Server--Driven%20UI-5A0FC8?style=for-the-badge&logo=json&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
@@ -48,7 +48,7 @@ A polished, accessible, offline-first 2048 puzzle shipped as **three independent
 ![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)
 ![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)
 
-**[▶ Play the web version](https://hoangsonww.github.io/2048-Game/)** · [Download the apps](https://github.com/hoangsonww/2048-Game/releases/latest) · [Rules and strategy](https://hoangsonww.github.io/2048-Game/Web-Version/about.html) · [Report an issue](https://github.com/hoangsonww/2048-Game/issues) · [Contributing](CONTRIBUTING.md) · [Security policy](SECURITY.md)
+**[▶ Play the web version](https://hoangsonww.github.io/2048-Game/)** · [Download the apps](https://github.com/hoangsonww/2048-Game/releases/latest) · [Cloud API docs](https://game-2048-cloud-api.vercel.app/docs) · [Rules and strategy](https://hoangsonww.github.io/2048-Game/Web-Version/about.html) · [Report an issue](https://github.com/hoangsonww/2048-Game/issues) · [Contributing](CONTRIBUTING.md) · [Security policy](SECURITY.md)
 
 ---
 
@@ -61,6 +61,7 @@ A polished, accessible, offline-first 2048 puzzle shipped as **three independent
 - [Controls](#controls)
 - [Behavioral invariants](#behavioral-invariants)
 - [Architecture](#architecture)
+- [Cloud API](#cloud-api)
 - [Server-driven surfaces](#server-driven-surfaces)
 - [Repository map](#repository-map)
 - [Getting started](#getting-started)
@@ -99,11 +100,11 @@ The result is a codebase where you can read one platform's implementation in iso
 
 ## Screenshots
 
-The same round, mid-game, on all three clients. Each is a real capture from the current build — the web shots are produced deterministically by `make screenshots-web`, and the native shots come from a simulator and an emulator.
+The same experience on all three clients. `make screenshots-web` captures the browser states; `make screenshots-mobile` drives a booted iPhone simulator and Android emulator. Both commands promote the reviewed canonical set into `images/`.
 
 | Web | iOS | Android |
 | :---: | :---: | :---: |
-| ![2048 web app showing the editorial layout, score panel, and 4×4 game board](../images/web-version-UI.png) | ![2048 SwiftUI app on an iPhone 17 Pro simulator, showing the board and score cards](../images/IOS-UI.png) | ![2048 Jetpack Compose app on a Pixel 6 emulator, showing the board and score cards](../images/android-ui.png) |
+| ![2048 web app with guest invite, Sign in, leaderboard control, and 4×4 board](../images/web-version-UI.png) | ![2048 SwiftUI app on iPhone with Sign in, leaderboard, help, and guest sync banner](../images/IOS-UI.png) | ![2048 Jetpack Compose app on Pixel with Sign in, leaderboard, and guest account banner](../images/android-ui.png) |
 
 ### Web states
 
@@ -115,7 +116,39 @@ The same round, mid-game, on all three clients. Each is a real capture from the 
 | :---: | :---: |
 | ![The restart confirmation dialog warning that the current round will be replaced](../images/web-restart-dialog.png) | ![The About page describing the rules, strategy, and project details](../images/web-about.png) |
 
-Regenerate every web capture with `make screenshots-web`; output lands in the gitignored `output/playwright/latest/`.
+### Optional cloud surfaces
+
+Guest play, auth, sync, and leaderboards — local-first; an account is never required.
+
+| Guest invite (desktop) | Create account | Sign in |
+| :---: | :---: | :---: |
+| ![Guest banner inviting account creation above the board](../images/web-cloud-guest.png) | ![Create-account dialog with username, email, and password](../images/web-cloud-signup.png) | ![Sign-in dialog with username-or-email and password](../images/web-cloud-signin.png) |
+
+| Handover warning | Reset password | |
+| :---: | :---: | :---: |
+| ![Dialog warning that signing in sets the current round aside](../images/web-cloud-handover.png) | ![Reset dialog asking for username, email, and a new password twice](../images/web-cloud-reset.png) | |
+
+| Signed in | Leaderboard | Account panel |
+| :---: | :---: | :---: |
+| ![Signed-in header and cloud sync status under the board](../images/web-cloud-signed-in.png) | ![Leaderboard dialog with Today / This week / All time periods](../images/web-cloud-leaderboard.png) | ![Account panel with profile summary, sync time, and sign out](../images/web-cloud-account.png) |
+
+| Mobile guest | Mobile create account | Android create account |
+| :---: | :---: | :---: |
+| ![Mobile layout with guest invite and on-screen controls](../images/web-cloud-mobile-guest.png) | ![Mobile create-account dialog](../images/web-cloud-mobile-signup.png) | ![Android Compose create-account bottom sheet](../images/android-cloud-signup.png) |
+
+| Android guest | Android leaderboard | Android sign in |
+| :---: | :---: | :---: |
+| ![Android guest banner above the board](../images/android-cloud-guest.png) | ![Android leaderboard bottom sheet](../images/android-cloud-leaderboard.png) | ![Android sign-in bottom sheet](../images/android-cloud-signin.png) |
+
+| iOS create account | iOS handover warning | iOS password reset |
+| :---: | :---: | :---: |
+| ![iOS create-account sheet with password confirmation](../images/ios-cloud-signup.png) | ![iOS warning that the guest round will be set aside](../images/ios-cloud-handover.png) | ![iOS password-reset sheet](../images/ios-cloud-reset.png) |
+
+| Android handover warning | Android password reset | iOS leaderboard |
+| :---: | :---: | :---: |
+| ![Android warning that the guest round will be set aside](../images/android-cloud-handover.png) | ![Android password-reset bottom sheet](../images/android-cloud-reset.png) | ![iOS leaderboard sheet](../images/ios-cloud-leaderboard.png) |
+
+QA-only output without promotion: `make screenshots-web-qa` writes `output/playwright/latest/`; `make screenshots-mobile-qa` writes `output/mobile/`.
 
 ---
 
@@ -140,12 +173,16 @@ Regenerate every web capture with `make screenshots-web`; output lands in the gi
 | On-screen direction controls | ✅ | — | — |
 | Fullscreen toggle | ✅ | — | — |
 | Haptic feedback | — | ✅ | ✅ |
+| Procedural sound cues with a mute toggle | ✅ | ✅ | ✅ |
+| Separate guest and signed-in rounds on one device | ✅ | ✅ | ✅ |
 | Reduced-motion support | ✅ | ✅ | ✅ |
 | Screen-reader announcements | ✅ | ✅ | ✅ |
 | Vector-only iconography | SVG | SF Symbols | Material vectors |
 | Installable / distributable | PWA | `.app` | `.apk` |
 | Works fully offline | ✅ | ✅ | ✅ |
-| Network calls, accounts, analytics, or telemetry | ❌ | ❌ | ❌ |
+| Optional account, cloud save sync, leaderboards | ✅ | ✅ | ✅ |
+| Password confirmation, per-field reveal, and reset | ✅ | ✅ | ✅ |
+| Mandatory network for a move | ❌ | ❌ | ❌ |
 
 ---
 
@@ -170,6 +207,8 @@ Three practical habits carry most beginners a long way:
 | Move | Arrow keys, `W`/`A`/`S`/`D`, swipe on the board, or the on-screen direction pad | Swipe the board in any direction | Swipe the board in any direction |
 | Undo last move | Undo button | Undo button | Undo button |
 | New game | New game button (confirms first if a round is in progress) | New game button (confirms first) | New game button (confirms first) |
+| Sign in / account | Header account button | Account control | Account control |
+| Leaderboard | Leaderboard button | Leaderboard | Leaderboard |
 | Rules and help | About link | Help button | Help button |
 | Fullscreen | `F` | — | — |
 | Continue past 2048 | "Keep playing" in the win overlay | "Keep playing" | "Keep playing" |
@@ -189,12 +228,14 @@ These are the contract. Every client must satisfy all of them, and each one is c
 5. Reaching 2048 presents a win state that the player may dismiss to continue playing. A full board with no available merge presents game over.
 6. Persisted state is validated on load. Anything structurally invalid — wrong board length, non-power-of-two values, negative scores, malformed JSON — is discarded and replaced with a fresh game rather than crashing or restoring a corrupt board.
 7. Randomness is injectable in every client so tests are fully deterministic, while production always uses unbiased platform randomness.
+8. The guest round and the signed-in round are separate. Signing in warns before taking a round off the screen, parks it untouched, and loads the account's own; signing out restores it exactly, best score included. Career statistics come from the account and are never lifted from local storage.
+9. A sound cue is heard now or dropped. No client queues a cue it cannot play immediately — a backlog arriving seconds after the moves that caused it is worse than silence.
 
 ---
 
 ## Architecture
 
-Three clients, three runtimes, one contract. There is no backend, no shared library, and no network dependency of any kind at runtime.
+Three clients, three runtimes, one contract. There is no shared rules library. Play is local-first: a move never requires the network. An optional Cloud API (`server/`) adds accounts, cross-device sync, and leaderboards — see [docs/backend.md](../docs/backend.md).
 
 | Concern | Web | iOS | Android |
 | --- | --- | --- | --- |
@@ -223,11 +264,26 @@ Deeper detail lives in [`ARCHITECTURE.md`](../ARCHITECTURE.md) for the whole sys
 
 ---
 
+## Cloud API
+
+Optional Express + MongoDB Atlas service for accounts, JWT auth, cross-device save sync, scores, and leaderboards. Live at [game-2048-cloud-api.vercel.app](https://game-2048-cloud-api.vercel.app) — the service root (`/`) redirects to Swagger UI at `/docs`.
+
+| Surface | URL |
+| --- | --- |
+| Swagger UI | [/docs](https://game-2048-cloud-api.vercel.app/docs) |
+| Redoc | [/redoc](https://game-2048-cloud-api.vercel.app/redoc) |
+| Scalar | [/reference](https://game-2048-cloud-api.vercel.app/reference) |
+| OpenAPI JSON | [/openapi.json](https://game-2048-cloud-api.vercel.app/openapi.json) |
+
+Play stays local-first: declining an account leaves the board unchanged. Full contract, sync rules, and local run notes: [`docs/backend.md`](../docs/backend.md). Privacy: [`docs/privacy.md`](../docs/privacy.md).
+
+---
+
 ## Server-driven surfaces
 
-Both native clients ship a **server-driven UI runtime with no server.**
+Both native clients ship a **server-driven UI runtime that does not fetch over the network today.**
 
-Store review takes days. A typo in the help copy should not have to wait that long, and every mature store app solves this by describing the screen with data the app fetches rather than code it ships. This repository's invariant is that there is no backend and no network call — so the runtime is built and the transport deliberately is not. Surfaces are described by JSON, validated, and rendered natively from the app bundle. Adding a publisher later is one new `SurfaceSource` and one line of wiring; the renderer, validator, and every test stay untouched.
+Store review takes days. A typo in the help copy should not have to wait that long, and every mature store app solves this by describing the screen with data rather than code it ships. Help surfaces are described by JSON, validated, and rendered natively from the app bundle — the same contract that could later load from a publisher without rewriting the renderer. The optional Cloud API handles accounts and sync; it does not drive help copy today. Adding a remote surface source later is one new `SurfaceSource` and one line of wiring; the renderer, validator, and every test stay untouched.
 
 **The game is never server-driven.** Board, merging, scoring, and undo are code, and no payload can reach them. What is describable is content — the help sheet today.
 
@@ -262,6 +318,7 @@ Full detail in [`ARCHITECTURE.md`](../ARCHITECTURE.md#server-driven-surfaces).
 ├── Web-Version/
 │   ├── game-engine.js                  Pure deterministic rules engine
 │   ├── script.js                       State, input handling, persistence, DOM
+│   ├── cloud.js / account.js           Optional Cloud API client and account UI
 │   ├── style.css                       Shared visual system and responsive layout
 │   └── about.html                      Rules and strategy guide
 │
@@ -269,17 +326,19 @@ Full detail in [`ARCHITECTURE.md`](../ARCHITECTURE.md#server-driven-surfaces).
 │   ├── Game_2048App.swift              App entry point
 │   ├── GameView.swift                  Responsive native board and controls
 │   ├── GameViewModel.swift             Rules, scoring, undo, persistence
-│   ├── ContentView.swift               Root container
+│   ├── Cloud/                          Optional account, sync, leaderboard
 │   └── Assets.xcassets                 App icons and colors
-├── Game-2048Tests/                     XCTest model tests
+├── Game-2048Tests/                     XCTest model and cloud tests
 ├── Game-2048UITests/                   XCUITest interaction and launch tests
 ├── 2048 Game.xcodeproj                 Xcode project (scheme: Game-2048)
 │
 ├── Android-Version/Game2048/           Jetpack Compose client
-│   ├── app/src/main/java/…             MainActivity, GameViewModel, GameStorage, theme
-│   ├── app/src/test/java/…             JUnit ViewModel tests
+│   ├── app/src/main/java/…             MainActivity, GameViewModel, cloud/, GameStorage, theme
+│   ├── app/src/test/java/…             JUnit ViewModel and cloud tests
 │   ├── app/src/androidTest/java/…      Compose instrumentation tests
 │   └── gradle/libs.versions.toml       Version catalog
+│
+├── server/                             Optional Cloud API (Express + MongoDB Atlas)
 │
 ├── tests/
 │   ├── web/                            Engine, static-metadata, and browser tests
@@ -297,7 +356,7 @@ Full detail in [`ARCHITECTURE.md`](../ARCHITECTURE.md#server-driven-surfaces).
 └── .devcontainer/                      Node 22, JDK 17, Android SDK 34 container
 ```
 
-`output/` is generated locally by the QA and screenshot scripts and is intentionally not versioned — it is fully reproducible with `make test` and `make screenshots-web`.
+`output/` is generated locally by the QA and screenshot scripts and is intentionally not versioned — it is fully reproducible with `make test`, `make screenshots-web`, and `make screenshots-mobile` on a host with both native runtimes.
 
 ---
 
@@ -380,6 +439,8 @@ make screenshots-web
 ```
 
 Output lands in `output/playwright/` (gitignored) covering gameplay, the restart dialog, win, loss, and the About page at both breakpoints.
+
+With an iPhone simulator and Android emulator already booted, refresh the native canonical set with `make screenshots-mobile`. The script installs the current Android APK, captures both clients through accessibility-labelled controls, and exports the iOS frames from XCTest attachments.
 
 ---
 
@@ -479,7 +540,10 @@ Every workflow has a stable `make` entry point. Prefer these over ad-hoc command
 | `make ios-devices` | Lists available iPhone simulators | macOS, Xcode |
 | `make test-ios` | iOS unit and UI tests on an available simulator | macOS, Xcode |
 | `make test` | Every suite this host can support | Varies |
-| `make screenshots-web` | Deterministic desktop and mobile UI captures | Node 22+, Chromium |
+| `make screenshots-web` | Deterministic desktop/mobile + cloud UI captures; promotes into `images/` | Node 22+, Chromium |
+| `make screenshots-web-qa` | Same captures into `output/` only (no promote) | Node 22+, Chromium |
+| `make screenshots-mobile` | iOS/Android game + cloud UI captures; promotes into `images/` | macOS, Xcode, SDK 34, booted simulator + emulator |
+| `make screenshots-mobile-qa` | Same native captures into `output/mobile/` only | Same as above |
 | `make clean-web` | Removes generated coverage and local screenshots | — |
 
 ---
@@ -488,30 +552,37 @@ Every workflow has a stable `make` entry point. Prefer these over ad-hoc command
 
 Coverage is layered deliberately: pure rules logic is tested exhaustively and cheaply, while the expensive browser, simulator, and emulator suites focus on real user flows that unit tests cannot reach.
 
-### Web — 75 tests, 100 % line coverage
+### Web — 253 tests, 100 % line coverage
 
 - **23 deterministic engine tests** against `game-engine.js`, covering all four directions, merge ordering and the single-merge rule, scoring, weighted spawning at its exact boundary, ineffective moves, undo semantics, win and loss predicates, and rejection of structurally invalid boards.
-- **38 controller tests** against `script.js`, run on a hand-written DOM so keyboard, touch, on-screen buttons, rendering, message states, and persistence are all covered without a browser. Includes the gesture-ownership contract: the `touchmove` listener must be non-passive, must suppress scrolling only during a board swipe, and must forget a cancelled gesture.
-- **4 metadata and asset tests** for the manifest, sitemap, `robots.txt`, JSON-LD, and every referenced icon, plus **2 repository-tooling tests** asserting the project structure and npm script surface stay intact.
-- **8 Chromium interaction scenarios** driving the real page: arrow-key play, WASD play, touch swipe, the on-screen direction pad, undo, persistence across reload, restart confirmation, fullscreen, the win overlay, the loss overlay, recovery from a corrupt saved state, and that a board swipe suppresses page scrolling without blocking it anywhere else.
+- **45 controller tests** against `script.js`, run on a hand-written DOM so keyboard, touch, on-screen buttons, rendering, message states, and persistence are all covered without a browser. Includes the gesture-ownership contract: the `touchmove` listener must be non-passive, must suppress scrolling only during a board swipe, and must forget a cancelled gesture.
+- **34 cloud-bridge tests** for the guest and account storage profiles: that signing in parks the guest round rather than uploading it, that signed-in play never writes to the guest slot, and that signing out restores the guest round exactly.
+- **47 cloud-client tests** for auth, token refresh, sync resolutions, password reset, and the rule that career statistics are never lifted from local storage, plus **72 account-surface tests** for the dialogs, the handover warning, password confirmation, and the reveal controls.
+- **13 sound tests** proving a cue is dropped rather than queued whenever it cannot be played now.
+- **5 metadata and asset tests** for the manifest, sitemap, `robots.txt`, JSON-LD, form patterns, and every referenced icon, plus **2 repository-tooling tests** asserting the project structure and npm script surface stay intact.
+- **13 Chromium interaction scenarios** driving the real page: arrow-key play, WASD play, touch swipe, the on-screen direction pad, undo, persistence across reload, restart confirmation, fullscreen, the win overlay, the loss overlay, recovery from a corrupt saved state, board-swipe ownership, real-clock sound timing, account and password flows, and responsive layout from a 320 px phone through tablet widths.
 
-Coverage is **enforced** by `c8` across everything in `Web-Version/`, and the build fails below 100 % statements, 100 % lines, 100 % functions, or 95 % branches. Both files currently reach **100 % statements, lines, and functions with 98.8 % branches**.
+Coverage is **enforced** by `c8` across everything in `Web-Version/`, and the build fails below 100 % statements, 100 % lines, 100 % functions, or 95 % branches. It currently reaches **100 % statements, lines, and functions with 95.1 % branches**.
 
-### iOS — 89 tests, 95.5 % line coverage
+### iOS — 183 tests, 95.1 % domain line coverage
 
 - **80 deterministic model, surface, and render tests** covering every direction, merge ordering, scoring, spawn distribution and index clamping, restart, undo depth and win-state rewind, persistence round-trips, best-score retention, win and loss detection, and rejection of every shape of invalid saved state.
-- **9 XCUITest simulator tests** covering the help sheet, swipe gestures, the restart confirmation dialog, accessibility identifiers and labels, end-state recovery flows, launch performance, and that a vertical board swipe reaches the board without moving the screen. The suite reports ten executions because the launch test runs once per appearance mode.
+- **16 profile and sound tests** covering guest / account separation, the career-best seed, and the cue renderer's envelope and pitch slide.
+- **74 cloud tests** across the API client, the controller state machine, the token store, and the wire models — including password reset, every unexpected-failure path, and the rule that career statistics come from the account alone.
+- **12 XCUITest simulator tests** covering the help sheet, swipe gestures, the restart confirmation dialog, accessibility identifiers and labels, end-state recovery flows, launch performance, the account and reset sheets, the password confirmation and reveal controls, the sign-in handover warning, and that a vertical board swipe reaches the board without moving the screen. The suite reports thirteen executions because the launch test runs once per appearance mode.
 
-Coverage is **enforced**: `scripts/test-ios.sh` reads the `.xcresult` with `xccov` and fails below 90 % line coverage of the app target, currently **99.4 %**.
+Coverage is **enforced**: `scripts/test-ios.sh` reads the `.xcresult` with `xccov` and fails below 90 % line coverage of stable app/domain code, currently **95.1 %**. `GameView.swift` and `CloudViews.swift` are exercised by the simulator suite instead: Xcode versions expose different generated executable-line counts for SwiftUI view builders, so including them would make the same source pass or fail according to the installed compiler.
 
-### Android — 80 tests, 97.6 % domain line coverage
+### Android — 213 tests, 97.2 % domain line coverage
 
-- **33 deterministic ViewModel tests** proving the same rules and persistence contract as the other two clients.
+- **49 deterministic ViewModel tests** proving the same rules and persistence contract as the other two clients, including the guest / account profile separation and the career-best seed.
 - **33 server-driven surface tests** covering decoding, version gating, node pruning, source fallback, and the rule that every failure mode ends at the app's own native UI.
-- **9 storage tests** covering `SharedPreferencesGameStorage` serialisation against an in-memory `SharedPreferences`, including truncated, non-numeric, and empty saved grids.
-- **5 Compose instrumentation tests** on an API 34 emulator covering the help sheet, swipe and undo, restart confirmation, and win/loss recovery.
+- **11 storage tests** covering `SharedPreferencesGameStorage` serialisation against an in-memory `SharedPreferences`, including truncated, non-numeric, and empty saved grids, and that the guest and account slots cannot see each other.
+- **80 cloud tests** across the API client, the controller state machine, and the token store — including password reset and the rule that career statistics come from the account alone.
+- **6 sound tests** proving a flood of cues is capped rather than buffered, and that an unavailable audio device costs the game nothing.
+- **20 Compose instrumentation tests** on an API 34 emulator covering the help sheet, swipe and undo, restart confirmation, win/loss recovery, the guest invite, the account surface, the sign-in destination, the sign-in handover warning, and the password confirmation, reveal, and reset flows.
 
-Coverage is **enforced** by JaCoCo: `make test-android` fails below 90 % line or 85 % branch coverage of the Kotlin rules engine and storage, currently **99.2 % lines and 91.3 % branches**. `MainActivity` is Compose and is measured by the device suite instead.
+Coverage is **enforced** by JaCoCo: `make test-android` fails below 90 % line or 85 % branch coverage of the Kotlin rules engine and storage, currently **97.2 % lines and 85.7 % branches**. `MainActivity` and `CloudUi` are Compose and are measured by the device suite instead.
 
 ### Static and repository checks
 
@@ -641,13 +712,13 @@ Accessibility is treated as a behavioral requirement, not a finishing touch, and
 
 ## Privacy and data handling
 
-The honest version, which is short: **nothing leaves your device.**
+**Local-first by default.** Without an account, nothing leaves your device.
 
-- No accounts, no sign-in, no user identifiers.
-- No analytics, telemetry, crash reporting, or advertising SDKs.
-- No backend, no API calls, no remote storage.
-- Game state lives in `localStorage` on web, `UserDefaults` on iOS, and `SharedPreferences` on Android — all local to the device and removable by clearing site data or deleting the app.
-- The only outbound request the web client makes is to Google Fonts for the display typeface, and the app remains fully playable if that request is blocked.
+- No analytics SDK, advertising SDK, or crash reporter.
+- Game state lives in `localStorage` on web, `UserDefaults` on iOS, and `SharedPreferences` on Android — removable by clearing site data or deleting the app.
+- The only non-game outbound request the web client may make is Google Fonts for the display typeface; the app remains fully playable if that request is blocked.
+
+**Optional account.** Creating an account enables cross-device save sync, scores, and leaderboards against the Cloud API. Declining the invitation leaves play unchanged. Details: [docs/privacy.md](../docs/privacy.md) and [docs/backend.md](../docs/backend.md).
 
 ---
 
@@ -700,7 +771,7 @@ Issue forms for [bug reports](https://github.com/hoangsonww/2048-Game/issues/new
 
 ## Security
 
-The clients are static, offline, and store no credentials, so the attack surface is small — but reports are still taken seriously. Please review [`SECURITY.md`](SECURITY.md) for the disclosure process, and do not open a public issue for a suspected vulnerability.
+The clients are local-first and play without an account. The optional Cloud API adds auth and sync — see [`SECURITY.md`](SECURITY.md) for the disclosure process. Do not open a public issue for a suspected vulnerability.
 
 ---
 

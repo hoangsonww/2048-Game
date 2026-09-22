@@ -13,4 +13,4 @@ The board's `detectDragGestures` must consume each `PointerInputChange`. The roo
 
 No JDK is required: Gradle provisions its own from `gradle/gradle-daemon-jvm.properties`. Use the `make android-*` targets or `Scripts`-equivalent wrappers rather than calling `./gradlew` or `adb` bare — `adb` is not on `PATH` after a default Android Studio install.
 
-Run `make test-android` for every change. When UI behavior changes and a device is available, run `make test-android-device`, inspect logcat for app exceptions, and manually review gameplay, help, restart, win, and loss states. `make android-run` builds, installs, and launches in one step.
+Run `make test-android` for every change. Optional cloud code lives under `…/cloud/`; JaCoCo excludes `CloudUi` and covers `CloudApi` / `CloudController` with fake-transport JVM tests. When UI behavior changes and a device is available, run `make test-android-device`, inspect logcat for app exceptions, and manually review gameplay, help, restart, win, and loss states. `make android-run` builds, installs, and launches in one step.

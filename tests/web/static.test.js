@@ -19,8 +19,14 @@ test("web entry contains complete SEO and social metadata", () => {
     const structuredData = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
         .map(match => JSON.parse(match[1]));
     assert.equal(structuredData.length > 0, true);
-    assert.match(JSON.stringify(structuredData), /"VideoGame"/);
-    assert.match(JSON.stringify(structuredData), /"HowTo"/);
+    const graph = structuredData.flatMap(item => item["@graph"] ?? [item]);
+    const application = graph.find(item => (Array.isArray(item["@type"]) ? item["@type"] : [item["@type"]]).includes("SoftwareApplication"));
+    assert.ok(application, "the playable app should have SoftwareApplication metadata");
+    assert.equal(application.offers?.price, "0");
+    assert.equal(application.applicationCategory, "GameApplication");
+    assert.ok(graph.some(item => item["@type"] === "HowTo"));
+    const faq = graph.find(item => item["@type"] === "FAQPage");
+    assert.equal(faq?.mainEntity?.length, (html.match(/class="faq-item"/g) ?? []).length, "visible FAQs and FAQ metadata must stay aligned");
 });
 
 test("manifest, sitemap, robots, and referenced icon assets are valid", () => {
@@ -41,7 +47,10 @@ test("manifest, sitemap, robots, and referenced icon assets are valid", () => {
         assert.equal(screenshot.sizes, declared, `${screenshot.src} is ${declared}, manifest says ${screenshot.sizes}`);
     }
     assert.match(read("robots.txt"), /Sitemap: https:\/\//);
-    assert.match(read("sitemap.xml"), /<urlset/);
+    const sitemap = read("sitemap.xml");
+    assert.match(sitemap, /<urlset/);
+    assert.ok(sitemap.includes('xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"'));
+    assert.doesNotMatch(sitemap, /<image:title>/, "Google deprecated image:title; only advertise image locations");
     for (const asset of [
         "images/favicon.svg", "images/favicon.ico", "images/brand-mark.svg",
         "images/share-card.png", "images/2048-192x192.png", "images/2048-512x512.png"
@@ -58,15 +67,37 @@ test("About page, LLM discovery, error page, and contributor metadata are comple
     assert.match(llms, /llms-full\.txt/);
     assert.match(read("llms-full.txt"), /## Interface map/);
     assert.match(read("404.html"), /noindex, follow/);
-    assert.match(read("humans.txt"), /No accounts, analytics/);
+    assert.match(read("humans.txt"), /Local-first play; optional account/);
+    assert.match(read("humans.txt"), /No analytics or advertising SDKs/);
+    assert.match(read("llms-full.txt"), /Cloud API/);
+    assert.match(read("index.html"), /cloud\.js/);
+    assert.match(read("index.html"), /account\.js/);
 });
 
 test("interactive controls use vector SVG icons instead of text glyphs", () => {
     const html = read("index.html");
-    for (const id of ["undoButton", "newGameButton"]) {
+    for (const id of ["undoButton", "newGameButton", "soundButton"]) {
         const button = html.match(new RegExp(`<button[^>]*id="${id}"[\\s\\S]*?</button>`))?.[0];
         assert.ok(button, `${id} should exist`);
         assert.match(button, /<svg[^>]*viewBox="0 0 24 24"/);
-        assert.doesNotMatch(button, /[↻↶↷←→↑↓⟲⟳]/);
+        assert.doesNotMatch(button, /[↻↶↷←→↑↓⟲⟳🔊🔇]/);
+    }
+    assert.match(html, /sounds\.js/);
+    // The muted glyph is swapped via CSS; an HTML `hidden` attribute would
+    // win over `.icon-button--muted .solid-icon--sound-off { display:block }`.
+    const mutedIcon = html.match(/<svg class="solid-icon solid-icon--sound-off"[^>]*>/)?.[0];
+    assert.ok(mutedIcon, "muted sound icon should exist");
+    assert.doesNotMatch(mutedIcon, /(?:^|\s)hidden(?:\s|=|>)/);
+});
+
+test("every form pattern compiles under the unicodeSets regex flag", () => {
+    // Chrome applies `v` semantics to `pattern`, where an unescaped `-` in a
+    // character class is a syntax error. A pattern that fails to compile is
+    // not a loose pattern — it is no validation at all, silently.
+    const html = read("index.html");
+    const patterns = [...html.matchAll(/\spattern="([^"]+)"/g)].map(match => match[1]);
+    assert.ok(patterns.length > 0, "there should be at least one pattern to check");
+    for (const pattern of patterns) {
+        assert.doesNotThrow(() => new RegExp(`^(?:${pattern})$`, "v"), `pattern ${pattern} must compile`);
     }
 });

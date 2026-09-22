@@ -50,8 +50,10 @@ kbd svg, .mobile-controls svg, .dialog-icon svg { width: 1rem; height: 1rem; fil
 .score-card span { display: block; margin-bottom: .15rem; color: var(--muted); font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .score-card--primary span { color: #bdb8ae; }
 .score-card strong { font: 500 clamp(1.45rem, 4vw, 1.85rem) "DM Mono", monospace; letter-spacing: -.06em; }
-.game-actions { display: grid; grid-template-columns: repeat(2, 3.25rem); gap: .45rem; }
-.icon-button { display: grid; place-items: center; border: 1px solid var(--line); border-radius: var(--radius-small); color: var(--ink); background: var(--white); cursor: pointer; transition: transform .2s ease, border-color .2s ease, background .2s ease; }
+.game-actions { display: grid; grid-template-columns: repeat(3, 3.25rem); gap: .45rem; }
+/* A floor, not a size: the grid still stretches these, but a narrow viewport
+   can no longer squash them below a comfortable tap target. */
+.icon-button { min-width: 2.75rem; min-height: 2.75rem; display: grid; place-items: center; border: 1px solid var(--line); border-radius: var(--radius-small); color: var(--ink); background: var(--white); cursor: pointer; transition: transform .2s ease, border-color .2s ease, background .2s ease; }
 .icon-button svg { width: 1.35rem; height: 1.35rem; display: block; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .icon-button svg.solid-icon, .dialog-icon svg.solid-icon { fill: currentColor; stroke: none; }
 .icon-button:hover:not(:disabled) { border-color: var(--ink); transform: translateY(-2px); }
@@ -84,13 +86,32 @@ kbd svg, .mobile-controls svg, .dialog-icon svg { width: 1rem; height: 1rem; fil
 .message-actions { display: flex; gap: .55rem; align-items: center; }
 @keyframes fade-in { from { opacity: 0; } }
 .button { min-height: 2.85rem; padding: .7rem 1.1rem; border: 0; border-radius: .55rem; font-weight: 700; cursor: pointer; transition: transform .2s ease, background .2s ease; }
-.button:hover { transform: translateY(-1px); }
-.button:active { transform: translateY(1px) scale(.98); }
+.button:hover:not(:disabled) { transform: translateY(-1px); }
+.button:active:not(:disabled) { transform: translateY(1px) scale(.98); }
+.button:disabled { opacity: .62; cursor: wait; }
 .button--primary { color: white; background: var(--accent); }
-.button--primary:hover { background: var(--accent-dark); }
+.button--primary:hover:not(:disabled) { background: var(--accent-dark); }
 .button--text { color: inherit; background: transparent; }
 .mobile-controls { display: none; }
-.status-line { min-height: 1.35rem; margin: .8rem 0 0; color: var(--muted); font-size: .78rem; text-align: center; }
+/* The two live regions under the board read as one block: same alignment,
+   same weight, the sync line quieter than the move announcement above it.
+   Left-aligned and louder, the sync line looked like a caption that had come
+   loose from something else. */
+.status-line { min-height: 1.35rem; margin: 1.1rem 0 0; color: var(--muted); font-size: .78rem; text-align: center; }
+.faq-section { width: min(100% - 2rem,75rem); margin: 0 auto 7rem; padding-top: 6rem; border-top: 1px solid var(--line); display: grid; grid-template-columns: .75fr 1fr; gap: clamp(3rem,8vw,8rem); }
+.faq-section h2 { margin: 0; font-size: clamp(2.8rem,6vw,5rem); line-height: .95; letter-spacing: -.06em; }
+.faq-list { display: block; }
+.faq-item { border-top: 1px solid var(--line); }
+.faq-item:last-child { border-bottom: 1px solid var(--line); }
+/* The whole row is the control, and the padding is what makes it a
+   comfortable tap target rather than a 23px sliver of text. */
+.faq-item summary { padding: 1.15rem 0; display: flex; align-items: baseline; gap: .9rem; min-height: 2.75rem; cursor: pointer; list-style: none; }
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::after { content: "+"; margin-left: auto; color: var(--accent); font: 500 1.25rem "DM Mono", monospace; line-height: 1; }
+.faq-item[open] summary::after { content: "\2013"; }
+.faq-item summary h3 { margin: 0; font-size: 1.15rem; font-weight: 600; letter-spacing: -.01em; }
+.faq-item summary:focus-visible { outline: 3px solid rgba(233,99,69,.48); outline-offset: 4px; }
+.faq-item p { margin: -.2rem 0 1.25rem; color: var(--muted); line-height: 1.6; max-width: 60ch; }
 .guide-section { width: min(100% - 2rem,75rem); margin: 0 auto 7rem; padding-top: 6rem; border-top: 1px solid var(--line); display: grid; grid-template-columns: .75fr 1fr; gap: clamp(3rem,8vw,8rem); }
 .guide-section h2 { margin: 0; font-size: clamp(2.8rem,6vw,5rem); line-height: .95; letter-spacing: -.06em; }
 .steps { margin: 0; padding: 0; list-style: none; }
@@ -104,7 +125,7 @@ footer p { margin: 0; }
 footer div { display: flex; gap: 1.5rem; }
 .confirm-dialog { width: min(calc(100% - 2rem),25rem); padding: 0; border: 0; border-radius: var(--radius-large); color: var(--ink); background: var(--white); box-shadow: 0 2rem 6rem rgba(40,33,24,.32); }
 .confirm-dialog::backdrop { background: rgba(36,35,31,.55); backdrop-filter: blur(.25rem); }
-.confirm-dialog form { padding: 2rem; text-align: center; }
+.confirm-dialog form, .confirm-dialog .dialog-body { padding: 2rem; text-align: center; }
 .dialog-icon { width: 3rem; height: 3rem; margin: 0 auto 1rem; display: grid; place-items: center; border-radius: .8rem; color: var(--accent); background: #fbe2da; }
 .dialog-icon svg { width: 1.35rem; height: 1.35rem; }
 .confirm-dialog h2 { margin: 0; font-size: 1.55rem; letter-spacing: -.035em; }
@@ -119,16 +140,16 @@ footer div { display: flex; gap: 1.5rem; }
     .intro-copy { margin-inline: auto; }
     .desktop-hint { display: none; }
     .game-panel { max-width: 32rem; margin-inline: auto; }
-    .guide-section { grid-template-columns: 1fr; gap: 2.5rem; }
+    .guide-section, .faq-section { grid-template-columns: 1fr; gap: 2.5rem; }
 }
 @media (max-width: 540px) {
-    .site-header, footer, .game-layout, .guide-section { width: min(100% - 1.25rem,75rem); }
+    .site-header, footer, .game-layout, .guide-section, .faq-section { width: min(100% - 1.25rem,75rem); }
     .header-links a:first-child { display: none; }
     .game-layout { padding-top: 2rem; gap: 2.25rem; }
     .eyebrow { font-size: .7rem; }
     .intro-copy { margin-top: 1.35rem; font-size: .98rem; }
     .score-row { grid-template-columns: 1fr 1fr; }
-    .game-actions { grid-column: 1 / -1; grid-template-columns: 1fr 1fr; }
+    .game-actions { grid-column: 1 / -1; grid-template-columns: repeat(3, 1fr); }
     .icon-button { min-height: 2.75rem; }
     .mobile-controls { margin-top: .85rem; display: flex; flex-direction: column; align-items: center; gap: .28rem; }
     .mobile-controls span { display: flex; gap: .28rem; }
@@ -137,6 +158,136 @@ footer div { display: flex; gap: 1.5rem; }
     .guide-section { margin-bottom: 4rem; padding-top: 4rem; }
     footer { align-items: flex-start; gap: 1.5rem; flex-direction: column; }
 }
+/* --- Cloud account, sync, and leaderboard -------------------------------
+   Every rule below styles an optional surface. None of it is load-bearing for
+   the board: with the cloud scripts removed the markup is absent and the game
+   renders exactly as it did before accounts existed. */
+.account-button { display: inline-flex; gap: .5rem; align-items: center; min-height: 2.4rem; padding: .45rem .85rem; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); background: var(--white); font: 600 .88rem "Outfit", sans-serif; cursor: pointer; transition: border-color .2s ease, transform .2s ease; }
+.account-button:hover { border-color: var(--ink); transform: translateY(-1px); }
+.account-button svg { width: 1.05rem; height: 1.05rem; fill: currentColor; stroke: none; }
+.account-button span { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.icon-button--ghost { border-color: transparent; background: transparent; }
+.icon-button .solid-icon--sound-off { display: none; }
+.icon-button--muted .solid-icon--sound-on { display: none; }
+.icon-button--muted .solid-icon--sound-off { display: block; }
+
+/* Guest invite is a floating toast — never in the game column, never pushes the board. */
+.cloud-toast {
+    position: fixed;
+    z-index: 40;
+    left: 50%;
+    bottom: max(1.25rem, env(safe-area-inset-bottom, 0px) + .75rem);
+    width: min(calc(100% - 1.5rem), 28rem);
+    padding: .95rem 1.1rem;
+    display: flex;
+    gap: .85rem;
+    align-items: center;
+    flex-wrap: wrap;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius-small);
+    background: var(--white);
+    box-shadow: 0 12px 40px rgba(35, 31, 24, .14);
+    transform: translateX(-50%) translateY(0);
+    animation: cloud-toast-in .35s ease-out;
+}
+.cloud-toast[hidden] { display: none; }
+.cloud-toast__text { flex: 1 1 12rem; min-width: 0; }
+.cloud-toast__text strong { display: block; font-size: .95rem; }
+.cloud-toast__text p { margin: .25rem 0 0; color: var(--muted); font-size: .85rem; line-height: 1.45; }
+.cloud-banner__short { display: none; }
+.cloud-toast__actions { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; }
+.cloud-toast__actions .icon-button--ghost { min-width: 2.35rem; min-height: 2.35rem; }
+.cloud-toast__actions .button { min-height: 2.35rem; padding: .5rem .85rem; font-size: .85rem; }
+@keyframes cloud-toast-in {
+    from { opacity: 0; transform: translateX(-50%) translateY(.75rem); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.cloud-status { margin: .2rem 0 0; color: var(--muted); font-size: .74rem; line-height: 1.45; text-align: center; opacity: .82; }
+.cloud-status.is-busy,
+.cloud-panel__muted.is-busy,
+.button.is-busy { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; }
+.cloud-status.is-busy::before,
+.cloud-panel__muted.is-busy::before,
+.button.is-busy::before {
+    content: "";
+    width: .85em;
+    height: .85em;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    flex: none;
+    animation: cloud-spin .7s linear infinite;
+}
+@keyframes cloud-spin { to { transform: rotate(360deg); } }
+
+.cloud-dialog { width: min(calc(100% - 2rem), 27rem); }
+.cloud-dialog--wide { width: min(calc(100% - 2rem), 34rem); }
+.cloud-dialog { position: relative; }
+.cloud-form { position: relative; }
+.cloud-dialog__close { position: absolute; top: .65rem; right: .65rem; z-index: 1; }
+.dialog-actions--stack { flex-direction: column-reverse; align-items: stretch; }
+.dialog-actions--stack .button { width: 100%; }
+@media (min-width: 28rem) {
+    .dialog-actions--stack { flex-direction: row; justify-content: stretch; }
+    .dialog-actions--stack .button { width: auto; flex: 1; }
+}
+.cloud-panel { padding: 2rem; text-align: center; }
+.cloud-panel h2 { margin: 0; font-size: 1.55rem; letter-spacing: -.035em; }
+.cloud-panel__muted { margin: .4rem 0 0; color: var(--muted); font-size: .88rem; }
+.cloud-panel__summary { margin: .8rem 0 0; font-size: .95rem; font-weight: 600; }
+.cloud-form { text-align: left !important; }
+.cloud-form h2, .cloud-form > p { text-align: center; }
+.cloud-form__error { margin: 0 0 1rem !important; padding: .6rem .8rem; border-radius: .5rem; color: #8c2c17; background: #fbe2da; font-size: .86rem; text-align: left; }
+.cloud-form__error[hidden] { display: none; }
+.cloud-field { margin-bottom: .9rem; display: flex; flex-direction: column; gap: .3rem; }
+.cloud-field[hidden] { display: none; }
+.cloud-field label { font-size: .82rem; font-weight: 700; letter-spacing: .01em; }
+.cloud-field input { min-height: 2.7rem; padding: .55rem .75rem; border: 1px solid var(--line); border-radius: .5rem; color: var(--ink); background: var(--paper); font: 500 .95rem "Outfit", sans-serif; }
+.cloud-field input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.cloud-field__hint { color: var(--muted); font-size: .76rem; }
+/* The reveal control sits inside the field, so the input keeps its own
+   focus ring and the button never changes the row's height. */
+.cloud-field__control { position: relative; display: flex; }
+.cloud-field__control input { width: 100%; padding-right: 2.9rem; }
+.reveal-button { position: absolute; top: 50%; right: .35rem; width: 2.1rem; height: 2.1rem; padding: 0; display: grid; place-items: center; transform: translateY(-50%); border: 0; border-radius: .4rem; color: var(--muted); background: transparent; cursor: pointer; }
+.reveal-button:hover { color: var(--ink); background: rgba(36,35,31,.07); }
+.reveal-button .solid-icon { width: 1.15rem; height: 1.15rem; display: block; fill: currentColor; stroke: none; }
+.reveal-button .solid-icon--reveal-off { display: none; }
+.reveal-button[aria-pressed="true"] .solid-icon--reveal-on { display: none; }
+.reveal-button[aria-pressed="true"] .solid-icon--reveal-off { display: block; }
+.button--link { width: 100%; margin-top: .4rem; padding: .5rem; color: var(--muted); background: transparent; font-size: .85rem; text-decoration: underline; text-underline-offset: .25em; }
+.button--link:hover { color: var(--ink); }
+
+.period-row { margin: 1.1rem 0; display: flex; gap: .4rem; justify-content: center; flex-wrap: wrap; }
+.period-button { min-height: 2.2rem; padding: .4rem .85rem; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: var(--white); font: 600 .82rem "Outfit", sans-serif; cursor: pointer; }
+.period-button[aria-pressed="true"] { color: var(--white); background: var(--ink); border-color: var(--ink); }
+.period-button:disabled { opacity: .55; cursor: wait; }
+
+.leaderboard-list { margin: 0; padding: 0; max-height: 22rem; overflow-y: auto; list-style: none; text-align: left; }
+.leaderboard-row { padding: .6rem .5rem; display: grid; grid-template-columns: 2.6rem 1fr auto auto; gap: .6rem; align-items: baseline; border-bottom: 1px solid var(--line); }
+.leaderboard-row:last-child { border-bottom: 0; }
+.leaderboard-row--you { border-radius: .5rem; background: #fbe2da; }
+.leaderboard-rank { color: var(--muted); font: 600 .85rem "DM Mono", monospace; }
+.leaderboard-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .92rem; font-weight: 600; }
+.leaderboard-tile { color: var(--muted); font: 500 .78rem "DM Mono", monospace; }
+.leaderboard-score { font: 700 .98rem "DM Mono", monospace; letter-spacing: -.03em; }
+
+@media (max-width: 540px) {
+    .account-button span { display: none; }
+    .account-button { padding: .45rem .55rem; }
+    .cloud-toast { padding: .75rem .85rem; gap: .6rem; flex-direction: column; align-items: stretch; bottom: max(1rem, env(safe-area-inset-bottom, 0px) + .5rem); }
+    .cloud-toast__text { flex: 0 0 auto; }
+    .cloud-banner__long { display: none; }
+    .cloud-banner__short { display: inline; }
+    .cloud-toast__actions { width: 100%; }
+    .cloud-toast__actions .button:first-child { flex: 1; }
+    .leaderboard-row { grid-template-columns: 2.2rem 1fr auto; }
+    .leaderboard-tile { display: none; }
+}
+
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
 
 .about-page { width: min(100% - 2rem, 75rem); margin-inline: auto; }

@@ -69,7 +69,7 @@ Any change to game rules or user-facing behavior should load `2048-cross-platfor
 - **Preserve existing user changes in a dirty working tree.** Never reset, discard, stash, or rewrite unrelated work.
 - **Treat audit, diagnosis, review, and test-only requests as read-only** unless implementation is explicitly requested.
 - **Never claim an unavailable runtime passed.** If `make doctor` reports no Xcode, say the iOS suite could not run — do not infer it from the Android result.
-- **Keep game state local.** No backend, analytics, accounts, remote storage, or network calls without explicit product direction.
+- **Keep game state local-first.** The optional Cloud API (`server/`) is the approved account / sync / leaderboard path. Do not add analytics SDKs, advertising, or mandatory network calls for a move without explicit product direction.
 - **Keep source deterministic** where tests inject a random tile provider.
 - **Do not edit generated Xcode project identifiers or Gradle wrapper binaries** unless the task requires it.
 - **Never commit** `local.properties`, signing files, tokens, build output, `output/` QA artifacts, or local simulator data. `.gitignore` covers these; do not force-add past it.

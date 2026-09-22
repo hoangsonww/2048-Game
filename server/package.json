@@ -1,0 +1,39 @@
+{
+  "name": "2048-cloud-api",
+  "version": "2.1.0",
+  "description": "Cloud API for the 2048 game: accounts, cross-device saves, scores, leaderboards, achievements, and statistics.",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "author": "Son Nguyen",
+  "engines": {
+    "node": ">=22"
+  },
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env src/server.js",
+    "dev": "node --env-file-if-exists=.env --watch src/server.js",
+    "check": "node scripts/validate-openapi.mjs",
+    "openapi": "node scripts/emit-openapi.mjs",
+    "postman": "node scripts/emit-postman.mjs",
+    "test": "NODE_ENV=test node --test \"tests/unit/*.test.js\"",
+    "test:integration": "NODE_ENV=test node --env-file-if-exists=.env --test --test-concurrency=1 \"tests/integration/*.test.js\"",
+    "smoke": "node scripts/smoke.mjs",
+    "test:all": "npm run check && npm test && npm run test:integration"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "compression": "^1.7.5",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "js-yaml": "^4.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.5",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "supertest": "^7.0.0"
+  }
+}

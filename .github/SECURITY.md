@@ -6,7 +6,9 @@ Security fixes target the latest commit on the default branch. Historical releas
 
 ## Architecture and data
 
-The web client is a static application hosted on GitHub Pages. The web, iOS, and Android clients have no project-operated backend, authentication system, analytics pipeline, file upload, or payment flow. Game state and the best score remain in browser or device-local storage.
+The web client is a static application hosted on GitHub Pages. Play is local-first on web, iOS, and Android: the active round and best score always live in browser or device-local storage, and a move never requires the network.
+
+An optional Cloud API (`server/`, deployed at [game-2048-cloud-api.vercel.app](https://game-2048-cloud-api.vercel.app); `/` redirects to `/docs`) provides accounts, JWT auth, cross-device save sync, scores, and leaderboards. There is no analytics pipeline, advertising SDK, file upload, or payment flow. See [docs/privacy.md](../docs/privacy.md) and [docs/backend.md](../docs/backend.md).
 
 ## Report a vulnerability privately
 
@@ -16,4 +18,4 @@ The maintainer will acknowledge actionable reports when available, investigate i
 
 ## Scope
 
-Useful reports include unsafe state handling, script injection in the web client, exposed credentials or signing material, malicious dependency behavior, and platform permission issues. Generic automated scan output without a reproducible impact may be closed as informational.
+Useful reports include unsafe state handling, script injection in the web client, auth or sync flaws in the Cloud API, exposed credentials or signing material, malicious dependency behavior, and platform permission issues. Generic automated scan output without a reproducible impact may be closed as informational.

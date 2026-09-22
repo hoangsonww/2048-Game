@@ -29,11 +29,12 @@ Two consequences follow, and both are deliberate:
 
 | Platform | Deterministic tests | UI / integration tests | Runner | Line coverage |
 | --- | --- | --- | --- | --- |
-| Web | 65 engine, controller, metadata, and asset tests + 2 tooling tests | 8 Chromium scenarios | Node test runner, Playwright | 100 % |
-| iOS | 80 model, surface, and render tests | 9 XCUITest flows | XCTest | 95.5 % |
-| Android | 75 ViewModel, storage, and surface tests | 5 Compose instrumentation tests | JUnit 4, Compose UI Test | 97.6 % (domain) |
+| Web | 238 engine, controller, cloud, sound, metadata, and asset tests + 2 tooling tests | 13 Chromium scenarios | Node test runner, Playwright | 100 % |
+| iOS | 170 model/surface/cloud/profile tests | 13 XCUITest executions | XCTest | 95.1 % domain (gated at 90 %) |
+| Android | 193 ViewModel, storage, sound, and surface tests | 20 Compose instrumentation tests | JUnit 4, Compose UI Test | 97.2 % (domain) |
+| Cloud API | 76 unit tests | 27 integration tests against a real MongoDB | Node test runner, supertest | — |
 
-The iOS UI suite reports ten executions because the launch test runs once per appearance mode.
+The iOS UI suite reports one extra execution because the launch test runs once per appearance mode. The Cloud API integration suite is skipped unless `MONGODB_TEST_URI` is set; see [backend.md](backend.md#local-development).
 
 All three deterministic suites prove the same behavioral contract from [`architecture.md`](architecture.md): every direction, merge ordering and the single-merge rule, scoring, weighted spawning, ineffective moves, undo semantics, restart, best-score retention, win and loss predicates, and rejection of invalid saved state.
 
@@ -43,6 +44,9 @@ Each platform additionally covers the layer above its rules engine:
 - **iOS** — persistence round-trips, spawn-index clamping, and corrupt `UserDefaults` payloads.
 - **Android** — `SharedPreferencesGameStorage` serialisation against an in-memory `SharedPreferences`.
 - **Both native clients** — the server-driven surface layer: decoding, version gating, node pruning, source fallback, and the rule that every failure mode ends at the app's own native UI. The shipped `help.json` payload is validated like any other untrusted input, and a test asserts the iOS and Android copies have not drifted apart.
+- **Cloud clients (all three platforms)** — fake-transport unit tests for auth, token refresh, sync resolutions, and the guest-prompt / controller state machine. The live API is covered by `server/` unit and integration suites, not by device tests.
+- **Guest and account profiles (all three platforms)** — that signing in parks the guest round rather than uploading it, that playing signed in never writes to the guest slot, that signing out restores the guest round byte for byte, and that career statistics are never lifted from local storage. See [Profile separation](#profile-separation).
+- **Sound (all three platforms)** — that cues are dropped rather than queued when they cannot be played now. See [Sound timing](#sound-timing).
 
 Every suite enforces its own coverage floor; see the platform sections below.
 
@@ -75,7 +79,7 @@ make test-web                     # or: npm test
 
 The controller is an IIFE that reads the document once on load, so `tests/web/helpers/fake-dom.js` stands in for the page: it captures the elements the controller looks up, records the listeners it registers, and lets a test fire a keypress, a swipe, or a click and read the result back. Each `loadController()` call re-requires the module, so tests never share state. The globals it installs are restored around every interaction, which is what keeps two loaded controllers independent.
 
-The eight Chromium scenarios cover arrow-key play, WASD play, touch swipe, the on-screen direction pad, undo, persistence across reload, restart confirmation, fullscreen, the win overlay, the loss overlay, recovery from a corrupt saved state, and that a board swipe suppresses page scrolling without blocking it elsewhere.
+The thirteen Chromium scenarios cover arrow-key play, WASD play, touch swipe, the on-screen direction pad, undo, persistence across reload, restart confirmation, fullscreen, the win overlay, the loss overlay, recovery from a corrupt saved state, sound timing, account and password flows, and responsive layout from a 320 px phone through tablet widths.
 
 Browser tests drive the page through real input events and read state back through `window.render_game_to_text()`. Keep that hook accurate when the state shape changes, or the browser suite silently loses its assertions.
 
@@ -83,9 +87,10 @@ Screenshots:
 
 ```bash
 make screenshots-web
+make screenshots-mobile       # requires booted iOS + Android runtimes
 ```
 
-Captures deterministic desktop and mobile views of gameplay, the restart dialog, win, loss, and the About page into `output/playwright/`. That directory is gitignored — it is local verification evidence, fully reproducible on demand, and must not be committed.
+`make screenshots-web` captures deterministic desktop and mobile views of gameplay, the restart dialog, win, loss, About, and the cloud surfaces. `make screenshots-mobile` drives the native clients through accessibility-labelled controls and promotes their game, guest, auth, handover, reset, and leaderboard states. The QA-only variants keep reproducible evidence under `output/playwright/latest/` and `output/mobile/`; those directories are gitignored and must not be committed.
 
 ## iOS
 
@@ -97,9 +102,9 @@ Requires macOS with Xcode. The script selects an available iPhone simulator auto
 
 Model tests and UI tests run as separate targets (`Game-2048Tests` and `Game-2048UITests`) so a UI-harness failure never masks a rules regression. Preserve the `.xcresult` bundle when diagnosing a failure — it carries the failure screenshots, the full test log, and coverage data that the console output does not.
 
-**Coverage is a hard gate.** After the run, `scripts/test-ios.sh` reads the `.xcresult` with `xccov` and fails below 90 % line coverage of the `Game-2048.app` target, which currently sits at 95.5 %. Override the floor with `IOS_MINIMUM_COVERAGE` only to raise it.
+**Coverage is a hard gate.** After the run, `scripts/test-ios.sh` reads the `.xcresult` with `xccov` and fails below 90 % line coverage of stable app/domain code, currently 95.1 %. `GameView.swift` and `CloudViews.swift` are excluded from the numeric gate because Xcode versions expose materially different generated executable-line counts for SwiftUI view builders. Their behavior is covered by the simulator suite, the same posture Android takes for `MainActivity` and `CloudUi`. Override the floor with `IOS_MINIMUM_COVERAGE` only to raise it.
 
-**Coverage must be measured on both suites together.** `GameView.swift` is 393 lines that only XCUITest exercises, so unit tests alone reach about 83 %. The local script runs one combined `xcodebuild test`, and CI — which runs the two targets separately so a UI-harness failure cannot mask a rules regression — collects coverage from both and merges the result bundles with `xcrun xcresulttool merge` before gating. Gate on one bundle and you are measuring something the other side of the fence is not.
+**Coverage must be measured on both suites together.** The local script runs one combined `xcodebuild test`, and CI — which runs the two targets separately so a UI-harness failure cannot mask a rules regression — collects coverage from both and merges the result bundles with `xcrun xcresulttool merge` before gating. UI-driven paths outside the excluded SwiftUI presentation files therefore still contribute to the domain gate.
 
 New test files must be added to the `Game-2048Tests` target in `2048 Game.xcodeproj` — the project does not use synchronised file groups, so a file that is merely on disk is silently never compiled or run.
 
@@ -112,7 +117,7 @@ make test-android          # unit tests, lint, debug APK
 make test-android-device   # adds Compose tests on a connected device
 ```
 
-**Coverage is a hard gate.** `make test-android` runs `jacocoCoverageVerification`, which fails below 90 % line or 85 % branch coverage of the Kotlin rules engine and its storage (`GameViewModel`, `GameStorage`, `SavedGame`, `SharedPreferencesGameStorage`, and the `sdui` package). Those currently sit at 97.6 % lines and 88.6 % branches. `SurfaceCatalog` is excluded for the same reason `MainActivity` is — it needs a real `Context`. The HTML report lands in `app/build/reports/jacoco/jacocoTestReport/`.
+**Coverage is a hard gate.** `make test-android` runs `jacocoCoverageVerification`, which fails below 90 % line or 85 % branch coverage of the Kotlin rules engine and its storage (`GameViewModel`, `GameStorage`, `SavedGame`, `SharedPreferencesGameStorage`, and the `sdui` package). Those currently sit at 97.2 % lines and 85.7 % branches. `SurfaceCatalog` is excluded for the same reason `MainActivity` is — it needs a real `Context`. The HTML report lands in `app/build/reports/jacoco/jacocoTestReport/`.
 
 `MainActivity` is Compose and is deliberately outside that gate: it can only be exercised on a device, which `make test-android-device` does. Holding the whole module to a JVM-only threshold would either fail on every machine without an emulator or push the number down to something meaningless.
 
@@ -188,6 +193,69 @@ Every client has now shipped a bug where a board swipe reached the surrounding c
 
 When a swipe bug is reported, measure before theorising. Frame coordinates and the enabled state of Undo tell you whether input reached the game at all — a swipe that scrolls the page and a swipe that silently does nothing look identical to a user, and the second is the more serious defect.
 
+## Profile separation
+
+A device holds two independent rounds — the guest one and the signed-in one —
+and the bug class here is leakage in either direction: an account inheriting a
+board it never played, or a session overwriting the round a player had before
+they signed in. Both are silent, and both are only visible a step later, when
+the numbers on the account panel do not match anything the player did.
+
+Each client asserts the same five properties against its own storage:
+
+1. Starting a session parks the guest round untouched, and the account starts
+   on a clean board with no best score borrowed from the device.
+2. Playing signed in writes only to the account slot.
+3. Ending a session restores the guest round exactly — board, score, moves,
+   and best score — and clears the cached account round.
+4. A sign-in offers the server a **null** save, so nothing local can reach the
+   account.
+5. Career totals render the account's own figures, even when the device holds
+   a much higher local best.
+
+The web suite drives these through `window.Game2048Game`, iOS through
+`GameViewModel` against a scratch `UserDefaults` suite, and Android through
+two prefixed `SharedPreferencesGameStorage` slots over one fake preferences
+file. The warning dialog itself is covered at the UI level on all three:
+Playwright, XCTest's confirmation dialog, and the Compose suite.
+
+## Credential entry
+
+Three properties, asserted per client:
+
+1. The confirmation field exists on sign-up and not on sign-in, and a
+   mismatch is refused **before** any request is made.
+2. A reveal control flips only its own field, and closing a form hides every
+   password again.
+3. A reset sends the username, the email, and the new password; a refusal
+   keeps the form open with the reason on it, and a success revokes the
+   session this device held and lands the player back on sign-in.
+
+Web covers these in `account-ui.test.js` plus a Playwright pass over the real
+`<dialog>` stacking and the input `type` flip. iOS and Android assert the
+controller and API halves on the JVM / in XCTest, and the sheets themselves
+in the Compose and XCUITest suites. The server's own reset rules — that a
+mismatched pair is refused, that the refusal is indistinguishable from an
+unknown account, and that every session dies — are in
+`server/tests/integration/api.test.js`, which needs `MONGODB_TEST_URI`.
+
+## Sound timing
+
+The defect these guard is not "no sound" — it is sound arriving late and all
+at once. Silence is easy to notice; a backlog is easy to ship.
+
+- **Web:** a Playwright test instruments `AudioContext`, asserts no context
+  exists before the first gesture, that the one built inside a gesture is
+  already running, that nothing is ever scheduled against a stopped clock, and
+  that twelve cues land on at least six distinct clock readings rather than
+  one. The unit suite covers the voice cap and the drop-rather-than-queue rule.
+- **iOS:** the cue renderer is a pure `nonisolated` function, so the envelope,
+  the frequency slide, and the degenerate zero-length case are testable with
+  no audio device.
+- **Android:** the mixer writes through an injected `ToneSink`, so a JVM test
+  can pace it like a real `AudioTrack` and assert that two hundred cues
+  produce a fraction of a second of audio rather than ten seconds of backlog.
+
 ## Determinism
 
 Every deterministic suite injects its own random provider, so tile spawning is fully reproducible. Never write a rules test that depends on real randomness, and never make the injectable provider the production default.
@@ -196,17 +264,29 @@ Tests may also drive state through launch arguments (iOS) or launch state (Andro
 
 ## Manual UI review
 
-Automated coverage does not replace looking at the screen. `make screenshots-web` captures these five states at desktop and mobile widths deterministically, so a diff against them is a fast way to spot an unintended visual change:
+Automated coverage does not replace looking at the screen. `make screenshots-web` captures browser states at desktop and mobile widths; `make screenshots-mobile` captures the native equivalents from a simulator and emulator. Both promote the canonical set into `images/`:
 
 | Gameplay | Restart confirmation | Win |
 | :---: | :---: | :---: |
-| ![Normal gameplay with a partially filled board](../images/web-version-UI.png) | ![The confirmation dialog shown before replacing an active round](../images/web-restart-dialog.png) | ![The win overlay after reaching 2048](../images/web-win.png) |
+| ![Normal gameplay with guest invite and cloud controls](../images/web-version-UI.png) | ![The confirmation dialog shown before replacing an active round](../images/web-restart-dialog.png) | ![The win overlay after reaching 2048](../images/web-win.png) |
 
 | Game over | Mobile layout | About |
 | :---: | :---: | :---: |
 | ![The game-over overlay on a locked board](../images/web-loss.png) | ![The mobile layout with on-screen direction controls](../images/web-mobile-gameplay.png) | ![The rules and strategy page](../images/web-about.png) |
 
-For every changed surface, inspect normal gameplay, help/about, restart confirmation, win, and game-over states where applicable, and check:
+| Guest invite | Create account | Leaderboard |
+| :---: | :---: | :---: |
+| ![Guest banner above the board](../images/web-cloud-guest.png) | ![Create-account dialog](../images/web-cloud-signup.png) | ![Leaderboard dialog](../images/web-cloud-leaderboard.png) |
+
+| Account panel | Android guest | Android auth sheet |
+| :---: | :---: | :---: |
+| ![Signed-in account panel](../images/web-cloud-account.png) | ![Android guest banner](../images/android-cloud-guest.png) | ![Android create-account sheet](../images/android-cloud-signup.png) |
+
+| iOS auth sheet | iOS handover | Native password reset |
+| :---: | :---: | :---: |
+| ![iOS create-account sheet](../images/ios-cloud-signup.png) | ![iOS warning shown before setting the guest round aside](../images/ios-cloud-handover.png) | ![Android password-reset sheet](../images/android-cloud-reset.png) |
+
+For every changed surface, inspect normal gameplay, help/about, restart confirmation, win, game-over, and any touched cloud dialogs where applicable, and check:
 
 - Compact and large breakpoints
 - Icon centering, at every icon, by geometry rather than font metrics

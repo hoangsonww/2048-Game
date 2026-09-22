@@ -111,17 +111,172 @@ final class Game_2048UITests: XCTestCase {
         assertScore(0, in: app)
     }
 
+    /// The account surface opens, swaps forms, and gets out of the way.
+    ///
+    /// No request leaves the simulator here: a signed-out launch never calls
+    /// the API, and none of these controls do either. What is being proved is
+    /// that every sheet is reachable and dismissible, which is the part a
+    /// unit test cannot see.
+    func testAccountSheetsOpenSwapAndDismiss() {
+        let app = launch()
+        XCTAssertTrue(app.otherElements["GameBoard"].waitForExistence(timeout: 15))
+
+        openSignIn(in: app)
+        XCTAssertTrue(app.staticTexts["Welcome back"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.textFields["identifierField"].exists)
+        XCTAssertTrue(app.secureTextFields["passwordField"].exists)
+        XCTAssertFalse(app.secureTextFields["confirmPasswordField"].exists,
+                       "the header says Sign in, so it must open sign-in")
+
+        app.buttons["authSwitch"].tap()
+        XCTAssertTrue(app.staticTexts["Create your account"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.textFields["usernameField"].exists)
+        XCTAssertTrue(app.textFields["emailField"].exists)
+        XCTAssertTrue(app.secureTextFields["passwordField"].exists)
+        XCTAssertTrue(app.secureTextFields["confirmPasswordField"].exists,
+                      "sign-up confirms the password; a typo there is unrecoverable")
+
+        // Revealing a password swaps the secure field for a plain one.
+        app.buttons["passwordFieldReveal"].tap()
+        XCTAssertTrue(app.textFields["passwordField"].waitForExistence(timeout: 3))
+        app.buttons["passwordFieldReveal"].tap()
+        XCTAssertTrue(app.secureTextFields["passwordField"].waitForExistence(timeout: 3))
+
+        // Return to sign-in for password recovery.
+        app.buttons["authSwitch"].tap()
+        XCTAssertTrue(app.staticTexts["Welcome back"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.secureTextFields["confirmPasswordField"].exists)
+
+        app.buttons["authForgot"].tap()
+        XCTAssertTrue(app.staticTexts["Reset your password"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.textFields["resetUsernameField"].exists)
+        XCTAssertTrue(app.secureTextFields["resetPasswordField"].exists)
+        XCTAssertTrue(app.secureTextFields["resetConfirmField"].exists)
+
+        app.buttons["resetDismiss"].tap()
+        XCTAssertFalse(app.staticTexts["Reset your password"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.otherElements["GameBoard"].waitForExistence(timeout: 5))
+    }
+
+    /// A mismatched confirmation is refused before anything is sent.
+    func testSignUpRefusesAMismatchedConfirmation() {
+        let app = launch()
+        XCTAssertTrue(app.otherElements["GameBoard"].waitForExistence(timeout: 15))
+
+        // The invite toast intentionally auto-hides after 5.5 seconds, which
+        // can elapse while a loaded simulator establishes its UI session.
+        // Enter through the persistent Sign in control, then take the
+        // explicit registration switch.
+        openSignIn(in: app)
+        XCTAssertTrue(app.staticTexts["Welcome back"].waitForExistence(timeout: 5))
+        app.buttons["authSwitch"].tap()
+        XCTAssertTrue(app.staticTexts["Create your account"].waitForExistence(timeout: 5))
+        // Xcode 16's UI runner intermittently sends only the first character
+        // to a SwiftUI SecureField. Reveal each field before typing so this
+        // test exercises an actual mismatch on every supported runner rather
+        // than accidentally submitting the equal pair "P" / "P".
+        //
+        // Sign-up is tall enough that the confirmation field sits under the
+        // keyboard after the first password is typed; a bare tap then fails
+        // CI with "Neither element nor any descendant has keyboard focus".
+        typeIntoRevealedPassword(identifier: "passwordField", text: "Password1", in: app)
+        typeIntoRevealedPassword(identifier: "confirmPasswordField", text: "Password2", in: app)
+        app.buttons["authSubmit"].tap()
+
+        // SwiftUI exposes a `Label` as a static text on newer runtimes but as
+        // a combined accessibility element on iOS 18/Xcode 16. Query by the
+        // identifier rather than tying this assertion to either element type.
+        XCTAssertTrue(element(identifier: "passwordMismatch", in: app).waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Create your account"].exists, "the form stays up to be corrected")
+    }
+
+    /// Signing in with a round on screen asks before taking it away.
+    func testSigningInMidRoundWarnsBeforeTheBoardLeavesTheScreen() {
+        let app = launch(state: "merge")
+        let board = app.otherElements["GameBoard"]
+        XCTAssertTrue(board.waitForExistence(timeout: 15))
+        board.swipeLeft()
+        XCTAssertTrue(app.buttons["Undo"].isEnabled)
+
+        openSignIn(in: app)
+        XCTAssertTrue(app.staticTexts["Welcome back"].waitForExistence(timeout: 5))
+        app.textFields["identifierField"].tap()
+        app.textFields["identifierField"].typeText("ada")
+        app.secureTextFields["passwordField"].tap()
+        app.secureTextFields["passwordField"].typeText("Password1")
+        app.buttons["authSubmit"].tap()
+
+        let warning = app.alerts["Set this round aside?"]
+        XCTAssertTrue(warning.waitForExistence(timeout: 10))
+        warning.buttons["Keep playing"].tap()
+        XCTAssertTrue(app.staticTexts["Welcome back"].waitForExistence(timeout: 5),
+                      "declining leaves the form up and the round alone")
+    }
+
     func testLaunchPerformance() {
         let app = XCUIApplication()
+        app.launchEnvironment["GAME2048_UI_TESTING"] = "1"
         measure(metrics: [XCTApplicationLaunchMetric()]) { app.launch() }
     }
 
     @discardableResult
     private func launch(state: String? = nil) -> XCUIApplication {
         let app = XCUIApplication()
+        app.launchEnvironment["GAME2048_UI_TESTING"] = "1"
         if let state { app.launchEnvironment["GAME2048_UI_TEST_STATE"] = state }
         app.launch()
         return app
+    }
+
+    /// Opens the credential sheet from a guest session.
+    ///
+    /// A leftover simulator login would otherwise open Account, and these
+    /// cases are about the sign-in / sign-up forms, not the signed-in panel.
+    private func openSignIn(in app: XCUIApplication) {
+        app.buttons["accountButton"].tap()
+        if app.buttons["signOutButton"].waitForExistence(timeout: 2) {
+            app.buttons["signOutButton"].tap()
+            XCTAssertTrue(app.otherElements["GameBoard"].waitForExistence(timeout: 5))
+            app.buttons["accountButton"].tap()
+        }
+    }
+
+    /// Types into a revealed password field without losing keyboard focus.
+    ///
+    /// On the taller sign-up form the confirmation field lands under the
+    /// keyboard once the first password is focused. CI then fails
+    /// `typeText` with "Neither element nor any descendant has keyboard
+    /// focus" even though the field exists and was tapped. Reveal already
+    /// claims focus in the app; wait for that before typing, and only tap
+    /// the field as a fallback after scrolling it clear of the keyboard.
+    private func typeIntoRevealedPassword(identifier: String, text: String, in app: XCUIApplication) {
+        let reveal = app.buttons["\(identifier)Reveal"]
+        let field = app.textFields[identifier]
+        XCTAssertTrue(reveal.waitForExistence(timeout: 5))
+
+        // Clear any prior keyboard so the next reveal can claim a visible field.
+        if app.keyboards.firstMatch.exists {
+            app.swipeDown()
+            let gone = NSPredicate(format: "exists == false")
+            let wait = XCTNSPredicateExpectation(predicate: gone, object: app.keyboards.firstMatch)
+            _ = XCTWaiter.wait(for: [wait], timeout: 2)
+        }
+
+        reveal.tap()
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+
+        if !app.keyboards.firstMatch.waitForExistence(timeout: 2) {
+            if field.frame.maxY > app.frame.midY {
+                app.swipeUp()
+            }
+            field.tap()
+            if !app.keyboards.firstMatch.waitForExistence(timeout: 2) {
+                field.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            }
+        }
+
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 3), "\(identifier) should accept keyboard input")
+        field.typeText(text)
     }
 
     private func assertScore(_ expected: Int, in app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {

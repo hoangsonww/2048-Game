@@ -54,10 +54,26 @@ device_name="$(xcrun simctl list devices -j | node -e '
 
 printf 'Using simulator: %s (%s)\n' "${device_name}" "${device_id}"
 
+# Brings the simulator window forward.
+#
+# Xcode 26 and earlier ship `Simulator.app`; Xcode 27 replaced it with
+# `DeviceHub.app`. Neither is required for the launch to have worked — the app
+# is already installed and running by the time this is called — so a missing
+# window is a note, not a failure.
+show_simulator_window() {
+    local app
+    for app in Simulator DeviceHub; do
+        if open -a "${app}" >/dev/null 2>&1; then
+            return 0
+        fi
+    done
+    printf 'Could not open a simulator window; the app is running on %s regardless.\n' "${device_name}" >&2
+}
+
 if [[ "$1" == "boot" ]]; then
     section "Booting ${device_name}"
     boot_ios_simulator "${device_id}"
-    open -a Simulator
+    show_simulator_window
     exit 0
 fi
 
@@ -84,6 +100,6 @@ section "Installing and launching ${bundle_id}"
 boot_ios_simulator "${device_id}"
 xcrun simctl install "${device_id}" "${app_path}"
 xcrun simctl launch "${device_id}" "${bundle_id}"
-open -a Simulator
+show_simulator_window
 
 printf '\nLaunched %s on %s.\n' "${bundle_id}" "${device_name}"

@@ -12,8 +12,8 @@ android {
         applicationId = "com.sonnguyenhoang.game2048"
         minSdk = 24
         targetSdk = 34
-        versionCode = 20001
-        versionName = "2.0.1"
+        versionCode = 20100
+        versionName = "2.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -100,7 +100,10 @@ val domainClasses = listOf(
     "com/sonnguyenhoang/game2048/SharedPreferencesGameStorage*.class",
     // The surface layer parses untrusted input and decides what a screen shows,
     // so it is held to the same bar as the rules engine.
-    "com/sonnguyenhoang/game2048/sdui/**.class"
+    "com/sonnguyenhoang/game2048/sdui/**.class",
+    // The cloud client parses untrusted input too, and gets a player's round
+    // wrong in a way they would notice on another device.
+    "com/sonnguyenhoang/game2048/cloud/**.class"
 )
 
 /**
@@ -108,7 +111,18 @@ val domainClasses = listOf(
  * the device suite for the same reason `MainActivity` is.
  */
 val deviceOnlyClasses = listOf(
-    "com/sonnguyenhoang/game2048/sdui/SurfaceCatalog*.class"
+    "com/sonnguyenhoang/game2048/sdui/SurfaceCatalog*.class",
+    // The only part of the cloud layer that opens a socket, and the only part
+    // that cannot run on the JVM. Everything it would have covered — what to
+    // send, how to read a reply, when to refresh — lives in `CloudApi`, which
+    // is measured.
+    "com/sonnguyenhoang/game2048/cloud/UrlConnectionTransport*.class",
+    // Compose, so it is reachable only on a device. The second pattern catches
+    // the `ComposableSingletons$…` holders the Compose compiler generates for
+    // every lambda in the file; without it the UI's branches land in the gate
+    // for the rules-and-client code and drag it down by a fifth.
+    "com/sonnguyenhoang/game2048/cloud/CloudUiKt*.class",
+    "com/sonnguyenhoang/game2048/cloud/ComposableSingletons\$CloudUiKt*.class"
 )
 
 // Scoped to the one directory AGP writes unit-test coverage into. A wider tree

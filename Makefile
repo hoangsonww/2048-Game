@@ -4,9 +4,9 @@ SHELL := /usr/bin/env bash
 
 
 .PHONY: help setup doctor serve check test test-web test-android test-android-device test-ios \
-	screenshots-web clean-web android-build android-install android-run android-tasks \
+	screenshots-web screenshots-web-qa screenshots-mobile screenshots-mobile-qa clean-web android-build android-install android-run android-tasks \
 	android-clean android-devices gradle ios-build ios-run ios-boot ios-devices verify-devcontainer \
-	version version-sync
+	version version-sync server-test server-check
 
 help: ## Show available project commands
 	@awk 'BEGIN {FS = ":.*## "; printf "2048 project commands\n\n"} /^[a-zA-Z0-9_-]+:.*## / {printf "  %-22s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -45,6 +45,12 @@ test-android-device: ## Also run Android tests on a connected emulator/device
 test-ios: ## Run iOS unit and UI tests on an available simulator
 	./scripts/test-ios.sh
 
+server-check: ## Validate the Cloud API OpenAPI document
+	cd server && npm run check
+
+server-test: ## Run Cloud API unit tests
+	cd server && npm test
+
 android-build: ## Build the Android debug APK
 	./scripts/android.sh assembleDebug
 
@@ -82,8 +88,17 @@ ios-devices: ## List available iPhone simulators
 verify-devcontainer: ## Build the dev container image and verify its toolchain
 	./scripts/verify-devcontainer.sh
 
-screenshots-web: ## Capture desktop/mobile gameplay, dialogs, win/loss, and About
+screenshots-web: ## Capture desktop/mobile gameplay, cloud UI, dialogs, win/loss, About; promote into images/
 	npm run screenshots:web
 
+screenshots-web-qa: ## Capture web UI into output/ only (no images/ promote)
+	npm run screenshots:web:qa
+
+screenshots-mobile: ## Capture iOS/Android UI from booted devices; promote into images/
+	./scripts/capture-mobile-screenshots.sh all --promote
+
+screenshots-mobile-qa: ## Capture iOS/Android UI into output/ only (no images/ promote)
+	./scripts/capture-mobile-screenshots.sh all
+
 clean-web: ## Remove generated web coverage and latest local screenshots
-	rm -rf -- "$(CURDIR)/coverage" "$(CURDIR)/output/playwright/latest"
+	rm -rf -- "$(CURDIR)/coverage" "$(CURDIR)/output/playwright/latest" "$(CURDIR)/output/cloud"

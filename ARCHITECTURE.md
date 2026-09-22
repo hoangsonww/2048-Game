@@ -1,22 +1,35 @@
 # 2048 Architecture
 
-This repository ships the same 2048 game three times: as a static web app, as a native SwiftUI iOS app, and as a native Jetpack Compose Android app. **They share no runtime code.** What they share is a behavioural contract, enforced by three independent test suites that assert the same rules.
+This repository ships the same 2048 game three times: as a static web app, as a native SwiftUI iOS app, and as a native Jetpack Compose Android app. **They share no runtime code.** What they share is a behavioural contract, enforced by three independent test suites that assert the same rules. An **optional** Cloud API (`server/`) adds accounts, cross-device sync, and leaderboards without ever gating a move.
 
-This document explains why that structure was chosen, what the contract is, and how each client honours it.
+This document is the whole-repository picture: why the structure exists, what the contract is, how each client honours it, how local state and the optional cloud layer interact, and how the build, test, and release machinery keep three toolchains honest. Per-client implementation notes live in [`docs/architecture.md`](docs/architecture.md); the HTTP wire contract and deploy details live in [`docs/backend.md`](docs/backend.md). When those disagree with this file on a shared invariant, **this file wins** — then the other docs should be updated.
 
-New here? Read [The product in one page](#the-product-in-one-page), [Three clients, one contract](#three-clients-one-contract), and [The rules engine](#the-rules-engine). That is enough to follow anything else.
+New here? Read [The product in one page](#the-product-in-one-page), [Three clients, one contract](#three-clients-one-contract), [The rules engine](#the-rules-engine), and [Optional Cloud API](#optional-cloud-api). That is enough to follow anything else.
+
+### How the docs fit together
+
+| Document | Scope | Read when |
+| --- | --- | --- |
+| **This file** | Cross-cutting architecture: contract, rules, state, cloud posture, CI, invariants | Orienting, reviewing a parity or cloud change, onboarding an agent |
+| [`docs/architecture.md`](docs/architecture.md) | Per-client build and UI detail, lifecycle, delivery base paths | Changing one client's state, gestures, or persistence wiring |
+| [`docs/backend.md`](docs/backend.md) | Cloud API stack, endpoints, env, deploy | Touching `server/` or a cloud client module |
+| [`docs/testing.md`](docs/testing.md) | Suite placement, flaky-device diagnosis, coverage floors | Adding or debugging tests |
+| [`docs/releasing.md`](docs/releasing.md) | `VERSION`, Cut release, artifacts | Shipping a version |
+| [`docs/privacy.md`](docs/privacy.md) | What is stored where, token placement trade-offs | Auth, sync, or disclosure changes |
+| [`AGENTS.md`](AGENTS.md) | Agent operating rules and product invariants | Any automated change in this repo |
 
 **Structure**
 
 | | |
 | --- | --- |
-| **Shape** | [Product](#the-product-in-one-page) · [Three clients, one contract](#three-clients-one-contract) · [Why no shared core](#why-there-is-no-shared-core) · [Repository map](#repository-map) · [Decision log](#decision-log) |
+| **Shape** | [Product](#the-product-in-one-page) · [System context](#system-context) · [Three clients, one contract](#three-clients-one-contract) · [Why no shared core](#why-there-is-no-shared-core) · [Repository map](#repository-map) · [Decision log](#decision-log) |
 | **Rules** | [The rules engine](#the-rules-engine) · [Board representation](#board-representation-and-indexing) · [Move algorithm](#the-move-algorithm) · [Merge ordering](#merge-ordering-the-rule-everyone-gets-wrong) · [A move traced end to end](#a-move-traced-end-to-end) · [Spawning](#tile-spawning-and-determinism) · [Win and loss](#win-and-loss-predicates) · [Complexity](#complexity-and-performance) |
-| **State** | [State machine](#game-state-machine) · [Undo](#undo) · [Score](#score-and-best-score) · [Persistence](#persistence-and-corrupt-state) · [State shape reference](#state-shape-reference) |
-| **Clients** | [Web](#web-client) · [iOS](#ios-client) · [Android](#android-client) · [Server-driven surfaces](#server-driven-surfaces) · [Input pipeline](#input-pipeline) · [Gesture ownership](#gesture-ownership) · [Rendering](#rendering-pipelines) · [Design tokens](#design-tokens-shared-by-hand) · [Motion](#motion-architecture) |
+| **State** | [State machine](#game-state-machine) · [Undo](#undo) · [Score](#score-and-best-score) · [Persistence](#persistence-and-corrupt-state) · [Guest and account profiles](#guest-and-account-profiles) · [State shape reference](#state-shape-reference) |
+| **Cloud** | [Optional Cloud API](#optional-cloud-api) · [Wire contract](#cloud-wire-contract) · [Sync resolution](#sync-resolution) · [Auth and sessions](#auth-and-sessions) · [Cloud client modules](#cloud-client-modules) · [Sign-in lifecycle](#sign-in-lifecycle) · [Server topology](#server-topology) · [Applying a downloaded save](#applying-a-downloaded-save) |
+| **Clients** | [Web](#web-client) · [iOS](#ios-client) · [Android](#android-client) · [Server-driven surfaces](#server-driven-surfaces) · [Input pipeline](#input-pipeline) · [Gesture ownership](#gesture-ownership) · [Rendering](#rendering-pipelines) · [Design tokens](#design-tokens-shared-by-hand) · [Credential entry](#credential-entry) · [Sound](#sound-architecture) · [Motion](#motion-architecture) |
 | **Web surface** | [PWA and discovery](#pwa-and-discovery-surface) |
 | **Quality** | [Test strategy](#test-strategy) · [Determinism seams](#determinism-seams) · [The fake DOM harness](#the-fake-dom-harness) · [Coverage gates](#coverage-gates) · [Failure modes](#failure-modes-and-how-each-is-caught) · [Accessibility](#accessibility) |
-| **Tooling** | [Command surface](#command-surface) · [Toolchain resolution](#toolchain-resolution) · [Build topology](#build-topology) · [Dev container](#dev-container) · [CI topology](#ci-topology) |
+| **Tooling** | [Command surface](#command-surface) · [Toolchain resolution](#toolchain-resolution) · [Build topology](#build-topology) · [Dev container](#dev-container) · [CI topology](#ci-topology) · [Versioning and release](#versioning-and-release) |
 | **Reference** | [Extending across three clients](#extending-across-three-clients) · [Security and privacy](#security-and-privacy-posture) · [Invariants](#architectural-invariants) · [Glossary](#glossary) |
 
 ---
@@ -33,19 +46,68 @@ flowchart LR
         Engine[Rules engine<br/>pure functions]
         State[Game state<br/>board, score, history]
         View[Presentation]
-        Store[(Local storage)]
+        Store[(Local storage<br/>guest + account profiles)]
+        CloudUI[Optional cloud UI<br/>auth · sync · leaderboard]
 
         Input --> Engine
         Engine --> State
         State --> View
         State <--> Store
+        CloudUI -.->|never gates a move| State
     end
+
+    API[(Optional Cloud API)]
+    CloudUI -.->|when signed in| API
 
     Player -->|swipe or key| Input
     View -->|board, score, status| Player
 ```
 
-Everything is local. There is no account, no server, no analytics, no network call. The only persistence is the browser's `localStorage`, iOS `UserDefaults`, and Android `SharedPreferences` — each holding one saved round and one best score.
+Everything is local-first. The board, score, undo, and best score work with no network. The only required persistence is the browser's `localStorage`, iOS `UserDefaults`, and Android `SharedPreferences` — each holding **two** complete profiles (guest and account) plus best scores. An **optional** Cloud API adds accounts, cross-device sync, and leaderboards; it never gates play. See [Optional Cloud API](#optional-cloud-api), [docs/backend.md](docs/backend.md), and [docs/privacy.md](docs/privacy.md).
+
+### System context
+
+```mermaid
+flowchart TB
+    subgraph Devices[Player devices]
+        WebC[Web client<br/>static HTML/CSS/JS]
+        IOSC[iOS client<br/>SwiftUI]
+        AndC[Android client<br/>Compose]
+    end
+
+    subgraph Local[On-device stores]
+        LS[localStorage]
+        UD[UserDefaults]
+        SP[SharedPreferences]
+    end
+
+    subgraph Cloud[Optional — never required for a move]
+        API[Express Cloud API<br/>Vercel + Atlas]
+        GHCR[GHCR images<br/>runner + Android SDK]
+    end
+
+    subgraph Ship[Distribution]
+        Pages[GitHub Pages<br/>/2048-Game/]
+        Releases[GitHub Releases<br/>APK · iOS zip · web zip]
+    end
+
+    WebC <--> LS
+    IOSC <--> UD
+    AndC <--> SP
+    WebC -.-> API
+    IOSC -.-> API
+    AndC -.-> API
+    WebC --> Pages
+    Releases -.->|Cut release| WebC
+    Releases -.-> IOSC
+    Releases -.-> AndC
+    CI[Cross-platform CI] --> GHCR
+    CI --> WebC
+    CI --> IOSC
+    CI --> AndC
+```
+
+Three independent clients, one behavioural contract, one optional backend, one version number. A contributor can clone and play the web app with only Node; ship Android without installing a JDK by hand; and never open Xcode to change the rules on web or Android.
 
 ---
 
@@ -120,8 +182,13 @@ The decisions that shaped this repository, and what would have to change for eac
 | 6 | Undo is exactly one step | A single slot is predictable, cheap to persist, and matches the original game | Users asked for deeper history and were willing to pay the persistence complexity |
 | 7 | Gradle provisions its own JDK via `gradle-daemon-jvm.properties` | A contributor should not have to install a specific JDK before `make test-android` works | Gradle's toolchain provisioning stopped being reliable |
 | 8 | Everything routes through `make` and `scripts/` | `adb` is not on `PATH` after a default Android Studio install, and the default `java` is usually wrong | Never — this is the difference between a clone that works and one that does not |
-| 9 | Storage keys are per-platform and idiomatic, not unified | Saves never travel between clients, so a shared format would buy nothing | A cross-device sync feature existed, which would contradict decision 10 |
-| 10 | No backend, no accounts, no analytics, no network calls | The game does not need them, and their absence is what makes the privacy posture trivially auditable | Never, without an explicit product decision |
+| 9 | Storage keys are per-platform and idiomatic, not unified | Local saves never leave the device format; the cloud wire format is a separate flat-board contract | Cross-device sync existed — it does now, via the Cloud API, without unifying local keys |
+| 10 | Local-first play; optional Cloud API for accounts and sync | An account is an invitation, never a gate; offline play stays complete | Product direction required any change that makes the network mandatory for a move |
+| 11 | Guest and account rounds are separate on-device profiles | A pre-sign-in round belongs to whoever was playing, not to whoever signs in next | Product required merging guest progress into accounts (rejected: career stats would lie) |
+| 12 | Sync prefers the further round; parks the loser | Last-writer-wins deletes an hour of play when a second phone comes online | A stronger CRDT or explicit player-picked resolution UI is warranted |
+| 13 | Auth and round adoption are separate client steps | Only the game knows which board is on screen, so only the game may offer a save | The API started choosing which board to keep (it must not) |
+| 14 | `VERSION` is the single human-edited version; Cut release is the only ship path | Manual tagging drifted four version fields at once | A different release host replaced GitHub Releases |
+| 15 | Server-driven surfaces are content-only with native fallbacks | Store review is slow; a typo in help copy should not wait days — but rules must stay in code | Payload-carried behaviour became a product requirement (rejected by invariant) |
 
 ---
 
@@ -134,6 +201,7 @@ flowchart TD
     Root --> Web["index.html · Web-Version/<br/>static web app"]
     Root --> IOS["Game-2048/ · 2048 Game.xcodeproj<br/>SwiftUI app"]
     Root --> Droid["Android-Version/Game2048/<br/>Compose app"]
+    Root --> Server["server/<br/>Cloud API · Express + Atlas"]
     Root --> Tests["tests/<br/>web + tooling suites"]
     Root --> Scripts["scripts/<br/>toolchain-resolving entry points"]
     Root --> Docs["docs/ · .github/README.md"]
@@ -143,16 +211,41 @@ flowchart TD
 
 | Path | Holds | Built by |
 | --- | --- | --- |
-| `index.html`, `Web-Version/` | The static web app: engine, controller, styles | Nothing — it is served as-is |
-| `Game-2048/` | SwiftUI views, view model, assets, entitlements | `xcodebuild` via `scripts/ios.sh` |
+| `index.html`, `Web-Version/` | The static web app: engine, controller, styles, optional `cloud.js` / `account.js` | Nothing — it is served as-is |
+| `Game-2048/` | SwiftUI views, view model, `Cloud/`, `SDUI/`, assets, entitlements | `xcodebuild` via `scripts/ios.sh` |
 | `Game-2048Tests/`, `Game-2048UITests/` | XCTest and XCUITest targets | Same |
-| `Android-Version/Game2048/` | Compose UI, view model, storage, Gradle build | Gradle via `scripts/android.sh` |
+| `Android-Version/Game2048/` | Compose UI, view model, `cloud/` package, `sdui/`, storage, Gradle build | Gradle via `scripts/android.sh` |
+| `server/` | Optional Cloud API (auth, saves, scores, leaderboards, OpenAPI) | Node on Vercel / `npm run dev` |
 | `tests/web/`, `tests/tooling/` | Node test-runner suites and the fake DOM harness | `node --test` |
 | `scripts/` | Every entry point; resolves JDKs, simulators, and `adb` | Invoked by `make` |
-| `docs/` | Architecture, testing, and screenshot guides | — |
+| `docs/` | Architecture, backend, privacy, testing, releasing, screenshot guides | — |
+| `images/` | Canonical screenshots promoted by screenshot Make targets | `make screenshots-web` / `screenshots-mobile` |
+| `VERSION` | The only human-edited version string | Propagated by `scripts/version.sh` |
 | `.agents/skills/` | Repository-local agent workflows, mirrored to `.claude/skills/` | — |
+| `.github/workflows/` | Cross-platform CI, dependency review, labeler, Cut release, Release | GitHub Actions |
 
 There are two `.xcodeproj` directories at the root. **`2048 Game.xcodeproj` is the real one**; `Game-2048.xcodeproj` is a stray with no `project.pbxproj`. Build scripts reference the former explicitly.
+
+```mermaid
+flowchart TB
+    subgraph ServerTree[server/]
+        App[src/app.js]
+        Routes[src/routes/*]
+        Services[src/services/*]
+        Models[src/models/*]
+        Lib[src/lib/* · game-rules · tokens · validate]
+        DocsAPI[src/docs/* · OpenAPI]
+        Entry[api/index.js · Vercel]
+        App --> Routes
+        Routes --> Services
+        Services --> Models
+        Routes --> Lib
+        App --> DocsAPI
+        Entry --> App
+    end
+```
+
+The server validates boards with the same power-of-two rules the clients use (`server/src/lib/game-rules.js`), but it is **not** a shared rules engine for play — clients never call it to resolve a swipe. It stores and reconciles saves; the move still happens on the device.
 
 ---
 
@@ -580,15 +673,40 @@ The best score survives a new game and never decreases. There is a subtle trap h
 
 ## Persistence and corrupt state
 
-Each client stores one saved round and one best score under platform-native keys:
+Each client stores one saved round and one best score **per profile**, under platform-native keys:
 
-| Client | Mechanism | Round key | Best-score key |
-| --- | --- | --- | --- |
-| Web | `localStorage` | `game2048-state-v2` (JSON) | `highScore` |
-| iOS | `UserDefaults` | `savedGridV2`, `savedScoreV2`, `savedHasWonV2` | `highScore` |
-| Android | `SharedPreferences` | `saved_grid_v2` (CSV), `saved_score_v2`, `saved_won_v2` | `high_score` |
+| Client | Mechanism | Guest round key | Guest best key | Account round key | Account best key |
+| --- | --- | --- | --- | --- | --- |
+| Web | `localStorage` | `game2048-state-v2` (JSON) | `highScore` | `game2048-state-account-v1` | `game2048-best-account-v1` |
+| iOS | `UserDefaults` | `savedGridV2`, `savedScoreV2`, `savedHasWonV2`, `savedMovesV2` | `highScore` | the same names prefixed `account…V1` | `accountHighScoreV1` |
+| Android | `SharedPreferences` | `saved_grid_v2` (CSV), `saved_score_v2`, `saved_won_v2`, `saved_moves_v2` | `high_score` | the same keys prefixed `account_` | `account_high_score` |
 
-The keys are intentionally *not* unified — each is idiomatic for its platform, and the saves never travel between clients. The `v2` suffix marks the current layout; an older `v1` entry is simply not read.
+The keys are intentionally *not* unified across clients — each is idiomatic for its platform, and the saves never travel between clients. The `v2` suffix marks the current layout; an older `v1` entry is simply not read.
+
+### Guest and account profiles
+
+Two complete, independent rounds live on a device: the one played signed out
+and the one played signed in. They never touch.
+
+| Event | What happens |
+| --- | --- |
+| Signing in with a round in progress | The player is warned first. The guest round is written to its own keys and left alone; the account profile becomes active. |
+| Signing in | The device offers the server **nothing** — `sync` is called with a null save, so the account's own round downloads, or the clean board stands. |
+| Playing signed in | Only the account keys are written. The guest round and the guest best score are frozen. |
+| Signing out | The account keys are cleared and the guest round is restored exactly — board, score, moves, and best score. |
+| Career statistics | Read from the account and from nowhere else. No local best score or highest tile is ever merged in. |
+
+The last row is the one that is easy to get wrong and hard to spot. Lifting a
+device's local best into an account's career totals produces a brand-new
+account advertising "Best 4,312 · 0 rounds · highest tile 128" — figures it
+never earned, from a round it never played.
+
+The reason the guest round is *parked* rather than uploaded is that an account
+is not a device. Two people can share a browser, and a round played before
+anyone signed in belongs to whoever was sitting there, not to whoever signs in
+next. Parking it also makes the promise reversible: signing out is not a
+destructive act, and a player who signs in to look at a leaderboard gets their
+board back untouched.
 
 Restoring is the one place the app ingests data it did not create, so every client validates before trusting:
 
@@ -635,6 +753,204 @@ Two deliberate differences:
 - **`canUndo` is explicit on the natives, derived on the web.** SwiftUI and Compose both need an observable property to drive a button's `disabled` state; the web reads `!!state.history` directly at render time.
 
 The snapshot stored for undo is the same three fields everywhere: **board, score, win flag**. Not `best` — the best score is monotonic and must survive an undo. Not `gameOver` — it is recomputed from the restored board.
+
+---
+
+## Optional Cloud API
+
+The Cloud API is an **additive** layer. Delete every cloud module and every client still plays a complete local game. The rules engines never import cloud types; a small bridge converts the on-screen round to and from the flat wire format.
+
+```mermaid
+flowchart TB
+    subgraph ClientLayer[Each client]
+        Rules[Rules engine / ViewModel]
+        Bridge["cloudSave / applyCloudSave<br/>beginAccountSession / endAccountSession"]
+        Ctrl[CloudController / account.js]
+        UI[Auth · Account · Leaderboard sheets]
+        Rules <--> Bridge
+        Bridge <--> Ctrl
+        Ctrl <--> UI
+    end
+
+    API[Cloud API]
+    Ctrl -.->|HTTPS when signed in| API
+
+    Rules -.->|no imports| API
+```
+
+| Layer | Responsibility | Must not |
+| --- | --- | --- |
+| Rules engine | Local moves, score, undo, win/loss | Know about tokens, HTTP, or usernames |
+| Local store | Source of truth for the **active** profile's round | Upload on every keystroke; mix guest and account keys |
+| Cloud controller | Auth, sync scheduling, leaderboard fetch, busy/error UI state | Decide which board is "the player's" without asking the game |
+| API | Persist rounds, scores, account metadata; reconcile conflicts | Ship game rules, UI, or styling to clients |
+
+Live deployment and OpenAPI: see [docs/backend.md](docs/backend.md). Feature flags (`FEATURE_REGISTRATION`, `FEATURE_CLOUD_SAVES`, `FEATURE_LEADERBOARDS`, …) answer `503` with `feature_disabled` so a surface can be retired without redeploying clients.
+
+### Cloud wire contract
+
+All three clients speak the same JSON shapes. Boards travel as a **flat 16-element row-major array**, even when the native client stores nested rows locally. Conversion happens only at the bridge.
+
+```json
+{
+  "board": [2, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  "score": 40,
+  "bestScore": 1200,
+  "won": false,
+  "gameOver": false,
+  "moves": 12,
+  "elapsedSeconds": 90,
+  "baseRevision": 3,
+  "client": "ios",
+  "deviceId": "…"
+}
+```
+
+`moves` measures how far a round has gone. **Undo must not decrease it** — a number a player can lower by pressing a button is not a progress signal for sync. The server also accepts nested `grid` forms and normalises them (`server/src/services/sync.js`), but clients should send the flat board.
+
+Career statistics from `GET /api/v1/auth/me` are computed on the server from submitted rounds. Clients render them verbatim and **never** lift a local best score or highest tile into them. See [Guest and account profiles](#guest-and-account-profiles).
+
+### Sync resolution
+
+`POST /api/v1/saves/sync` compares the device save with the stored `current` slot. Nothing is silently discarded.
+
+```mermaid
+flowchart TD
+    Sync[POST /saves/sync] --> Local{Local save?}
+    Local -->|null — sign-in adopt| RemoteOnly{Remote current?}
+    RemoteOnly -->|yes| DL[downloaded]
+    RemoteOnly -->|no| IS1[in_sync · empty board stands]
+    Local -->|present| Remote{Remote current?}
+    Remote -->|no| UP[uploaded]
+    Remote -->|yes| Same{Same board + revision?}
+    Same -->|yes| IS2[in_sync]
+    Same -->|no| Ahead{Which is further?}
+    Ahead -->|local| UP2[uploaded]
+    Ahead -->|remote| DL2[downloaded]
+    Ahead -->|divergent| CF["conflicted<br/>further wins · loser parked"]
+```
+
+"Further" prefers higher score, then moves, then revision — score first because that is how a player answers "which of these is my real game?" Rule 6 is the load-bearing one: the losing side is preserved in a recoverable `conflict-<timestamp>` slot.
+
+| Resolution | Client action |
+| --- | --- |
+| `uploaded` | Keep local board; refresh any returned metadata |
+| `downloaded` | `applyCloudSave` after validating the payload |
+| `in_sync` | No board change |
+| `conflicted` | Apply the winning save; surface a note that the other round was parked |
+
+Offline play continues; sync retries on the next signed-in move or explicit "Sync now". In-flight auth, sync, leaderboard, and sign-out show a spinner and disable the control that started them; **the board stays playable**.
+
+### Auth and sessions
+
+```mermaid
+sequenceDiagram
+    participant UI as Auth sheet
+    participant Ctrl as Cloud controller
+    participant API as Cloud API
+    participant Game as Rules / ViewModel
+
+    UI->>Ctrl: register / login
+    Ctrl->>API: credentials
+    API-->>Ctrl: access + refresh tokens
+    Ctrl->>Game: beginAccountSession(fresh)
+    Note over Game: Park guest profile; activate account keys
+    Ctrl->>API: sync(null)
+    API-->>Ctrl: downloaded or in_sync
+    Ctrl->>Game: applyCloudSave if needed
+    Note over Game: First upload happens on the first signed-in move
+```
+
+- Access tokens are short-lived; refresh tokens are long-lived, **hashed at rest**, rotated on use, and race-safe against concurrent 401 retries.
+- `POST /auth/reset-password` is an **interim** recovery path (username + email match). It is feature-flagged, rate-limited, uniform in errors, and revokes every session — including the resetting device, which is why clients fall back to the guest round afterwards. See [Credential entry](#credential-entry) and the security note on the route.
+- Authenticating and adopting a round are **separate** steps on every client. `login` / `register` return a session only; the game switches profile, then asks the controller to adopt.
+
+### Cloud client modules
+
+| Client | Modules | Transport seam | Bridge into rules |
+| --- | --- | --- | --- |
+| Web | `Web-Version/cloud.js`, `account.js` | `fetch` (injectable in tests) | `cloudSave` / `applyCloudSave`, `beginAccountSession` / `endAccountSession` |
+| iOS | `Game-2048/Cloud/*` | `CloudAPI` actor over `URLSession`; fake transport in unit tests | `GameViewModel` cloud save / apply + session begin/end |
+| Android | `…/cloud/*` | `HttpTransport` / `HttpURLConnection`; fake transport for JVM tests | Same pattern on `GameViewModel` |
+
+Presentation (`CloudViews.swift`, `CloudUi.kt`, web account dialogs) is excluded from numeric coverage gates the same way other SwiftUI/Compose chrome is: cover controllers and API clients with fake transports; cover sheets with UI tests and screenshots.
+
+Removing the cloud layer is a delete of those modules plus header / banner wiring. The board and rules stay.
+
+### Sign-in lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> Guest: launch, no tokens
+    [*] --> Restoring: launch, tokens present
+    Restoring --> SignedIn: /auth/me ok
+    Restoring --> Guest: tokens rejected
+    Guest --> Working: sign in / register
+    Working --> SignedIn: session + adopt round
+    Working --> Guest: auth failure
+    SignedIn --> SignedIn: move → debounced sync
+    SignedIn --> SignedIn: sync now / leaderboard
+    SignedIn --> Guest: sign out (restore guest profile)
+```
+
+| Event | Game | Cloud controller |
+| --- | --- | --- |
+| Sign in with an active guest round | Warn; on confirm, park guest keys untouched | Authenticate, then `sync(null)` |
+| First signed-in move | Persist to account keys | Debounced upload |
+| Sign out | `endAccountSession` — restore guest board and best exactly | Revoke refresh where possible; clear tokens |
+| Password reset success | Same as sign out (sessions revoked server-side) | Drop to guest; show sign-in again |
+
+### Server topology
+
+```mermaid
+flowchart LR
+    Client --> Vercel[Vercel serverless<br/>api/index.js]
+    Vercel --> App[Express app]
+    App --> AuthR[auth.routes]
+    App --> SavesR[saves.routes]
+    App --> ScoresR[scores.routes]
+    App --> LB[leaderboard.routes]
+    App --> Meta[meta · health · OpenAPI UI]
+    SavesR --> Sync[services/sync]
+    Sync --> Atlas[(MongoDB Atlas<br/>game2048)]
+    AuthR --> Atlas
+```
+
+Stack summary: Express 5, Mongoose 8, JWT access/refresh, Zod validation, Helmet/CORS, in-memory rate limits, OpenAPI 3.1 generated in code. Rate limits are per-instance — enough to stop a runaway client loop, not a distributed DDoS shield.
+
+| Area | Routes (under `/api/v1`) | Notes |
+| --- | --- | --- |
+| Auth | register, login, refresh, logout, me, reset-password | Reset is interim + feature-flagged |
+| Saves | sync, list slots, … | Conflict parking lives here |
+| Scores | submit / list | Feeds career stats and leaderboards |
+| Leaderboard | period queries | Public; no auth required to read |
+| Meta | health, OpenAPI UI | `/docs`, `/redoc`, `/reference`, `/openapi.json` |
+| Flagged | social, challenges, events, achievements, … | `503 feature_disabled` when off |
+
+Feature flags: `FEATURE_REGISTRATION`, `FEATURE_LEADERBOARDS`, `FEATURE_CLOUD_SAVES`, `FEATURE_SOCIAL`, `FEATURE_DAILY_CHALLENGE`, `FEATURE_EVENTS`, `FEATURE_PASSWORD_RESET`. Full env and deploy notes: [docs/backend.md](docs/backend.md).
+
+### Applying a downloaded save
+
+```mermaid
+sequenceDiagram
+    participant API as Cloud API
+    participant Ctrl as Cloud controller
+    participant Bridge as applyCloudSave
+    participant Rules as ViewModel / engine
+    participant Store as Active profile keys
+
+    API-->>Ctrl: save payload
+    Ctrl->>Bridge: applyCloudSave(payload)
+    Bridge->>Bridge: validate 16 cells · powers of two · scores ≥ 0
+    alt invalid
+        Bridge-->>Ctrl: reject · keep local board
+    else valid
+        Bridge->>Rules: replace board, score, won, undo snapshot if present
+        Rules->>Store: persist active profile
+    end
+```
+
+A corrupt or hostile cloud payload must fail the same way a corrupt local save does: discard and keep playing. Never partially apply a board.
 
 ---
 
@@ -774,6 +1090,52 @@ Text flips to white at 8 and above, on every client. The ramp is warm-neutral th
 
 **Changing a colour is a three-file edit.** This is the most common parity drift in the repository and the cheapest to catch: the values above are the reference.
 
+### Credential entry
+
+Four rules, identical on all three clients:
+
+| Rule | Why |
+| --- | --- |
+| A control labeled **Sign in** opens sign-in; an explicit **Create account** action opens registration. | The destination must match the action the player chose. Registration remains one switch away for a new player. |
+| Sign-up asks for the password twice; sign-in does not. | A typo at sign-up locks a player out of an account they cannot prove they own. A typo at sign-in is reported by the server on the next keystroke. |
+| Every password field has its own reveal control. | A password nobody can read is a password they mistype, and retyping it into a confirmation field they also cannot read does not help. Per-field, so revealing one does not expose the form to whoever is behind them. |
+| Closing a form hides every password again. | The next person to open it starts from dots. |
+
+The mismatch is caught on the client before anything is sent: a confirmation
+field is a UI affordance, and the server is never told what was typed into it.
+
+Recovery is `POST /auth/reset-password`, and it is **deliberately weak**: a
+matching username and email are the whole proof, because there is no mail
+infrastructure to build a real token flow on yet. Anyone who knows both can
+take the account over. It is gated behind `FEATURE_PASSWORD_RESET`, rate
+limited, uniform in its errors so it cannot be used to discover who has an
+account, and total — every session on the account is revoked, including the
+one on the device doing the resetting, which is why each client drops back to
+its guest round afterwards. The security note lives on the endpoint itself in
+`server/src/routes/auth.routes.js`; read it before relying on this.
+
+### Sound architecture
+
+Every cue is synthesised at runtime — a few oscillators on web, generated PCM
+on both native clients — so there are no audio assets to ship, localise, or
+keep in sync across three repositories' worth of build systems. Mute is one
+boolean in the platform's own preference store, and it is honoured before any
+device is opened.
+
+The design constraint that matters is **promptness under load**. A player
+holding an arrow key generates cues far faster than a cue lasts, and the
+obvious implementation of each platform's audio API turns that into a queue:
+
+| Client | The trap | What it does instead |
+| --- | --- | --- |
+| Web | An `AudioContext` built before a user gesture is suspended, and a suspended context's `currentTime` is frozen at zero. Every cue scheduled against it lands on the same instant and they all fire together when it unfreezes. | No context exists until `unlock()` runs inside a real gesture, so it is born running. A cue scheduled while the clock is not running is **dropped**, never queued. |
+| iOS | `AVAudioPlayerNode` is a queue: buffers scheduled on one node play strictly one after another. | A ring of eight player nodes, each cue interrupting the node it lands on, so cues overlap instead of lining up. |
+| Android | Allocating an `AudioTrack` per cue costs tens of milliseconds and a thread each time, so the backlog grows faster than it drains. | One streaming track and a mixer thread that sums the sounding voices; the blocking `write` is what paces it. |
+
+All three cap the number of simultaneous voices and **drop** the excess. That
+is the whole rule: a cue the player cannot hear now is worth less than nothing
+if the price is hearing it later, on top of twenty others.
+
 ### Motion architecture
 
 | Element | Web | iOS | Android |
@@ -838,6 +1200,12 @@ flowchart LR
 **Keep the controller that way.** A controller that reaches back into `document` mid-flight is one that can only be tested in a real browser.
 
 Rendering is incremental: the 16 cells are built once and then updated in place. A `pop` class is toggled only on tiles whose value actually changed this move, so a re-render does not re-animate a static board.
+
+### Optional cloud on web
+
+`cloud.js` owns HTTP, token storage, and sync. `account.js` owns the dialogs, guest invite banner, busy states, and the bridge calls into the game controller. Point a local app at a local API with `GAME2048_API_BASE_URL` when running `make serve`.
+
+The account UI follows the same paper/ink/accent tokens as the board. Credential rules are shared — see [Credential entry](#credential-entry). Sync is debounced after signed-in moves so a fast arrow-key run does not open one HTTP request per swipe.
 
 The controller exposes two hooks for testing and automation:
 
@@ -959,6 +1327,22 @@ The actual fix was trimming spacing so the content fits, which makes `ViewThatFi
 
 **The lesson worth recording: three attempts producing byte-identical failures means the change is not reaching the behaviour at all.** That is a signal to stop and re-measure, not to try a fourth fix.
 
+### Optional cloud on iOS
+
+Cloud code lives under `Game-2048/Cloud/`. New Swift files must be added to the Xcode target — the project has no synchronised groups.
+
+| Type | Role |
+| --- | --- |
+| `CloudAPI` | Actor wrapping `URLSession`; token refresh; fakeable for unit tests |
+| `CloudStore` / `UserDefaultsCloudStore` | Tokens, prompt-dismissed flag |
+| `CloudController` | `@MainActor` UI state: phase, activity, user, leaderboard, errors |
+| `CloudViews` | Paper-chrome auth, account, leaderboard, and reset sheets |
+| `CloudModels` | Wire DTOs shared with the controller |
+
+`CloudController.restore()` re-establishes a stored session on launch but does **not** reconcile the board — the game decides which profile is active first, then asks for adopt. Auth sheets are scrollable paper forms (not Settings `Form` / `List`) so they match the game palette; fields stay leading-aligned, title and subtitle centred.
+
+**Cloud UI must not push the board into a `ScrollView`.** The same gesture-ownership rule applies after the account banner and header controls are present.
+
 ---
 
 ## Android client
@@ -1009,6 +1393,22 @@ classDiagram
 
 `GameViewModel` takes a nullable `GameStorage`, so the rules suite runs entirely in memory while a separate suite exercises the real `SharedPreferences` serialisation against a hand-written in-memory fake — no Robolectric, no mocking framework, no Android runtime.
 
+### Optional cloud on Android
+
+Cloud code lives under `…/cloud/`. Pattern mirrors iOS:
+
+| Type | Role |
+| --- | --- |
+| `CloudApi` + `HttpTransport` | HTTP; fake transport for JVM unit tests |
+| `CloudStorage` | Tokens and preferences |
+| `CloudController` | Auth/sync/leaderboard orchestration and UI state |
+| `CloudUi` | Compose auth, account, and leaderboard surfaces |
+| `CloudModels` | Wire DTOs |
+
+Grid updates remain **immutable** even when applying a downloaded cloud save — produce a new board rather than mutating in place. In-place mutation previously broke Compose recomposition and reverse-direction merges simultaneously.
+
+The board's `detectDragGestures` still **must consume each `PointerInputChange`** after cloud chrome is added; an unconsumed change is delivered to the parent scroll and a board swipe drags the whole screen.
+
 ---
 
 ## Gesture ownership
@@ -1050,28 +1450,37 @@ All three are covered by tests. See [`docs/testing.md`](docs/testing.md#gesture-
 ```mermaid
 flowchart TB
     UI["Browser / simulator / emulator<br/>real input, real rendering"]
-    Unit["Deterministic unit suites<br/>rules, controller, storage"]
+    Unit["Deterministic unit suites<br/>rules, controller, storage, cloud, sound, SDUI"]
 
     UI --> Unit
 
-    Unit --> W["Web: 65 tests<br/>engine + controller + assets"]
-    Unit --> I["iOS: 49 tests<br/>model + persistence + edges"]
-    Unit --> A["Android: 42 tests<br/>ViewModel + storage"]
+    Unit --> W["Web: engine + controller + cloud + assets"]
+    Unit --> I["iOS: model + persistence + cloud + surfaces"]
+    Unit --> A["Android: ViewModel + storage + cloud + surfaces"]
+    Unit --> S["Cloud API: unit + optional Mongo integration"]
 
-    UI --> WB["Web: 8 Chromium flows"]
-    UI --> IU["iOS: 9 XCUITest flows"]
-    UI --> AU["Android: 5 Compose tests"]
+    UI --> WB["Web: Chromium flows"]
+    UI --> IU["iOS: XCUITest flows"]
+    UI --> AU["Android: Compose instrumentation"]
 ```
 
-The split is deliberate: **rules go in the deterministic suite on all three platforms, because parity is the point.** User-flow behaviour goes in the platform UI suite, asserting a user-visible outcome rather than re-deriving the rules.
+The split is deliberate: **rules go in the deterministic suite on all three platforms, because parity is the point.** User-flow behaviour goes in the platform UI suite, asserting a user-visible outcome rather than re-deriving the rules. Cloud controllers are unit-tested with fake transports; the live API is covered under `server/`, not by device tests.
 
-| Platform | Deterministic | UI / integration | Runner |
-| --- | --- | --- | --- |
-| Web | 65 unit + 2 tooling | 8 Chromium scenarios | `node --test`, Playwright |
-| iOS | 49 model tests | 9 XCUITest flows (10 executions) | XCTest |
-| Android | 42 JVM tests | 5 Compose instrumentation tests | JUnit 4, Compose UI Test |
+| Platform | Deterministic | UI / integration | Runner | Notes |
+| --- | --- | --- | --- | --- |
+| Web | Engine, controller, cloud, sound, metadata, assets (+ tooling) | Chromium scenarios (board + cloud UI) | `node --test`, Playwright | c8 gate on all of `Web-Version/` |
+| iOS | Model, persistence, cloud, profiles, surfaces | XCUITest (appearance modes multiply launch) | XCTest | Domain coverage gate; `ScreenshotTests` never merge-gates |
+| Android | ViewModel, storage, sound, surfaces, cloud | Compose instrumentation | JUnit 4, Compose UI Test | JaCoCo on engine/storage |
+| Cloud API | Route/service unit tests | Integration against real Mongo when `MONGODB_TEST_URI` set | Node, supertest | See [docs/backend.md](docs/backend.md) |
 
-The iOS UI suite reports ten executions because the launch test runs once per appearance mode.
+Exact counts drift; [`docs/testing.md`](docs/testing.md) is authoritative for the inventory table. What must not drift is **coverage of the contract clauses** in [Three clients, one contract](#three-clients-one-contract).
+
+Each platform additionally covers the layer above its rules engine:
+
+- **Web** — controller against `fake-dom.js` (keyboard, touch, buttons, render, persistence) without a browser.
+- **iOS / Android** — persistence round-trips, spawn clamping, corrupt payloads; SDUI decode/gating/pruning/fallback; byte-identical `help.json`.
+- **All three** — cloud fake-transport auth/refresh/sync; guest vs account profile parking and restore; career stats never lifted from local storage; sound drop-not-queue.
+- **Server** — sync resolutions, auth refresh races, feature-flag `503`s, board normalisation.
 
 ### Determinism seams
 
@@ -1084,8 +1493,11 @@ Every place a test can pin behaviour that would otherwise be random, timing-depe
 | Persisted state | Storage abstraction | Web: fake `localStorage`. iOS: `UserDefaults(suiteName:)`. Android: `GameStorage` interface |
 | Whether persistence happens at all | iOS `loadSavedGame` flag | Constructor |
 | The DOM | `tests/web/helpers/fake-dom.js` | Test harness |
+| Cloud HTTP | Fake / stub transport | Web injectable `fetch`; iOS/Android test doubles on `CloudAPI` / `HttpTransport` |
+| Cloud API clock / Mongo | Test DB + controlled fixtures | `MONGODB_TEST_URI`, server test helpers |
 | Simulator / emulator choice | `IOS_SIMULATOR_ID`, `scripts/common.sh` resolution | Environment |
 | Coverage floor | `IOS_MINIMUM_COVERAGE` | Environment |
+| Compose animation flakiness | System animation scale 0 in instrumentation | CI / local device setup |
 
 The rule that follows from the first two rows: **a valid move always spawns a tile.** Asserting a whole row after a move couples the assertion to where the injected generator put that tile. Assert the cells the merge produced, plus the score. Three tests broke on exactly this during development, which is why it is written down here, in [`docs/testing.md`](docs/testing.md), and in `.github/CONTRIBUTING.md`.
 
@@ -1120,15 +1532,19 @@ The harness is not a general-purpose DOM. It implements what the controller actu
 
 Every platform enforces a floor, and all three sit far above it.
 
-| Platform | Gate | Current | Enforced by |
-| --- | --- | --- | --- |
-| Web | 100 % statements / lines / functions, 95 % branches, across all of `Web-Version/` | 100 % lines, 98.75 % branches | `c8`, in `npm run test:unit` |
-| iOS | 90 % lines of the `Game-2048.app` target | 99.44 % | `xccov` in `scripts/test-ios.sh` and in CI |
-| Android | 90 % lines, 85 % branches of the Kotlin engine and storage | 99.21 % lines, 91.26 % branches | JaCoCo `jacocoCoverageVerification` |
+| Platform | Gate | Enforced by |
+| --- | --- | --- |
+| Web | 100 % statements / lines / functions, 95 % branches, across all of `Web-Version/` | `c8`, in `npm run test:unit` |
+| iOS | 90 % lines of stable app/domain code | `xccov` in `scripts/test-ios.sh` and in CI |
+| Android | 90 % lines, 85 % branches of the Kotlin engine and storage | JaCoCo `jacocoCoverageVerification` |
 
-`MainActivity` sits outside the Android gate on purpose: it is Compose and is only reachable on a device, which `make test-android-device` covers. Holding the whole module to a JVM-only threshold would either fail on every machine without an emulator or push the number down to something meaningless.
+SwiftUI presentation files (`GameView.swift` and `CloudViews.swift`) and Android Compose presentation files (`MainActivity` and `CloudUi`) sit outside their numeric gates on purpose. Their behavior is exercised by simulator and emulator suites, while compiler-generated line counts for declarative UI vary between toolchain versions. Stable domain and controller code remains subject to the hard coverage floors above.
 
 **Lowering a threshold is never the fix for a failing gate.**
+
+### Screenshot and visual parity
+
+Canonical images under `images/` are part of the documentation contract. Regenerate with `make screenshots-web` and `make screenshots-mobile` (promote), or the `*-qa` variants for local-only output. Cloud UI states (`web-cloud-*`, `ios-cloud-*`, `android-cloud-*`) must be refreshed when auth/account/leaderboard chrome changes. UI changes require screenshots of affected states **and** manual visual inspection — automation captures pixels; humans catch "looks wrong".
 
 ### Failure modes and how each is caught
 
@@ -1136,7 +1552,7 @@ The classes of defect this architecture is actually exposed to, and what stands 
 
 | Failure mode | Symptom | Caught by |
 | --- | --- | --- |
-| Parity drift — a rule changes on one client only | The game behaves differently on Android | Three deterministic suites asserting the same contract; a CI job per platform |
+| Parity drift — a rule changes on one client only | The game behaves differently on Android | Three deterministic suites asserting the same contract; a required CI job per platform |
 | Merged tile merges again | `[2,2,4]` → `[8]` | A dedicated test on each platform, named for the rule |
 | Merge order flips for a direction | `[2,2,2,0]` right gives `4 2` instead of `2 4` | Direction-specific ordering tests on each platform |
 | Ineffective move spawns or scores | The board gains a tile from a blocked swipe | `swipe()` return value asserted `false`, plus board equality |
@@ -1150,8 +1566,17 @@ The classes of defect this architecture is actually exposed to, and what stands 
 | Manifest drifts from its assets | Install prompt broken or wrong screenshot | `validate-repository.mjs` reads the PNG header |
 | iOS test file not in the target | Test silently never runs | Documented; the count in `docs/testing.md` is the check |
 | Toolchain assumption (`adb` on `PATH`, right `java`) | Works on the author's machine only | Every entry point routes through `scripts/`; the dev container proves a clean environment |
+| Guest round uploaded on sign-in | Another person's device round becomes "yours" | Profile-separation tests; `sync(null)` on adopt |
+| Career stats lifted from local best | New account shows a best it never earned | Explicit assertions that `/me` stats are rendered verbatim |
+| Last-writer-wins sync | An hour of play vanishes when a second phone syncs | Server sync unit tests for `conflicted` + parked slot |
+| Undo decreases `moves` | Sync thinks the round went backwards | Client + server invariants on monotonic moves |
+| Cloud download applied without validation | Impossible board on screen | Same board predicates as local restore before `applyCloudSave` |
+| Cue backlog under rapid input | Sounds arrive seconds late in a burst | Drop-not-queue tests / architecture on all three |
+| SDUI schema too new / empty | Blank help sheet | Fallback-required tests on both natives |
+| Version field drift | Store listing disagrees with `package.json` | `make version` in check + CI + pre-tag |
+| Confirm-password field under keyboard in UITest | CI: "no keyboard focus" | Reveal-driven type helper; dismiss prior keyboard |
 
-The two entries with no automated check — the iOS target membership and parity drift in *newly added* behaviour — are the ones that need human attention in review. Everything else fails a build.
+The entries with no fully automated check — iOS target membership for brand-new files, and parity drift in *newly invented* behaviour not yet mirrored — need human attention in review. Everything else fails a build or a required check.
 
 ---
 
@@ -1252,51 +1677,68 @@ Accessibility is a contract clause, not a polish pass.
 | Requirement | Web | iOS | Android |
 | --- | --- | --- | --- |
 | Icons | SVG | SF Symbols | Material vector |
-| Screen-reader board | `role="grid"` / `row` / `gridcell`, per-cell `aria-label` | Accessibility labels on tiles | Content descriptions |
+| Screen-reader board | `role="grid"` / `row` / `gridcell`, per-cell `aria-label` | Accessibility container on the board; labels on controls | Content descriptions / semantics |
 | Live announcements | `#statusLine` with `aria-live` | — | — |
-| Keyboard | Arrows, WASD, `F` for fullscreen | — | — |
-| Focus | Visible focus, message panel takes focus when shown | — | — |
-| Motion | Respects reduced-motion | Respects reduced-motion | Respects reduced-motion |
+| Keyboard | Arrows, WASD, `F` for fullscreen; dialog traps focus while open | — | — |
+| Focus | Visible focus; message panel takes focus when shown | XCUITest identifiers on interactive chrome | Semantics for Compose tests |
+| Motion | Respects `prefers-reduced-motion` | Respects reduced motion | Respects animator scale / `snap()` |
+| Cloud forms | Labels, mismatch callouts, busy `aria-busy` | Accessibility identifiers on fields / reveal / submit | Content descriptions on auth controls |
 
 **Never use ASCII, emoji, or Unicode glyphs as button icons.** Icon artwork is centred by geometry and layout, with an accessible name on the enclosing control.
 
-Every cell carries `aria-label` of either `Tile <value>` or `Empty cell`, asserted by a test — a grid that reads as a wall of unlabelled divs is unusable with a screen reader, and that regression is easy to introduce while optimising rendering.
+Every web cell carries `aria-label` of either `Tile <value>` or `Empty cell`, asserted by a test — a grid that reads as a wall of unlabelled divs is unusable with a screen reader, and that regression is easy to introduce while optimising rendering.
+
+Password reveal controls carry their own accessibility labels ("Show password" / "Hide password") so a screen reader announces state rather than a decorative eye glyph. Closing a form resets every reveal to hidden — the next opener starts from dots.
 
 ---
 
 ## Command surface
 
-Everything goes through `make`. The targets wrap scripts that resolve toolchains, so a fresh clone works without manual environment setup.
+Everything goes through `make`. The targets wrap scripts that resolve toolchains, so a fresh clone works without manual environment setup. Prefer these entry points over inventing one-off `adb` / `xcrun` / `./gradlew` invocations.
 
 ```mermaid
 flowchart LR
-    Make[make] --> Check[check<br/>syntax · repo · shell · SEO]
-    Make --> Serve[serve<br/>localhost:8080]
+    Make[make] --> Check[check]
+    Make --> Serve[serve]
     Make --> TW[test-web]
     Make --> TI[test-ios]
     Make --> TA[test-android]
-    Make --> T[test<br/>everything this host supports]
+    Make --> TAD[test-android-device]
+    Make --> T[test]
     Make --> Run[ios-run · android-run]
-    Make --> Shots[screenshots-web]
+    Make --> Shots[screenshots-web · screenshots-mobile]
+    Make --> Ver[version · version-sync]
+    Make --> Srv[server-check · server-test]
 
     TW --> Scripts[scripts/*.sh]
     TI --> Scripts
     TA --> Scripts
     Run --> Scripts
+    Shots --> Scripts
 ```
 
 | Command | Does |
 | --- | --- |
 | `make help` | Lists every supported workflow |
-| `make check` | Fast pre-commit checks — also what the Husky hook runs |
-| `make serve` | Serves the web app at `http://localhost:8080` |
+| `make check` | Fast pre-commit checks — syntax, repo/SEO validation, ShellCheck when installed; also what the Husky hook runs |
+| `make serve` | Serves the web app at `http://localhost:8080`. Set `GAME2048_API_BASE_URL` to point it at a local Cloud API |
 | `make test-web` | Syntax, repo validation, unit tests with coverage, tooling tests, Chromium flows |
-| `make test-ios` | Unit and UI tests on a resolved simulator, then the coverage gate |
+| `make test-ios` | Unit and UI tests on a resolved simulator, then the coverage gate (`ScreenshotTests` skipped) |
 | `make test-android` | Unit tests, coverage gate, lint, debug APK |
-| `make test-android-device` | Adds Compose tests on a connected device |
+| `make test-android-device` | Adds Compose tests on a connected device / emulator |
 | `make test` | Every suite the current host can run |
 | `make ios-run` / `android-run` | Build, install, launch |
-| `make screenshots-web` | Deterministic desktop and mobile captures into `output/` |
+| `make ios-build` / `ios-boot` / `ios-devices` | Lower-level iOS helpers |
+| `make android-build` / `android-install` / `android-devices` / `android-tasks` / `android-clean` | Lower-level Android helpers |
+| `make gradle ARGS="…"` | Any Gradle task with a resolved JDK 17 |
+| `make screenshots-web` | Deterministic desktop/mobile game + cloud UI captures, promoted into `images/` |
+| `make screenshots-web-qa` | Same captures into `output/playwright/latest/` only |
+| `make screenshots-mobile` | Canonical iOS/Android game + cloud UI from a booted sim/emulator → `images/` |
+| `make screenshots-mobile-qa` | Same native captures into `output/mobile/` only |
+| `make version` | Print `VERSION` and verify every derived client field agrees |
+| `make version-sync` | Rewrite derived version fields from `VERSION` |
+| `make server-check` / `server-test` | Cloud API OpenAPI validation and unit tests under `server/` |
+| `make verify-devcontainer` | Build the dev container and assert every tool is on `PATH` |
 
 ### Toolchain resolution
 
@@ -1313,56 +1755,125 @@ flowchart TD
     Common --> Guard["require_macos · require_command"]
 ```
 
+| Helper | Resolves | Falls back to |
+| --- | --- | --- |
+| `use_java_17` | A JDK 17 on disk | Notice only — Gradle daemon JVM criteria then provision |
+| `resolve_adb` | `adb` on `PATH` | `$ANDROID_HOME/platform-tools/adb`, then common SDK locations |
+| `resolve_ios_simulator` | `IOS_SIMULATOR_ID` if set | A booted iPhone, else a preferred available device |
+| `boot_ios_simulator` | Boots and waits for the device | — |
+
 The Android build additionally commits Gradle daemon JVM criteria in `Android-Version/Game2048/gradle/gradle-daemon-jvm.properties`, so **Gradle downloads and runs on a matching Adoptium JDK 17 regardless of the machine's default `java`**. The JVM suite therefore needs only the Android SDK — not a preinstalled JDK. The first invocation pays a one-time download into `~/.gradle/jdks/`.
 
 A dev container covers the web and Android workflows for contributors without a local toolchain; `make verify-devcontainer` builds it and checks every tool. iOS is not covered there — it requires Xcode on a macOS host.
+
+Environment knobs worth knowing:
+
+| Variable | Effect |
+| --- | --- |
+| `GAME2048_API_BASE_URL` | Web (and local serve) Cloud API origin |
+| `IOS_SIMULATOR_ID` | Pin the simulator UDID for iOS scripts |
+| `IOS_MINIMUM_COVERAGE` | Override the iOS domain coverage floor (default 90) |
+| `ANDROID_HOME` / `ANDROID_SDK_ROOT` | SDK root for `adb` and emulator tooling |
+| `MONGODB_TEST_URI` | Enables Cloud API integration tests (must end in `_test`) |
 
 ---
 
 ## CI topology
 
 ```mermaid
-flowchart LR
-    Push[push / PR / dispatch] --> Web[web · ubuntu]
-    Push --> IOS[ios · macos-15]
-    Push --> AJ[android-jvm · ubuntu]
-    Push --> DK[docker · ubuntu]
-    Push --> DA[docker-android · ubuntu]
+flowchart TB
+    Push[push / PR / workflow_dispatch] --> Conc["concurrency: ci-…<br/>cancel-in-progress"]
+    Conc --> Web[web · ubuntu]
+    Conc --> IOS[ios · macos-15]
+    Conc --> AJ[android-jvm · ubuntu]
+    Conc --> DK[docker · ubuntu]
+    Conc --> DA[docker-android · ubuntu]
     AJ --> AD[android-device · ubuntu]
 
-    DA --> A1[SDK image · amd64 only]
-    DA --> A2[verify toolchain in a login shell]
-    DA --> A3[build APK + unit tests in the image]
-    DA --> A4[publish to GHCR on a branch push]
+    subgraph Required["Required to merge into main"]
+        Web
+        IOS
+        AJ
+        AD
+    end
 
-    DK --> D1[build amd64 + arm64]
-    DK --> D2[smoke test a running container]
-    DK --> D3{"branch push?"}
-    D3 -- yes --> D4[publish to GHCR]
-    D3 -- "no, pull request" --> D5[build only, never publish]
-
-    Web --> W1[npm audit]
-    Web --> W2[syntax · repo · SEO validation]
-    Web --> W3[ShellCheck]
-    Web --> W4[unit tests + coverage gate]
-    Web --> W5[Chromium flows]
-
-    IOS --> I1[build-for-testing]
-    IOS --> I2[model tests + coverage]
-    IOS --> I3[UI + accessibility flows]
-    IOS --> I4[coverage gate via xccov]
-
-    AJ --> A1[unit tests]
-    AJ --> A2[JaCoCo gate]
-    AJ --> A3[lint]
-    AJ --> A4[debug APK]
-
-    AD --> D1[emulator Compose flows]
+    subgraph Advisory["Also runs — not merge gates"]
+        DK
+        DA
+        DR[dependency-review]
+        Label[pull request labels]
+    end
 ```
 
-Four independently visible jobs, so a failure points straight at the responsible platform. Coverage reports, `.xcresult` bundles, Android reports, and the debug APK upload as artifacts **including on failure** — which is usually when they are needed.
+| Job (check name) | Runner | What it proves |
+| --- | --- | --- |
+| **Web unit, coverage, and browser flows** | `ubuntu-latest` | `npm audit`, syntax, repo/SEO validation, ShellCheck, unit + c8 gate, Playwright Chromium |
+| **iOS build, model tests, and UI flows** | `macos-15` | `build-for-testing`, model XCTest + coverage, XCUITest (skips `ScreenshotTests`), xccov domain gate |
+| **Android unit, lint, and APK build** | `ubuntu-latest` | JVM unit tests, JaCoCo gate, lint, debug APK |
+| **Android emulator UI flows** | `ubuntu-latest` | Compose instrumentation on API 34 (with a second attempt if the emulator is unusable) |
+| Docker image build and publish | `ubuntu-latest` | Multi-arch runner image; smoke test; publish to GHCR on branch push only |
+| Android builder image | `ubuntu-latest` | SDK image build, login-shell toolchain verify, APK build inside the image; publish on branch push |
+
+**Branch protection on `main`** requires the four bold jobs above, with *strict* status checks (the branch must be up to date) and a pull request before merging. Admins are not exempt. Docker, dependency-review, and labeler are visible but not merge blockers — a red Docker job should still be investigated, but it does not hold the PR.
+
+Concurrency: one run per workflow + ref; newer pushes cancel in-progress runs on the same branch so a flurry of fixes does not queue obsolete work.
+
+Artifacts upload **including on failure**: web coverage, iOS `.xcresult` bundles, Android reports, and the debug APK. That is usually when they are needed.
 
 ShellCheck is optional locally but **required in CI**. Install it (`brew install shellcheck`) to catch shell issues before pushing rather than after.
+
+Companion workflows (not part of Cross-platform CI):
+
+| Workflow | Trigger | Role |
+| --- | --- | --- |
+| Dependency review | `pull_request` | Flags newly introduced vulnerable or disallowed deps |
+| Pull request labels | `pull_request_target` | Applies path-based labels |
+| Cut release | `workflow_dispatch` | Bumps `VERSION`, tags, dispatches Release |
+| Release | tag / dispatch | Builds and attaches APK, unsigned iOS app, web zip |
+
+Server OpenAPI and unit tests are exercised via `make server-check` / `server-test` and should be run when `server/` changes; they are part of the Cloud API's own quality bar even when not every PR touches that tree.
+
+---
+
+## Versioning and release
+
+`VERSION` at the repository root is the **only** place a human edits the version. Everything else is derived by `scripts/version.sh` and verified by `make version` / CI.
+
+| Derived field | Where |
+| --- | --- |
+| `package.json` → `version` | Web |
+| `versionName` / `versionCode` | `Android-Version/Game2048/app/build.gradle.kts` |
+| `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` | `2048 Game.xcodeproj` (every configuration) |
+
+`versionCode` is `MAJOR * 10000 + MINOR * 100 + PATCH` (so `2.1.3` → `20103`). It stays monotonic as long as minor and patch stay below 100, and there is no second number to forget.
+
+```mermaid
+flowchart TD
+    Human[Edit VERSION or Cut release] --> Sync[scripts/version.sh]
+    Sync --> Pkg[package.json]
+    Sync --> And[Gradle versionName/Code]
+    Sync --> Xcode[MARKETING_VERSION · CURRENT_PROJECT_VERSION]
+    Check[make version / CI / pre-tag] --> Agree{All agree?}
+    Agree -->|no| Fail[Fail the build]
+    Agree -->|yes| Ship[Cut release → Release workflow]
+```
+
+**Do not tag by hand.** The ship path is Actions → **Cut release** → choose `patch` / `minor` / `major`. That workflow:
+
+1. Verifies the tree is internally consistent.
+2. Bumps `VERSION`, propagates derived fields, opens the changelog section.
+3. Commits, tags `vX.Y.Z`, and pushes.
+4. **Dispatches** the Release workflow by name (a tag pushed with `GITHUB_TOKEN` does not start workflows — GitHub suppresses that loop).
+5. Waits and confirms a GitHub Release exists with the expected artifacts attached.
+
+| Artifact | Job | Notes |
+| --- | --- | --- |
+| `2048-vX.Y.Z-debug.apk` | `android-apk` | Installable with unknown sources |
+| `2048-vX.Y.Z-ios-unsigned.zip` | `ios-app` | Simulator / self-sign; no App Store profile in-repo |
+| `2048-vX.Y.Z-web.zip` | `web-bundle` | Unzip and serve |
+| `SHA256SUMS-*.txt` | those jobs | Checksums for the zips |
+
+One job creates the Release; three upload into it. Letting each build job create-if-missing races. A green job is not a release — `verify` inspects attached assets, and Cut release checks again afterwards. Full narrative: [docs/releasing.md](docs/releasing.md).
 
 ---
 
@@ -1375,6 +1886,7 @@ flowchart TD
     Start[Behaviour change] --> Kind{Touches the rules?}
     Kind -->|no, one platform's UI| Single["Change that client<br/>+ its UI test"]
     Kind -->|yes| Contract[Update the contract in ARCHITECTURE.md and AGENTS.md]
+    Kind -->|cloud wire / sync| Backend[Update docs/backend.md + server tests + three clients]
 
     Contract --> W[Web: engine or controller + test]
     Contract --> I[iOS: GameViewModel + XCTest]
@@ -1404,9 +1916,18 @@ Worked example — **adding a 4096 tile colour**:
 | 2. iOS | `Game-2048/GameView.swift` — add a `case 4096` to `tileColor` |
 | 3. Android | `…/ui/theme/Color.kt` — add `Tile4096`, wire it into the tile composable |
 | 4. Verify | Compare against the [design-token table](#design-tokens-shared-by-hand); the hex must match exactly |
-| 5. Screenshot | `make screenshots-web`, inspect manually |
+| 5. Screenshot | `make screenshots-web` (and mobile if native), inspect manually |
 
 No test changes — the ramp is presentation. Contrast that with **changing the spawn probability**, which touches the rules: three engine edits, three boundary tests updated (the exclusive `< 0.9` assertion on each platform), and this document's [spawning section](#tile-spawning-and-determinism).
+
+Worked example — **changing sync conflict priority**:
+
+| Step | Where |
+| --- | --- |
+| 1. Contract | Update [Sync resolution](#sync-resolution) and [docs/backend.md](docs/backend.md) |
+| 2. Server | `server/src/services/sync.js` + unit tests |
+| 3. Clients | Only if wire fields or client-side messaging change — often messaging only |
+| 4. Verify | `make server-test`; spot-check a conflicted sync on one native client |
 
 Rules of thumb:
 
@@ -1414,6 +1935,7 @@ Rules of thumb:
 - **Prefer reaching a target board through injected state** over a long scripted move sequence — the test then says what it means.
 - **Name the test after the behaviour it protects**, not the function it calls. The name is what a future maintainer reads when it fails at 2 a.m.
 - **Confirm the test fails before your fix and passes after.** A test that never failed has proven nothing.
+- **Cloud presentation files stay out of coverage gates**; cover controllers with fake transports and sheets with UI tests / screenshots.
 
 The [`2048-cross-platform-parity`](.agents/skills/2048-cross-platform-parity/SKILL.md) skill encodes this workflow for agents.
 
@@ -1421,21 +1943,23 @@ The [`2048-cross-platform-parity`](.agents/skills/2048-cross-platform-parity/SKI
 
 ## Security and privacy posture
 
-The threat model is short because the attack surface is small — and keeping it small is itself the design.
+The threat model is short because the attack surface is small — and keeping it small is itself the design. Local play has no network. Cloud features are opt-in and never sit on the move path.
 
 ```mermaid
 flowchart LR
     subgraph Device[The player's device]
-        App[Game]
-        Store[(localStorage / UserDefaults / SharedPreferences)]
+        App[Game + optional cloud UI]
+        Store[(localStorage / UserDefaults / SharedPreferences<br/>guest + account profiles)]
         App <--> Store
     end
 
-    Net((Network))
-    App -. "no requests, ever" .- Net
+    Net((Internet))
+    App -.->|only when signed in<br/>auth · sync · leaderboard| API[Cloud API]
+    API --> Atlas[(Atlas)]
+    App -. "moves never wait" .- Net
 
     subgraph Supply[Supply chain]
-        Dep["devDependencies only:<br/>c8 · husky · playwright"]
+        Dep["Web: c8 · husky · playwright<br/>Server: Express stack"]
         Audit[npm audit in CI]
         Dep --> Audit
     end
@@ -1443,37 +1967,36 @@ flowchart LR
 
 | Property | Status |
 | --- | --- |
-| Data collected | None. No accounts, no analytics, no telemetry, no identifiers |
-| Network calls at runtime | None on any client |
-| Runtime dependencies | **Zero** on all three clients. The web app ships no third-party JavaScript |
-| Build dependencies | Web: three devDependencies (`c8`, `husky`, `playwright`). Android: AndroidX and Compose. iOS: Apple SDKs only |
-| Persisted data | One saved round and one best score, in platform-local storage. Never leaves the device |
-| Untrusted input | Only the saved state, which is fully validated before use |
-| Secrets in the repository | None. `local.properties`, keystores, signing material, and tokens are gitignored and never committed |
-| Signing in CI | None. All builds are unsigned |
-| Dependency monitoring | `npm audit` on every CI run. Upgrades are applied manually; no update bot is enabled |
+| Data collected | Local round + best score always (per profile). With an optional account: profile, cloud saves, scores, session tokens — see [docs/privacy.md](docs/privacy.md) |
+| Network calls at runtime | **None required for play.** Optional Cloud API when the player signs in or opens cloud surfaces |
+| Runtime dependencies | **Zero** required third-party JS on web for the board. Cloud clients use platform HTTP only (`fetch`, `URLSession`, `HttpURLConnection`) |
+| Build dependencies | Web: three devDependencies (`c8`, `husky`, `playwright`). Android: AndroidX and Compose. iOS: Apple SDKs only. Server: Express stack under `server/` |
+| Persisted data | Local: guest + account rounds and best scores. Cloud (opt-in): saves, scores, account metadata, hashed refresh tokens |
+| Untrusted input | Saved state (local and cloud) and bundled SDUI payloads are fully validated before use |
+| Auth secrets | JWT secrets only on the server (env). Clients hold opaque tokens; see privacy doc for Keychain / EncryptedSharedPreferences trade-offs |
+| Password reset | Interim username+email check — deliberately weak, feature-flagged; read the route security note before extending |
+| Secrets in the repository | None. `.env`, `local.properties`, keystores, signing material, and tokens are gitignored and never committed |
+| Signing in CI | None. All CI builds are unsigned |
+| Dependency monitoring | `npm audit` on every CI web job. Upgrades are applied manually; no update bot is enabled |
+| Injection sinks | Web DOM is built with `createElement` / `textContent` — no `eval`, no dynamic `innerHTML` for game content |
 
-The only place the app consumes data it did not create is the saved round, and every rejection path there is tested. There is no user-generated content, no URL parameter handling, no `eval`, no `innerHTML` with dynamic content — the DOM is built with `createElement` and `textContent`, so there is no injection sink to defend.
+The board path consumes one untrusted input class: saved rounds. Every rejection path is tested. Cloud downloads are validated with the same board predicates before `applyCloudSave`. SDUI payloads are a second untrusted class on the natives (bundled today) — see [Server-driven surfaces](#server-driven-surfaces).
 
 ---
 
 ## Server-driven surfaces
 
-The game is never server-driven. Rules, board, scoring, and undo are code, and
-no payload can reach them. What *is* describable by data is **content** — the
-help sheet today — the parts you would otherwise ship a build to change.
+The **game** is never server-driven. Rules, board, scoring, and undo are code, and no payload can reach them. What *is* describable by data is **content** — the help sheet today — the parts you would otherwise ship a store build to change.
 
-This exists because store review is slow. A typo in the help copy should not
-wait days. It is built now rather than later because the expensive part is not
-the transport, it is the contract and the fallback semantics, and designing
-those under release pressure is how a bad contract ships.
+This is a **separate** concern from the [Optional Cloud API](#optional-cloud-api). The Cloud API stores accounts and saves. SDUI describes help (and future) copy. Conflating them is how rules accidentally become data.
 
-**Today there is no server.** The only source is the app bundle, and neither
-client makes a network request. See [Security and privacy](#security-and-privacy-posture).
+This exists because store review is slow. A typo in the help copy should not wait days. It is built now rather than later because the expensive part is not the transport, it is the contract and the fallback semantics, and designing those under release pressure is how a bad contract ships.
+
+**Today the SDUI publisher is the app bundle**, not the Cloud API. The only surface source is shipped JSON (`help.json`); neither native client fetches surfaces over the network. The web client has no SDUI runtime — a static page can be edited and redeployed in seconds, so the store-review problem does not exist there.
 
 ```mermaid
 flowchart TB
-    Source["SurfaceSource<br/>(bundled today)"] --> Resolve[SurfaceResolver]
+    Source["SurfaceSource<br/>(bundled help.json today)"] --> Resolve[SurfaceResolver]
     Resolve --> Compat{Compatible?}
     Compat -->|"schema too new"| FB[Native fallback]
     Compat -->|"app too old"| FB
@@ -1519,13 +2042,13 @@ One new `SurfaceSource` and one line in the catalog. The renderer, validator,
 resolver, and every test stay untouched. The *code* cost is small; the cost that
 matters is the rest:
 
-- Android gains an `INTERNET` permission, visible on the store listing.
+- Android gains an `INTERNET` permission solely for surfaces (it may already have one for the Cloud API — still a disclosure change).
 - The privacy disclosure changes.
 - A cache and staleness policy becomes necessary.
 - The payload becomes an untrusted remote input, not just an untrusted local one.
 
 That is a product decision, not a refactor, which is exactly why the seam exists
-and the transport does not.
+and the transport does not. Do **not** route surfaces through the Cloud API's save endpoints — different trust and versioning model.
 
 ### Where it lives
 
@@ -1561,7 +2084,15 @@ These hold across all three clients. A change that breaks one is a bug regardles
 - New game preserves the best score and requires confirmation when a round is in progress.
 - The best score never decreases.
 - Corrupt or structurally invalid saved state is discarded safely — never crashes, never partially restores.
-- Game state stays on the device. No backend, analytics, accounts, remote storage, or network calls.
+- Game state stays playable on the device. The optional Cloud API never gates a move; see [docs/backend.md](docs/backend.md).
+- Guest and account rounds are separate profiles. Signing in parks the guest round; signing out restores it exactly. Career statistics come from the account only.
+
+**Cloud**
+
+- Auth and round adoption are separate steps; the API never chooses which on-screen board to keep.
+- Sync never silently discards a divergent round — the further side wins and the other is parked.
+- `moves` is monotonic with play progress; undo must not decrease it.
+- In-flight cloud work disables its own control and shows a spinner; the board stays interactive.
 
 **Code**
 
@@ -1574,8 +2105,10 @@ These hold across all three clients. A change that breaks one is a bug regardles
 - A server-driven surface describes **content only**, never rules, styling, or behaviour.
 - Every surface has a native fallback, so no payload can blank or crash a screen.
 - Surface actions are names resolved by the host, never code carried in data.
+- Sound cues are heard now or dropped — never queued into a delayed burst.
 - Generated Xcode identifiers and Gradle wrapper binaries are not hand-edited.
 - `local.properties`, signing material, tokens, build output, and local simulator data are never committed.
+- `VERSION` is the only human-edited version; release only through Cut release.
 
 ---
 
@@ -1585,7 +2118,7 @@ The vocabulary used consistently across the three clients, the tests, and this d
 
 | Term | Means |
 | --- | --- |
-| **Board** | The 4×4 playfield. Flat 16-element array on the web, nested rows on the natives |
+| **Board** | The 4×4 playfield. Flat 16-element array on the web (and on the cloud wire), nested rows on the native view models |
 | **Tile** | One non-zero cell value. Always zero or a power of two |
 | **Cell** | One position on the board, whether or not it holds a tile |
 | **Line** | One row or column, extracted for merging. Always length 4 |
@@ -1597,19 +2130,36 @@ The vocabulary used consistently across the three clients, the tests, and this d
 | **Ineffective move** | A move that changes nothing. Scores nothing, spawns nothing, creates no snapshot, and is not undoable |
 | **Spawn** | The single new `2` or `4` placed after a valid move |
 | **Snapshot** | The board, score, and win flag captured before a valid move, for undo. Exactly one is retained |
-| **Best score** | The highest score achieved across rounds. Monotonic — survives new games and undo |
+| **Best score** | The highest score achieved across rounds for a profile. Monotonic — survives new games and undo |
 | **Win state** | Reaching 2048. Sticky, announced once, and does not end the round |
 | **Game over** | A full board with no orthogonal equal pair |
 | **Round** | One game from a fresh board to a new game or game over |
+| **Profile** | Guest or account — independent on-device storage slots for round + best |
+| **Guest round** | The signed-out profile; parked (not uploaded) when someone signs in |
+| **Account round** | The signed-in profile; synced when the network is available |
+| **Bridge** | `cloudSave` / `applyCloudSave` (+ session begin/end) — the only seam between rules and cloud |
+| **Cloud controller** | Auth/sync/leaderboard orchestration and busy/error UI state (`CloudController`, `account.js`) |
+| **Wire board** | Flat 16-element row-major array used on the Cloud API |
+| **Revision** | Server-side save generation used in sync comparison |
+| **Resolution** | Sync outcome: `uploaded`, `downloaded`, `in_sync`, or `conflicted` |
+| **Further round** | The save that wins a conflict — higher score, then moves, then revision |
+| **Parked conflict** | Losing save retained in a recoverable server slot, never deleted |
+| **Surface** | Versioned SDUI content tree (help today); not game rules |
+| **Native fallback** | Hand-written UI used when a surface cannot be rendered safely |
 | **Determinism seam** | An injection point that lets a test pin otherwise-random behaviour |
 | **Parity** | The three clients behaving identically for the same inputs |
 | **Contract** | The list of behaviours every client must satisfy — see [Three clients, one contract](#three-clients-one-contract) |
+| **Cut release** | The only supported path to bump `VERSION`, tag, and attach artifacts |
 
 ## Further reading
 
-- [`docs/architecture.md`](docs/architecture.md) — per-client implementation detail
-- [`docs/testing.md`](docs/testing.md) — suite placement, gates, and diagnosing flaky device runs
+- [`docs/architecture.md`](docs/architecture.md) — per-client implementation detail, lifecycle, delivery base paths
+- [`docs/backend.md`](docs/backend.md) — Cloud API stack, endpoints, env, deploy, feature flags
+- [`docs/privacy.md`](docs/privacy.md) — what is stored where; token placement trade-offs
+- [`docs/testing.md`](docs/testing.md) — suite placement, gates, flaky-device diagnosis, profile/sound test notes
+- [`docs/releasing.md`](docs/releasing.md) — `VERSION`, Cut release, artifact verification
 - [`.github/README.md`](.github/README.md) — product overview, features, and screenshots
 - [`AGENTS.md`](AGENTS.md) — the source of truth for coding agents
 - [`.agents/skills/`](.agents/skills/) — per-area workflows, including cross-platform parity
 - [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md) — contribution and testing requirements
+- [OpenAPI / live docs](https://game-2048-cloud-api.vercel.app/docs) — runnable API reference when the Cloud API is deployed

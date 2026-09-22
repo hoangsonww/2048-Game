@@ -1,6 +1,6 @@
 # Support
 
-This is a free, open-source project maintained in spare time. There is no backend service, no account system, and no paid support channel — but questions and reports are genuinely welcome, and routing them to the right place gets them answered faster.
+This is a free, open-source project maintained in spare time. There is no paid support channel — but questions and reports are genuinely welcome, and routing them to the right place gets them answered faster. Play is local-first; the optional Cloud API (accounts, sync, leaderboards) is documented in [docs/backend.md](../docs/backend.md).
 
 ## Where to go
 
@@ -36,7 +36,7 @@ For rules and gameplay bugs, the board state matters enormously. On the web clie
 
 This is a spare-time project, so response times vary. Actionable reports with clear reproduction steps get looked at first. Security reports are prioritized above everything else.
 
-An issue may be closed as informational if it is a generic automated scan result with no demonstrated impact, a question already answered in the documentation, or a request that conflicts with the project's stated constraints — no backend, no accounts, no analytics, no runtime dependencies on the web client.
+An issue may be closed as informational if it is a generic automated scan result with no demonstrated impact, a question already answered in the documentation, or a request that conflicts with the project's stated constraints — local-first play, no analytics or advertising SDKs, no mandatory network for a move, and no runtime npm dependencies on the static web client.
 
 ## Never post in public
 
