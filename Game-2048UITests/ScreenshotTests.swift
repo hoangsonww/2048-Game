@@ -39,6 +39,10 @@ final class ScreenshotTests: XCTestCase {
         if app.buttons["signOutButton"].waitForExistence(timeout: 2) {
             app.buttons["signOutButton"].tap()
             XCTAssertTrue(board.waitForExistence(timeout: 5))
+            // Signing out restores the parked guest round; swipe again so the
+            // handover warning still has progress to warn about.
+            board.swipeLeft()
+            board.swipeUp()
             app.buttons["accountButton"].tap()
         }
         XCTAssertTrue(app.staticTexts["Welcome back"].waitForExistence(timeout: 10))
@@ -49,10 +53,9 @@ final class ScreenshotTests: XCTestCase {
         save(app, as: "ios-signup")
 
         app.buttons["authSubmit"].tap()
-        if app.alerts["Set this round aside?"].waitForExistence(timeout: 10) {
-            save(app, as: "ios-handover")
-            app.alerts.buttons["Keep playing"].tap()
-        }
+        XCTAssertTrue(app.alerts["Set this round aside?"].waitForExistence(timeout: 10))
+        save(app, as: "ios-handover")
+        app.alerts.buttons["Keep playing"].tap()
 
         app.buttons["authSwitch"].tap()
         XCTAssertTrue(app.staticTexts["Welcome back"].waitForExistence(timeout: 10))
@@ -63,7 +66,7 @@ final class ScreenshotTests: XCTestCase {
         app.buttons["resetDismiss"].tap()
 
         app.buttons["leaderboardButton"].tap()
-        XCTAssertTrue(app.navigationBars["Leaderboard"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Leaderboard"].waitForExistence(timeout: 10))
         // The board is fetched over the network; give it a moment to answer
         // or to say it could not.
         Thread.sleep(forTimeInterval: 6)

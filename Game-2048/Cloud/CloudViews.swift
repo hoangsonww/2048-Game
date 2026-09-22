@@ -249,10 +249,21 @@ private struct CloudTextField: View {
 
 /// The coral fill that Form never gave the primary action.
 private struct CloudSubmitButton: View {
+    enum Style {
+        case accent, ink
+        var fill: Color {
+            switch self {
+            case .accent: return CloudPalette.accent
+            case .ink: return CloudPalette.ink
+            }
+        }
+    }
+
     let title: String
     let busyTitle: String
     let busy: Bool
     let identifier: String
+    var style: Style = .accent
     let action: () -> Void
 
     var body: some View {
@@ -270,7 +281,7 @@ private struct CloudSubmitButton: View {
             .frame(maxWidth: .infinity)
             .frame(height: 52)
             .background(
-                CloudPalette.accent.opacity(busy ? 0.72 : 1),
+                style.fill.opacity(busy ? 0.72 : 1),
                 in: RoundedRectangle(cornerRadius: 14, style: .continuous)
             )
         }
@@ -699,63 +710,135 @@ struct AccountSheet: View {
 
     @Environment(\.dismiss) private var dismiss
 
+    private var syncing: Bool { cloud.activity == .syncing }
+    private var signingOut: Bool { cloud.activity == .signingOut }
+
     var body: some View {
         NavigationStack {
-            List {
-                if let user = cloud.user {
-                    Section {
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text(user.displayName).font(.system(size: 22, weight: .heavy, design: .rounded)).tracking(-0.8)
-                            Text(user.email).font(.system(size: 13, design: .rounded)).foregroundStyle(CloudPalette.muted)
-                        }
-                        .padding(.vertical, 4)
-                    }
+            ScrollView {
+                VStack(alignment: .center, spacing: 18) {
+                    if let user = cloud.user {
+                        CloudFormIcon(systemName: "person.crop.circle.fill")
 
-                    Section("Career") {
-                        LabeledContent("Best score", value: user.statistics.bestScore.formatted())
-                        LabeledContent("Rounds played", value: user.statistics.gamesPlayed.formatted())
-                        LabeledContent("Rounds won", value: user.statistics.gamesWon.formatted())
-                        LabeledContent("Highest tile", value: user.statistics.highestTile.formatted())
+                        Text(user.displayName)
+                            .font(.system(size: 28, weight: .heavy, design: .rounded))
+                            .tracking(-1.1)
+                            .foregroundStyle(CloudPalette.ink)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+
+                        Text(user.email)
+                            .font(.system(size: 14, weight: .medium, design: .rounded))
+                            .foregroundStyle(CloudPalette.muted)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+
+                        // Career totals come from the account and from nowhere
+                        // else. A guest round played on this device before
+                        // signing in is not part of this account's history.
+                        VStack(spacing: 0) {
+                            AccountStatRow(label: "Best score", value: user.statistics.bestScore.formatted())
+                            AccountStatDivider()
+                            AccountStatRow(label: "Rounds played", value: user.statistics.gamesPlayed.formatted())
+                            AccountStatDivider()
+                            AccountStatRow(label: "Rounds won", value: user.statistics.gamesWon.formatted())
+                            AccountStatDivider()
+                            AccountStatRow(label: "Highest tile", value: user.statistics.highestTile.formatted())
+                        }
+                        .padding(.vertical, 6)
+                        .background(
+                            Color.white.opacity(0.78),
+                            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .stroke(Color.black.opacity(0.08))
+                        )
+                        .accessibilityElement(children: .contain)
+
+                        Text(cloud.status)
+                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .foregroundStyle(CloudPalette.muted)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("accountSyncStatus")
+
+                        CloudSubmitButton(
+                            title: "Sync now",
+                            busyTitle: "Syncing…",
+                            busy: syncing,
+                            identifier: "syncNowButton",
+                            style: .ink,
+                            action: onSyncNow
+                        )
+                        .padding(.top, 2)
+
+                        Text("Signing out brings back the round this device was playing before you signed in. Your account keeps its own.")
+                            .font(.system(size: 12.5, weight: .medium, design: .rounded))
+                            .foregroundStyle(CloudPalette.muted.opacity(0.9))
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        CloudLinkButton(
+                            title: signingOut ? "Signing out…" : "Sign out",
+                            identifier: "signOutButton",
+                            disabled: signingOut,
+                            action: onSignOut
+                        )
                     }
                 }
-
-                Section("Sync") {
-                    Text(cloud.status).font(.system(size: 13, design: .rounded)).foregroundStyle(CloudPalette.muted)
-                    Button {
-                        onSyncNow()
-                    } label: {
-                        HStack(spacing: 8) {
-                            if cloud.activity == .syncing {
-                                ProgressView().controlSize(.small)
-                            }
-                            Text(cloud.activity == .syncing ? "Syncing…" : "Sync now")
-                        }
-                    }
-                    .disabled(cloud.activity == .syncing)
-                    .accessibilityIdentifier("syncNowButton")
-                }
-
-                Section {
-                    Button(role: .destructive) {
-                        onSignOut()
-                    } label: {
-                        HStack(spacing: 8) {
-                            if cloud.activity == .signingOut {
-                                ProgressView().controlSize(.small)
-                            }
-                            Text(cloud.activity == .signingOut ? "Signing out…" : "Sign out")
-                        }
-                    }
-                    .disabled(cloud.activity == .signingOut)
-                    .accessibilityIdentifier("signOutButton")
-                } footer: {
-                    Text("Signing out brings back the round this device was playing before you signed in. Your account keeps its own.")
+                .padding(.horizontal, 22)
+                .padding(.top, 10)
+                .padding(.bottom, 32)
+                .frame(maxWidth: 520)
+                .frame(maxWidth: .infinity)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            .background(CloudPalette.paper.ignoresSafeArea())
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .foregroundStyle(CloudPalette.ink)
+                        .accessibilityIdentifier("accountDismiss")
                 }
             }
-            .navigationTitle("Account")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
+        .tint(CloudPalette.accent)
+    }
+}
+
+private struct AccountStatRow: View {
+    let label: String
+    let value: String
+
+    var body: some View {
+        HStack {
+            Text(label)
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .foregroundStyle(CloudPalette.ink)
+            Spacer(minLength: 12)
+            Text(value)
+                .font(.system(size: 15, weight: .bold, design: .monospaced))
+                .foregroundStyle(CloudPalette.muted)
+                .multilineTextAlignment(.trailing)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 13)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label), \(value)")
+    }
+}
+
+private struct AccountStatDivider: View {
+    var body: some View {
+        Rectangle()
+            .fill(Color.black.opacity(0.06))
+            .frame(height: 1)
+            .padding(.leading, 16)
     }
 }
 
@@ -770,16 +853,40 @@ struct LeaderboardSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                Picker("Window", selection: Binding(
-                    get: { cloud.leaderboardPeriod },
-                    set: { onPeriod($0) }
-                )) {
-                    ForEach(periods, id: \.0) { key, label in Text(label).tag(key) }
+                Text("Leaderboard")
+                    .font(.system(size: 28, weight: .heavy, design: .rounded))
+                    .tracking(-1.1)
+                    .foregroundStyle(CloudPalette.ink)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 22)
+                    .padding(.top, 8)
+
+                HStack(spacing: 8) {
+                    ForEach(periods, id: \.0) { key, label in
+                        let active = cloud.leaderboardPeriod == key
+                        Button {
+                            onPeriod(key)
+                        } label: {
+                            Text(label)
+                                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                                .foregroundStyle(active ? Color.white : CloudPalette.muted)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 9)
+                                .background(
+                                    (active ? CloudPalette.ink : Color.white.opacity(0.7)),
+                                    in: Capsule()
+                                )
+                                .overlay(
+                                    Capsule().stroke(Color.black.opacity(active ? 0 : 0.08))
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(cloud.activity == .loadingLeaderboard)
+                    }
                 }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .disabled(cloud.activity == .loadingLeaderboard)
+                .padding(.horizontal, 22)
+                .padding(.vertical, 14)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityIdentifier("leaderboardPeriods")
 
                 if cloud.activity == .loadingLeaderboard && (cloud.leaderboard?.entries.isEmpty ?? true) {
@@ -788,40 +895,64 @@ struct LeaderboardSheet: View {
                         .frame(maxWidth: .infinity)
                 }
 
-                List {
-                    ForEach(cloud.leaderboard?.entries ?? []) { entry in
-                        HStack(spacing: 12) {
-                            Text("#\(entry.rank)")
-                                .font(.system(size: 13, weight: .medium, design: .monospaced))
-                                .foregroundStyle(CloudPalette.muted)
-                                .frame(width: 38, alignment: .leading)
-                            Text(entry.displayName)
-                                .font(.system(size: 15, weight: .semibold, design: .rounded))
-                                .lineLimit(1)
-                            Spacer()
-                            Text(entry.highestTile.formatted())
-                                .font(.system(size: 12, design: .monospaced))
-                                .foregroundStyle(CloudPalette.muted)
-                            Text(entry.score.formatted())
-                                .font(.system(size: 15, weight: .bold, design: .monospaced))
+                ScrollView {
+                    LazyVStack(spacing: 8) {
+                        ForEach(cloud.leaderboard?.entries ?? []) { entry in
+                            HStack(spacing: 12) {
+                                Text("#\(entry.rank)")
+                                    .font(.system(size: 13, weight: .medium, design: .monospaced))
+                                    .foregroundStyle(CloudPalette.muted)
+                                    .frame(width: 38, alignment: .leading)
+                                Text(entry.displayName)
+                                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                    .foregroundStyle(CloudPalette.ink)
+                                    .lineLimit(1)
+                                Spacer(minLength: 8)
+                                Text(entry.highestTile.formatted())
+                                    .font(.system(size: 12, design: .monospaced))
+                                    .foregroundStyle(CloudPalette.muted)
+                                Text(entry.score.formatted())
+                                    .font(.system(size: 15, weight: .bold, design: .monospaced))
+                                    .foregroundStyle(CloudPalette.ink)
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 12)
+                            .background(
+                                entry.isViewer
+                                    ? CloudPalette.accent.opacity(0.14)
+                                    : Color.white.opacity(0.72),
+                                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .stroke(Color.black.opacity(0.06))
+                            )
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel("Rank \(entry.rank), \(entry.displayName), \(entry.score) points")
                         }
-                        .listRowBackground(entry.isViewer ? CloudPalette.accent.opacity(0.13) : Color.clear)
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel("Rank \(entry.rank), \(entry.displayName), \(entry.score) points")
-                    }
 
-                    Section {
                         Text(cloud.leaderboardNote)
-                            .font(.system(size: 12.5, design: .rounded))
+                            .font(.system(size: 12.5, weight: .medium, design: .rounded))
                             .foregroundStyle(CloudPalette.muted)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 8)
                             .accessibilityIdentifier("leaderboardNote")
                     }
+                    .padding(.horizontal, 22)
+                    .padding(.bottom, 28)
                 }
-                .listStyle(.plain)
             }
-            .navigationTitle("Leaderboard")
+            .background(CloudPalette.paper.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .foregroundStyle(CloudPalette.ink)
+                }
+            }
         }
+        .tint(CloudPalette.accent)
     }
 }
