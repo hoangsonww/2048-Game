@@ -332,7 +332,7 @@
             if (elements.accountButtonLabel) elements.accountButtonLabel.textContent = label;
             elements.accountButton.setAttribute(
                 "aria-label",
-                state.signedIn ? `Account: ${label}` : "Sign in or create an account"
+                state.signedIn ? `Account: ${label}` : "Sign in"
             );
         }
 
@@ -835,7 +835,7 @@
 
         const listen = (element, type, handler) => element?.addEventListener(type, handler);
 
-        listen(elements.accountButton, "click", () => (cloud.isSignedIn() ? openAccount() : openAuth("register")));
+        listen(elements.accountButton, "click", () => (cloud.isSignedIn() ? openAccount() : openAuth("login")));
         listen(elements.leaderboardButton, "click", () => openLeaderboard());
         listen(elements.bannerCreate, "click", () => openAuth("register"));
         listen(elements.bannerSignIn, "click", () => openAuth("login"));

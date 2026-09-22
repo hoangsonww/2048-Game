@@ -122,6 +122,13 @@ final class Game_2048UITests: XCTestCase {
         XCTAssertTrue(app.otherElements["GameBoard"].waitForExistence(timeout: 15))
 
         app.buttons["accountButton"].tap()
+        XCTAssertTrue(app.navigationBars["Welcome back"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.textFields["identifierField"].exists)
+        XCTAssertTrue(app.secureTextFields["passwordField"].exists)
+        XCTAssertFalse(app.secureTextFields["confirmPasswordField"].exists,
+                       "the header says Sign in, so it must open sign-in")
+
+        app.buttons["authSwitch"].tap()
         XCTAssertTrue(app.navigationBars["Create your account"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.textFields["usernameField"].exists)
         XCTAssertTrue(app.textFields["emailField"].exists)
@@ -135,7 +142,7 @@ final class Game_2048UITests: XCTestCase {
         app.buttons["passwordFieldReveal"].tap()
         XCTAssertTrue(app.secureTextFields["passwordField"].waitForExistence(timeout: 3))
 
-        // Sign-in has nothing to confirm.
+        // Return to sign-in for password recovery.
         app.buttons["authSwitch"].tap()
         XCTAssertTrue(app.navigationBars["Welcome back"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.secureTextFields["confirmPasswordField"].exists)
@@ -156,7 +163,13 @@ final class Game_2048UITests: XCTestCase {
         let app = launch()
         XCTAssertTrue(app.otherElements["GameBoard"].waitForExistence(timeout: 15))
 
+        // The invite toast intentionally auto-hides after 5.5 seconds, which
+        // can elapse while a loaded simulator establishes its UI session.
+        // Enter through the persistent Sign in control, then take the
+        // explicit registration switch.
         app.buttons["accountButton"].tap()
+        XCTAssertTrue(app.navigationBars["Welcome back"].waitForExistence(timeout: 5))
+        app.buttons["authSwitch"].tap()
         XCTAssertTrue(app.navigationBars["Create your account"].waitForExistence(timeout: 5))
         // Xcode 16's UI runner intermittently sends only the first character
         // to a SwiftUI SecureField. Reveal each field before typing so this
@@ -186,17 +199,17 @@ final class Game_2048UITests: XCTestCase {
         XCTAssertTrue(app.buttons["Undo"].isEnabled)
 
         app.buttons["accountButton"].tap()
-        XCTAssertTrue(app.navigationBars["Create your account"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Welcome back"].waitForExistence(timeout: 5))
+        app.textFields["identifierField"].tap()
+        app.textFields["identifierField"].typeText("ada")
         app.secureTextFields["passwordField"].tap()
         app.secureTextFields["passwordField"].typeText("Password1")
-        app.secureTextFields["confirmPasswordField"].tap()
-        app.secureTextFields["confirmPasswordField"].typeText("Password1")
         app.buttons["authSubmit"].tap()
 
         let warning = app.alerts["Set this round aside?"]
         XCTAssertTrue(warning.waitForExistence(timeout: 10))
         warning.buttons["Keep playing"].tap()
-        XCTAssertTrue(app.navigationBars["Create your account"].waitForExistence(timeout: 5),
+        XCTAssertTrue(app.navigationBars["Welcome back"].waitForExistence(timeout: 5),
                       "declining leaves the form up and the round alone")
     }
 

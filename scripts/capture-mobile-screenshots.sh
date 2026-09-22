@@ -180,7 +180,11 @@ android_capture() {
     sleep 6                                 # ... and it auto-hides after 5.5s
     shot android-main
 
-    tap content-desc "Sign in or create an account"
+    tap content-desc "Sign in"
+    expand_sheet
+    shot android-signin
+
+    tap text "Create an account instead"
     expand_sheet
     shot android-signup
 
@@ -192,7 +196,6 @@ android_capture() {
 
     tap text "I already have an account"
     expand_sheet
-    shot android-signin
 
     tap content-desc "Open password reset"
     expand_sheet

@@ -116,12 +116,23 @@ class GameScreenCloudTest {
             )
         )
 
-        // Guest "Sign in" opens LOGIN mode. The header account button opens
-        // REGISTER, which has Username/Email — not the identifier field.
+        // Every control labeled "Sign in", including the header account
+        // button, opens LOGIN mode. Registration remains a separate action.
         openSignInAndSubmit(identifier = "ada", password = "Password1")
 
         awaitNode("Account: Ada").assertExists()
         awaitGone(hasText("Playing as a guest"), "The guest invite")
+    }
+
+    @Test
+    fun theHeaderSignInButtonOpensSignInNotRegistration() {
+        show(controller())
+
+        awaitNode("Sign in").performClick()
+
+        awaitNode("Sign-in intro").assertExists()
+        awaitNode("Username or email").assertExists()
+        compose.onNodeWithText("Create your account").assertDoesNotExist()
     }
 
     @Test

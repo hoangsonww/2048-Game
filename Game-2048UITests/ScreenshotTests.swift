@@ -35,6 +35,10 @@ final class ScreenshotTests: XCTestCase {
         save(app, as: "ios-main")
 
         app.buttons["accountButton"].tap()
+        XCTAssertTrue(app.navigationBars["Welcome back"].waitForExistence(timeout: 10))
+        save(app, as: "ios-signin")
+
+        app.buttons["authSwitch"].tap()
         XCTAssertTrue(app.navigationBars["Create your account"].waitForExistence(timeout: 10))
         save(app, as: "ios-signup")
 
@@ -46,7 +50,6 @@ final class ScreenshotTests: XCTestCase {
 
         app.buttons["authSwitch"].tap()
         XCTAssertTrue(app.navigationBars["Welcome back"].waitForExistence(timeout: 10))
-        save(app, as: "ios-signin")
 
         app.buttons["authForgot"].tap()
         XCTAssertTrue(app.navigationBars["Reset your password"].waitForExistence(timeout: 10))

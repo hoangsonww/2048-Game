@@ -207,7 +207,7 @@ test("auth dialog owns WASD and arrows so the board stays still", async () => {
     await page.locator("#accountButton").click();
     assert.equal(await page.locator("#authDialog").evaluate(dialog => dialog.open), true);
 
-    await page.locator("#authUsername").fill("player");
+    await page.locator("#authIdentifier").fill("player");
     await page.keyboard.press("a");
     await page.keyboard.press("w");
     await page.keyboard.press("ArrowLeft");
@@ -350,11 +350,11 @@ test("password fields confirm, reveal, and offer a way back in", async () => {
     await page.locator("#accountButton").click();
     await page.waitForSelector("#authDialog[open]");
 
-    // Sign-up confirms; sign-in has nothing to confirm.
-    assert.equal(await page.locator("#authConfirmField").isVisible(), true);
-    await page.locator("#authSwitch").click();
+    // The Sign in button opens sign-in; switching to sign-up adds confirmation.
+    assert.equal(await page.locator("#authTitle").textContent(), "Welcome back");
     assert.equal(await page.locator("#authConfirmField").isVisible(), false);
     await page.locator("#authSwitch").click();
+    assert.equal(await page.locator("#authConfirmField").isVisible(), true);
 
     // Each reveal control flips only its own field.
     const reveal = page.locator('[data-reveal="authPassword"]');

@@ -69,7 +69,7 @@ fun AccountButton(controller: CloudController, onOpen: () -> Unit) {
             .background(Color.White.copy(alpha = 0.68f))
             .clickable(onClick = onOpen)
             .padding(start = 12.dp, end = 15.dp)
-            .semantics { contentDescription = if (controller.isSignedIn) "Account: $label" else "Sign in or create an account" },
+            .semantics { contentDescription = if (controller.isSignedIn) "Account: $label" else "Sign in" },
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(Icons.Rounded.Person, contentDescription = null, tint = Ink, modifier = Modifier.size(18.dp))

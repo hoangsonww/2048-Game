@@ -187,7 +187,7 @@ struct GameView: View {
             }
             Spacer(minLength: 4)
             AccountButton(cloud: cloud) {
-                if cloud.isSignedIn { showingAccount = true } else { authMode = .register }
+                if cloud.isSignedIn { showingAccount = true } else { authMode = .login }
             }
             LeaderboardButton { showingLeaderboard = true }
             Button {

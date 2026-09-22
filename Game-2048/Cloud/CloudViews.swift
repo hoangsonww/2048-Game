@@ -49,7 +49,7 @@ struct AccountButton: View {
             .overlay(Capsule().stroke(Color.black.opacity(0.08)))
         }
         .foregroundStyle(CloudPalette.ink)
-        .accessibilityLabel(cloud.isSignedIn ? "Account: \(cloud.user?.displayName ?? "")" : "Sign in or create an account")
+        .accessibilityLabel(cloud.isSignedIn ? "Account: \(cloud.user?.displayName ?? "")" : "Sign in")
         .accessibilityIdentifier("accountButton")
     }
 }

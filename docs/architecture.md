@@ -181,7 +181,7 @@ client. The rules engine never imports them; a small bridge
 | Play without an account | Fully supported; guest prompt is dismissible |
 | Guest and account rounds | Separate storage profiles. Signing in warns, parks the guest round, and loads the account's own; signing out restores the guest round exactly |
 | Career statistics | Come from the account only — never lifted from the device's local round |
-| Credential entry | Sign-up confirms the password, every password field has its own reveal control, and closing a form hides them all again |
+| Credential entry | “Sign in” opens sign-in and “Create account” opens registration. Sign-up confirms the password, every password field has its own reveal control, and closing a form hides them all again |
 | Forgotten passwords | Interim reset: a matching username and email set a new password and revoke every session. Deliberately weak, feature-flagged, and documented as temporary — see [ARCHITECTURE.md](../ARCHITECTURE.md#credential-entry) |
 | Sync conflicts | Prefer the further round; park the other — never last-writer-wins discard |
 | Offline | Moves never wait on the network |

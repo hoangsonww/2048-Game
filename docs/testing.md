@@ -31,7 +31,7 @@ Two consequences follow, and both are deliberate:
 | --- | --- | --- | --- | --- |
 | Web | 238 engine, controller, cloud, sound, metadata, and asset tests + 2 tooling tests | 13 Chromium scenarios | Node test runner, Playwright | 100 % |
 | iOS | 170 model/surface/cloud/profile tests | 13 XCUITest executions | XCTest | 95.1 % domain (gated at 90 %) |
-| Android | 193 ViewModel, storage, sound, and surface tests | 19 Compose instrumentation tests | JUnit 4, Compose UI Test | 97.2 % (domain) |
+| Android | 193 ViewModel, storage, sound, and surface tests | 20 Compose instrumentation tests | JUnit 4, Compose UI Test | 97.2 % (domain) |
 | Cloud API | 76 unit tests | 27 integration tests against a real MongoDB | Node test runner, supertest | — |
 
 The iOS UI suite reports one extra execution because the launch test runs once per appearance mode. The Cloud API integration suite is skipped unless `MONGODB_TEST_URI` is set; see [backend.md](backend.md#local-development).

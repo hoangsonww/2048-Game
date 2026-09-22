@@ -573,14 +573,14 @@ Coverage is **enforced** by `c8` across everything in `Web-Version/`, and the bu
 
 Coverage is **enforced**: `scripts/test-ios.sh` reads the `.xcresult` with `xccov` and fails below 90 % line coverage of stable app/domain code, currently **95.1 %**. `GameView.swift` and `CloudViews.swift` are exercised by the simulator suite instead: Xcode versions expose different generated executable-line counts for SwiftUI view builders, so including them would make the same source pass or fail according to the installed compiler.
 
-### Android — 212 tests, 97.2 % domain line coverage
+### Android — 213 tests, 97.2 % domain line coverage
 
 - **49 deterministic ViewModel tests** proving the same rules and persistence contract as the other two clients, including the guest / account profile separation and the career-best seed.
 - **33 server-driven surface tests** covering decoding, version gating, node pruning, source fallback, and the rule that every failure mode ends at the app's own native UI.
 - **11 storage tests** covering `SharedPreferencesGameStorage` serialisation against an in-memory `SharedPreferences`, including truncated, non-numeric, and empty saved grids, and that the guest and account slots cannot see each other.
 - **80 cloud tests** across the API client, the controller state machine, and the token store — including password reset and the rule that career statistics come from the account alone.
 - **6 sound tests** proving a flood of cues is capped rather than buffered, and that an unavailable audio device costs the game nothing.
-- **19 Compose instrumentation tests** on an API 34 emulator covering the help sheet, swipe and undo, restart confirmation, win/loss recovery, the guest invite, the account surface, the sign-in handover warning, and the password confirmation, reveal, and reset flows.
+- **20 Compose instrumentation tests** on an API 34 emulator covering the help sheet, swipe and undo, restart confirmation, win/loss recovery, the guest invite, the account surface, the sign-in destination, the sign-in handover warning, and the password confirmation, reveal, and reset flows.
 
 Coverage is **enforced** by JaCoCo: `make test-android` fails below 90 % line or 85 % branch coverage of the Kotlin rules engine and storage, currently **97.2 % lines and 85.7 % branches**. `MainActivity` and `CloudUi` are Compose and are measured by the device suite instead.
 

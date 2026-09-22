@@ -211,7 +211,7 @@ fun GameScreen(providedViewModel: GameViewModel? = null, providedCloud: CloudCon
                 onToggleSound = {
                     soundOn = sounds.toggle()
                 },
-                onAccount = { if (cloud?.isSignedIn == true) showAccount = true else authMode = AuthMode.REGISTER },
+                onAccount = { if (cloud?.isSignedIn == true) showAccount = true else authMode = AuthMode.LOGIN },
                 onLeaderboard = {
                     showLeaderboard = true
                     cloud?.loadLeaderboard()

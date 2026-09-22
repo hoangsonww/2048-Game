@@ -300,13 +300,16 @@ test("the invitation stays hidden when the browser cannot reach the cloud", asyn
     assert.equal(app.cloud.calls.some(call => call[0] === "restore"), false, "there is nothing to restore against");
 });
 
-test("the account button opens sign-up when signed out and the account panel when signed in", async () => {
+test("the account button opens sign-in when signed out and the account panel when signed in", async () => {
     const app = mount();
     await app.ui.start();
 
     app.elements.accountButton.dispatch("click");
     assert.equal(app.elements.authDialog.open, true);
-    assert.equal(app.elements.authTitle.textContent, "Create your account");
+    assert.equal(app.elements.authTitle.textContent, "Welcome back");
+    assert.equal(app.elements.authIdentifierField.hidden, false);
+    assert.equal(app.elements.authUsernameField.hidden, true);
+    assert.equal(app.elements.accountButton.getAttribute("aria-label"), "Sign in");
 
     app.elements.authDialog.close();
     app.cloud.setState({ signedIn: true, user: { username: "ada", displayName: "Ada", email: "ada@example.test", statistics: { bestScore: 900, gamesPlayed: 12, highestTile: 256 } } });
@@ -382,7 +385,7 @@ test("the submit button is re-enabled after a failure", async () => {
     const app = mount({ cloud });
     await app.ui.start();
 
-    app.elements.accountButton.dispatch("click");
+    app.elements.cloudBannerCreate.dispatch("click");
     await app.elements.authForm.dispatch("submit", { preventDefault() {} });
 
     assert.equal(app.elements.authSubmit.disabled, false);
@@ -396,7 +399,7 @@ test("auth submit shows a loading state until the request finishes", async () =>
     const app = mount({ cloud });
     await app.ui.start();
 
-    app.elements.accountButton.dispatch("click");
+    app.elements.cloudBannerCreate.dispatch("click");
     app.elements.authForm.dispatch("submit", { preventDefault() {} });
     app.elements.authForm.dispatch("submit", { preventDefault() {} });
     assert.equal(app.cloud.calls.filter(call => call[0] === "register").length, 1);
@@ -836,7 +839,7 @@ test("signing in with an untouched board needs no confirmation", async () => {
     const app = mount();
     await app.ui.start();
     app.elements.accountButton.dispatch("click");
-    assert.match(app.elements.authIntro.textContent, /every device/i);
+    assert.match(app.elements.authIntro.textContent, /pick up the round/i);
 
     await app.elements.authForm.dispatch("submit", { preventDefault() {} });
     await tick();
@@ -1043,7 +1046,7 @@ test("a second submit while one is in flight is ignored", async () => {
     });
     const app = mount({ cloud });
     await app.ui.start();
-    app.elements.accountButton.dispatch("click");
+    app.elements.cloudBannerCreate.dispatch("click");
 
     const first = app.elements.authForm.dispatch("submit", { preventDefault() {} });
     app.elements.authForm.dispatch("submit", { preventDefault() {} });
@@ -1215,13 +1218,13 @@ test("the confirmation field belongs to sign-up and not to sign-in", async () =>
     await app.ui.start();
 
     app.elements.accountButton.dispatch("click");
-    assert.equal(app.elements.authConfirmField.hidden, false);
+    assert.equal(app.elements.authConfirmField.hidden, true);
+
+    app.elements.authSwitch.dispatch("click", { preventDefault() {} });
+    assert.equal(app.elements.authConfirmField.hidden, false, "sign-up confirms the password before creating the account");
 
     app.elements.authSwitch.dispatch("click", { preventDefault() {} });
     assert.equal(app.elements.authConfirmField.hidden, true, "signing in tells you immediately that you mistyped");
-
-    app.elements.authSwitch.dispatch("click", { preventDefault() {} });
-    assert.equal(app.elements.authConfirmField.hidden, false);
 });
 
 test("a mismatched confirmation never reaches the network", async () => {
@@ -1300,7 +1303,6 @@ test("forgot password opens the reset form, carrying what was already typed", as
     const app = mount();
     await app.ui.start();
     app.elements.accountButton.dispatch("click");
-    app.elements.authSwitch.dispatch("click", { preventDefault() {} });
     app.elements.authIdentifier.value = "  ada  ";
 
     app.elements.authForgot.dispatch("click", { preventDefault() {} });

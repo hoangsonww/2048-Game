@@ -70,8 +70,9 @@ Run the smallest relevant checks while iterating and the complete affected-platf
   best score included. Career statistics come from the account and are never
   lifted from local storage. See
   [ARCHITECTURE.md](ARCHITECTURE.md#guest-and-account-profiles).
-- Sign-up confirms the password, every password field has its own reveal
-  control, and closing a form hides them again. Password recovery is an
+- A control labeled “Sign in” opens sign-in, never sign-up; explicit “Create
+  account” actions open registration. Sign-up confirms the password, every
+  password field has its own reveal control, and closing a form hides them again. Password recovery is an
   interim username + email check that revokes every session — read the
   security note on the endpoint before extending it. See
   [ARCHITECTURE.md](ARCHITECTURE.md#credential-entry).

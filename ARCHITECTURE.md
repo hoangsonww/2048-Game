@@ -803,10 +803,11 @@ Text flips to white at 8 and above, on every client. The ramp is warm-neutral th
 
 ### Credential entry
 
-Three rules, identical on all three clients:
+Four rules, identical on all three clients:
 
 | Rule | Why |
 | --- | --- |
+| A control labeled **Sign in** opens sign-in; an explicit **Create account** action opens registration. | The destination must match the action the player chose. Registration remains one switch away for a new player. |
 | Sign-up asks for the password twice; sign-in does not. | A typo at sign-up locks a player out of an account they cannot prove they own. A typo at sign-in is reported by the server on the next keystroke. |
 | Every password field has its own reveal control. | A password nobody can read is a password they mistype, and retyping it into a confirmation field they also cannot read does not help. Per-field, so revealing one does not expose the form to whoever is behind them. |
 | Closing a form hides every password again. | The next person to open it starts from dots. |
