@@ -170,13 +170,13 @@ private struct CloudFormScaffold<Content: View>: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .center, spacing: 16) {
+                VStack(alignment: .leading, spacing: 16) {
                     content
                 }
                 .padding(.horizontal, 22)
                 .padding(.top, 10)
                 .padding(.bottom, 32)
-                .frame(maxWidth: 520)
+                .frame(maxWidth: 520, alignment: .leading)
                 .frame(maxWidth: .infinity)
             }
             .scrollDismissesKeyboard(.interactively)
@@ -202,26 +202,24 @@ private struct CloudField<Content: View>: View {
     @ViewBuilder var content: Content
 
     var body: some View {
-        VStack(alignment: .center, spacing: 7) {
+        VStack(alignment: .leading, spacing: 7) {
             Text(title)
                 .font(.system(size: 13, weight: .bold, design: .rounded))
                 .foregroundStyle(CloudPalette.ink)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity, alignment: .center)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityHidden(true)
             content
                 .font(.system(size: 16, weight: .medium, design: .rounded))
                 .foregroundStyle(CloudPalette.ink)
-                .multilineTextAlignment(.center)
                 .padding(.horizontal, 14)
-                .frame(maxWidth: .infinity, minHeight: 50, alignment: .center)
+                .frame(maxWidth: .infinity, minHeight: 50, alignment: .leading)
                 .background(Color.white.opacity(0.78), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 13, style: .continuous)
                         .stroke(Color.black.opacity(0.08))
                 )
         }
-        .frame(maxWidth: .infinity, alignment: .center)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -240,7 +238,7 @@ private struct CloudTextField: View {
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .textFieldStyle(.plain)
-                .multilineTextAlignment(.center)
+                .multilineTextAlignment(.leading)
                 .accessibilityIdentifier(identifier)
                 .accessibilityLabel(title)
         }
@@ -358,14 +356,14 @@ struct RevealablePasswordField: View {
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
                             .focused($focused)
-                            .multilineTextAlignment(.center)
+                            .multilineTextAlignment(.leading)
                             .accessibilityIdentifier(identifier)
                             .accessibilityLabel(title)
                     } else {
                         SecureField("", text: $text, prompt: Text(title).foregroundStyle(CloudPalette.muted.opacity(0.55)))
                             .textContentType(textContentType)
                             .focused($focused)
-                            .multilineTextAlignment(.center)
+                            .multilineTextAlignment(.leading)
                             .accessibilityIdentifier(identifier)
                             .accessibilityLabel(title)
                     }
@@ -403,8 +401,8 @@ private struct AuthCallout: View {
         Label(message, systemImage: "exclamationmark.triangle.fill")
             .font(.system(size: 13, weight: .medium, design: .rounded))
             .foregroundStyle(CloudPalette.accent)
-            .frame(maxWidth: .infinity)
-            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .multilineTextAlignment(.leading)
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .background(
@@ -548,8 +546,8 @@ struct AuthSheet: View {
             Text("At least 8 characters, including one letter and one number.")
                 .font(.system(size: 12.5, weight: .medium, design: .rounded))
                 .foregroundStyle(CloudPalette.muted.opacity(0.9))
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             CloudSubmitButton(
                 title: registering ? "Create account" : "Sign in",
@@ -682,8 +680,8 @@ struct ResetPasswordSheet: View {
             Text("At least 8 characters, including one letter and one number.")
                 .font(.system(size: 12.5, weight: .medium, design: .rounded))
                 .foregroundStyle(CloudPalette.muted.opacity(0.9))
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             CloudSubmitButton(
                 title: "Reset password",
