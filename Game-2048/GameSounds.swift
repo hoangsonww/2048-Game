@@ -164,3 +164,96 @@ final class GameSounds: ObservableObject {
         return samples
     }
 }
+
+// MARK: - Focused maintainer notes (documentation only)
+//
+// Sound-engine maintenance guide
+//
+// These notes describe the existing contract. They intentionally add no declarations,
+// expressions, fixtures, branches, or runtime behavior.
+//
+// Review guardrails
+//
+// 01. A cue is played immediately or dropped; never queue stale gameplay feedback.
+//
+// 02. Keep the voice pool bounded so rapid moves cannot create unbounded audio work.
+//
+// 03. Honor mute state before opening or scheduling work on the audio engine.
+//
+// 04. Maintain short, distinct envelopes for movement, merge, undo, win, and game-over feedback.
+//
+// 05. Treat audio-session interruption as recoverable and avoid changing game state from sound
+//     callbacks.
+//
+// 06. Keep generated tones deterministic enough for buffer-shape unit tests.
+//
+// 07. Do not add bundled audio assets unless product direction explicitly changes.
+//
+// 08. Preserve main-actor ownership for UI-observable sound preference state.
+//
+// Symbol and scenario index
+//
+// 01. `final class GameSounds: ObservableObject`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 02. `struct Tone: Hashable`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 03. `init(defaults: UserDefaults = .standard)`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 04. `func setEnabled(_ enabled: Bool)`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 05. `func toggle()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 06. `func move() { blip(frequency: 420, duration: 0.05, volume: 0.18) }`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 07. `func merge(points: Int = 4)`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 08. `func undo() { blip(frequency: 360, duration: 0.07, volume: 0.2, slideTo: 240) }`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 09. `func newGame()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 10. `func win()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 11. `func gameOver()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 12. `func invalid() { blip(frequency: 160, duration: 0.04, volume: 0.1) }`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 13. `private func ensureRunning()`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 14. `private func blip(frequency: Double, duration: Double, volume: Float, delay: Double = 0, slideTo: Double? = nil)`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 15. `private func play(_ tone: Tone)`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 16. `private func buffer(for tone: Tone) -> AVAudioPCMBuffer?`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//

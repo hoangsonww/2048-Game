@@ -67,3 +67,45 @@ final class UserDefaultsCloudStore: TokenStoring {
         }
     }
 }
+
+// MARK: - Focused maintainer notes (documentation only)
+//
+// Credential storage maintenance guide
+//
+// These notes describe the existing contract. They intentionally add no declarations,
+// expressions, fixtures, branches, or runtime behavior.
+//
+// Review guardrails
+//
+// 01. Store access and refresh tokens as one logical session; a partial pair is not
+//     authenticated state.
+//
+// 02. Clear both token keys together so sign-out cannot leave a half-valid credential behind.
+//
+// 03. Keep prompt dismissal separate from credentials because it belongs to local presentation
+//     state.
+//
+// 04. Use injected UserDefaults suites in tests to prevent state leaking between test cases.
+//
+// 05. Never place passwords, profile data, boards, or career statistics in this token store.
+//
+// 06. Changes to storage keys require an explicit migration or a deliberate safe sign-out.
+//
+// Symbol and scenario index
+//
+// 01. `final class UserDefaultsCloudStore: TokenStoring`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 02. `init(defaults: UserDefaults = .standard)`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 03. `func read() -> CloudTokens?`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 04. `func write(_ tokens: CloudTokens?)`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//

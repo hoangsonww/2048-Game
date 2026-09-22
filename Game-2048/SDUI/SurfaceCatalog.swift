@@ -41,3 +41,43 @@ actor SurfaceCatalog {
 
     func invalidate() { cache.removeAll() }
 }
+
+// MARK: - Focused maintainer notes (documentation only)
+//
+// Surface catalog maintenance guide
+//
+// These notes describe the existing contract. They intentionally add no declarations,
+// expressions, fixtures, branches, or runtime behavior.
+//
+// Review guardrails
+//
+// 01. Cache only resolved content, never executable behavior or arbitrary code.
+//
+// 02. Keep invalidation explicit so tests and future refresh actions can force a clean lookup.
+//
+// 03. Resolve each surface against the running app version before returning it to presentation.
+//
+// 04. Treat source failure as a fallback condition rather than a blank-screen condition.
+//
+// 05. Keep actor isolation around cache mutation and asynchronous source access.
+//
+// 06. Do not let remote availability gate core game play or the native fallback.
+//
+// Symbol and scenario index
+//
+// 01. `actor SurfaceCatalog`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 02. `init(source: (any SurfaceSource)? = nil, appVersion: String = SurfaceResolver.bundleVersion)`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 03. `func resolve(_ id: SurfaceID) async -> SurfaceResolution`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
+// 04. `func invalidate() { cache.removeAll() }`
+//     This entry points to an existing declaration or test scenario above; it is listed
+//     here only to make the file's maintenance surface easier to scan during review.
+//
