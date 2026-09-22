@@ -175,12 +175,12 @@ final class Game_2048UITests: XCTestCase {
         // to a SwiftUI SecureField. Reveal each field before typing so this
         // test exercises an actual mismatch on every supported runner rather
         // than accidentally submitting the equal pair "P" / "P".
-        app.buttons["passwordFieldReveal"].tap()
-        app.textFields["passwordField"].tap()
-        app.textFields["passwordField"].typeText("Password1")
-        app.buttons["confirmPasswordFieldReveal"].tap()
-        app.textFields["confirmPasswordField"].tap()
-        app.textFields["confirmPasswordField"].typeText("Password2")
+        //
+        // Sign-up is tall enough that the confirmation field sits under the
+        // keyboard after the first password is typed; a bare tap then fails
+        // CI with "Neither element nor any descendant has keyboard focus".
+        typeIntoRevealedPassword(identifier: "passwordField", text: "Password1", in: app)
+        typeIntoRevealedPassword(identifier: "confirmPasswordField", text: "Password2", in: app)
         app.buttons["authSubmit"].tap()
 
         // SwiftUI exposes a `Label` as a static text on newer runtimes but as
@@ -239,6 +239,44 @@ final class Game_2048UITests: XCTestCase {
             XCTAssertTrue(app.otherElements["GameBoard"].waitForExistence(timeout: 5))
             app.buttons["accountButton"].tap()
         }
+    }
+
+    /// Types into a revealed password field without losing keyboard focus.
+    ///
+    /// On the taller sign-up form the confirmation field lands under the
+    /// keyboard once the first password is focused. CI then fails
+    /// `typeText` with "Neither element nor any descendant has keyboard
+    /// focus" even though the field exists and was tapped. Reveal already
+    /// claims focus in the app; wait for that before typing, and only tap
+    /// the field as a fallback after scrolling it clear of the keyboard.
+    private func typeIntoRevealedPassword(identifier: String, text: String, in app: XCUIApplication) {
+        let reveal = app.buttons["\(identifier)Reveal"]
+        let field = app.textFields[identifier]
+        XCTAssertTrue(reveal.waitForExistence(timeout: 5))
+
+        // Clear any prior keyboard so the next reveal can claim a visible field.
+        if app.keyboards.firstMatch.exists {
+            app.swipeDown()
+            let gone = NSPredicate(format: "exists == false")
+            let wait = XCTNSPredicateExpectation(predicate: gone, object: app.keyboards.firstMatch)
+            _ = XCTWaiter.wait(for: [wait], timeout: 2)
+        }
+
+        reveal.tap()
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+
+        if !app.keyboards.firstMatch.waitForExistence(timeout: 2) {
+            if field.frame.maxY > app.frame.midY {
+                app.swipeUp()
+            }
+            field.tap()
+            if !app.keyboards.firstMatch.waitForExistence(timeout: 2) {
+                field.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            }
+        }
+
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 3), "\(identifier) should accept keyboard input")
+        field.typeText(text)
     }
 
     private func assertScore(_ expected: Int, in app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
