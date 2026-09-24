@@ -51,7 +51,49 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  release_guard:
+    name: Check whether this push is already released
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.guard.outputs.should_release }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check published releases for the triggering commit
+        id: guard
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          GH_TOKEN: ${{ github.token }}
+          TRIGGER_SHA: ${{ github.sha }}
+        run: |
+          set -Eeuo pipefail
+
+          # Manual releases are intentional even when the selected ref is
+          # already present in an older release.
+          if [[ "${EVENT_NAME}" != "push" ]]; then
+            echo "should_release=true" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          while IFS= read -r tag; do
+            [[ -n "${tag}" ]] || continue
+            if git merge-base --is-ancestor "${TRIGGER_SHA}" "refs/tags/${tag}"; then
+              echo "${TRIGGER_SHA} is already included in published release ${tag}; skipping."
+              echo "should_release=false" >> "${GITHUB_OUTPUT}"
+              exit 0
+            fi
+          done < <(gh release list --limit 100 --json isDraft,tagName \
+            --jq '.[] | select(.isDraft == false) | .tagName')
+
+          echo "should_release=true" >> "${GITHUB_OUTPUT}"
+
   cut:
+    needs: release_guard
+    if: ${{ needs.release_guard.outputs.should_release == 'true' }}
     name: Cut ${{ github.event_name == 'workflow_dispatch' && inputs.bump || 'patch' }} release
     runs-on: ubuntu-latest
     timeout-minutes: 60

@@ -19,6 +19,9 @@ builds all three clients, and verifies the downloadable artifacts.
 It listens for the resulting push to `main`; the release commit it creates does
 not recurse because GitHub suppresses workflow events produced by
 `GITHUB_TOKEN`.
+If closely spaced merges are already included in an earlier queued run's
+published release, their later runs stop before bumping instead of creating an
+empty patch release.
 
 For a planned minor or major release, use Actions → **Cut release** → Run
 workflow and choose the corresponding bump. Leave `dry_run` off to publish;

@@ -22,6 +22,10 @@ test("a merged pull request automatically cuts a patch release from main", () =>
 
     assert.match(workflow, /push:\n\s+branches: \[main\]/);
     assert.doesNotMatch(workflow, /pull_request_target:/);
+    assert.match(workflow, /TRIGGER_SHA: \$\{\{ github\.sha \}\}/);
+    assert.match(workflow, /gh release list --limit 100 --json isDraft,tagName/);
+    assert.match(workflow, /git merge-base --is-ancestor "\$\{TRIGGER_SHA\}" "refs\/tags\/\$\{tag\}"/);
+    assert.match(workflow, /needs\.release_guard\.outputs\.should_release == 'true'/);
     assert.match(workflow, /inputs\.bump \|\| 'patch'/);
     assert.match(workflow, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
     assert.match(workflow, /git push origin HEAD:"\$\{\{ github\.event\.repository\.default_branch \}\}"/);
