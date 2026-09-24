@@ -115,8 +115,13 @@ test("a release commit reaches protected main only after CI passes for that comm
 
     assert.equal(fixture.result.status, 0, `${fixture.result.stdout}\n${fixture.result.stderr}`);
     assert.equal(run("git", ["--git-dir", fixture.remote, "rev-parse", "main"]).stdout.trim(), fixture.releaseSha);
-    assert.match(fs.readFileSync(fixture.log, "utf8"), /workflow run ci\.yml --ref automation\/release-/);
-    assert.match(fs.readFileSync(fixture.log, "utf8"), new RegExp(`run list .*--commit ${fixture.releaseSha}`));
+    const ghCalls = fs.readFileSync(fixture.log, "utf8").trim().split("\n");
+    const dispatchCall = ghCalls.find(call => call.startsWith("workflow run "));
+    const runListCall = ghCalls.find(call => call.startsWith("run list "));
+    const candidateBranch = dispatchCall.match(/--ref (\S+)/)[1];
+    assert.match(candidateBranch, /^automation\/release-/);
+    assert.ok(runListCall.includes(`--commit ${fixture.releaseSha}`));
+    assert.ok(runListCall.includes(`--branch ${candidateBranch}`));
     assert.equal(run("git", ["--git-dir", fixture.remote, "branch", "--list", "automation/release-*"]).stdout.trim(), "");
 });
 

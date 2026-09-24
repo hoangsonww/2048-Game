@@ -30,6 +30,7 @@ while ((SECONDS < deadline)); do
     run="$(gh run list \
         --workflow "${ci_workflow}" \
         --commit "${release_sha}" \
+        --branch "${candidate_branch}" \
         --event workflow_dispatch \
         --limit 10 \
         --json databaseId,status,conclusion \
