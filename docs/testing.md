@@ -29,7 +29,7 @@ Two consequences follow, and both are deliberate:
 
 | Platform | Deterministic tests | UI / integration tests | Runner | Line coverage |
 | --- | --- | --- | --- | --- |
-| Web | 238 engine, controller, cloud, sound, metadata, and asset tests + 2 tooling tests | 13 Chromium scenarios | Node test runner, Playwright | 100 % |
+| Web | 238 engine, controller, cloud, sound, metadata, and asset tests + 5 tooling tests | 13 Chromium scenarios | Node test runner, Playwright | 100 % |
 | iOS | 170 model/surface/cloud/profile tests | 13 XCUITest executions | XCTest | 95.1 % domain (gated at 90 %) |
 | Android | 193 ViewModel, storage, sound, and surface tests | 20 Compose instrumentation tests | JUnit 4, Compose UI Test | 97.2 % (domain) |
 | Cloud API | 76 unit tests | 27 integration tests against a real MongoDB | Node test runner, supertest | — |

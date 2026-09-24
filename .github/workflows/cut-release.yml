@@ -100,7 +100,7 @@ jobs:
     if: ${{ needs.release_guard.outputs.should_release == 'true' }}
     name: Cut ${{ github.event_name == 'workflow_dispatch' && inputs.bump || 'patch' }} release
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
         with:
@@ -179,7 +179,7 @@ jobs:
           print(f"Opened {version} — {today}")
           PY
 
-      - name: Commit, tag and push
+      - name: Commit the release candidate
         if: ${{ github.event_name != 'workflow_dispatch' || !inputs.dry_run }}
         run: |
           set -Eeuo pipefail
@@ -196,8 +196,21 @@ jobs:
           project, and the changelog section was opened.
 
           Cut by the Cut release workflow."
+
+      # The release commit is a new SHA, so the checks that passed on the
+      # merged PR do not satisfy branch protection for it. Validate that exact
+      # commit on a temporary branch before advancing protected main.
+      - name: Validate the release commit and update the protected branch
+        if: ${{ github.event_name != 'workflow_dispatch' || !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./scripts/push-validated-release.sh "${{ github.event.repository.default_branch }}"
+
+      - name: Tag the validated release
+        if: ${{ github.event_name != 'workflow_dispatch' || !inputs.dry_run }}
+        run: |
+          set -Eeuo pipefail
           git tag -a "${{ steps.next.outputs.tag }}" -m "2048 ${{ steps.next.outputs.next }}"
-          git push origin HEAD:"${{ github.event.repository.default_branch }}"
           git push origin "${{ steps.next.outputs.tag }}"
 
       - name: Start the release build
