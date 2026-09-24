@@ -79,6 +79,7 @@ export const config = Object.freeze({
         // a blanket wildcard, and `*` stays available for deliberate opt-in.
         origins: list("CORS_ORIGINS", [
             "https://hoangsonww.github.io",
+            "https://the-2048.netlify.app",
             "http://localhost:8080",
             "http://127.0.0.1:8080",
             "http://localhost:4000",
