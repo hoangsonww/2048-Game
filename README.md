@@ -1,13 +1,6 @@
 # 2048, Built Three Ways
 
-A polished, accessible, **local-first** 2048 puzzle shipped as **three independent native clients** — a dependency-free progressive web app, a SwiftUI iOS app, and a Jetpack Compose Android app — plus an optional Cloud API for accounts, cross-device save sync, and leaderboards. The clients share no runtime code, yet every one of them is held to the same documented set of behavioral invariants and verified by continuous integration. A move never requires the network.
-
-[![Cross-platform CI](https://github.com/hoangsonww/2048-Game/actions/workflows/ci.yml/badge.svg)](https://github.com/hoangsonww/2048-Game/actions/workflows/ci.yml)
-[![Latest release](https://img.shields.io/github/v/release/hoangsonww/2048-Game?display_name=tag&sort=semver)](https://github.com/hoangsonww/2048-Game/releases/latest)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Play online](https://img.shields.io/badge/Play-online-0E8A16)](https://the-2048.netlify.app)
-
-**Clients**
+A polished, accessible, **local-first** 2048 puzzle shipped as **three independent native clients** — a dependency-free progressive web app, a SwiftUI iOS app, and a Jetpack Compose Android app — plus an optional Cloud API for accounts, cross-device save sync, and leaderboards. The clients share no runtime code, yet every one of them is held to the same documented set of behavioral invariants and verified by continuous integration. A move never requires the network~
 
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black)
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
@@ -23,9 +16,6 @@ A polished, accessible, **local-first** 2048 puzzle shipped as **three independe
 ![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-4285F4?logo=jetpackcompose&logoColor=white)
 ![Material Design 3](https://img.shields.io/badge/Material%20Design-3-757575?logo=materialdesign&logoColor=white)
 ![Server-driven UI](https://img.shields.io/badge/Server--driven%20UI-iOS%20%2B%20Android-5A0FC8)
-
-**Cloud API**
-
 ![Node.js](https://img.shields.io/badge/Node.js-22%2B-5FA04E?logo=nodedotjs&logoColor=white)
 ![Express](https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?logo=mongodb&logoColor=white)
@@ -36,9 +26,6 @@ A polished, accessible, **local-first** 2048 puzzle shipped as **three independe
 ![Helmet, CORS, rate limits, compression](https://img.shields.io/badge/HTTP-Helmet%20%C2%B7%20CORS%20%C2%B7%20rate%20limits%20%C2%B7%20compression-5A29E4)
 ![OpenAPI](https://img.shields.io/badge/OpenAPI-3.1-6BA539?logo=openapiinitiative&logoColor=white)
 ![API reference](https://img.shields.io/badge/API%20docs-js--yaml%20%C2%B7%20Swagger%20UI%20%C2%B7%20Redoc%20%C2%B7%20Scalar-85EA2D?logo=swagger&logoColor=black)
-
-**Build and quality**
-
 ![Playwright](https://img.shields.io/badge/Playwright-Chromium-2EAD33?logo=playwright&logoColor=white)
 ![c8](https://img.shields.io/badge/Web%20coverage-c8-4B8BF5?logo=v8&logoColor=white)
 ![Xcode](https://img.shields.io/badge/Xcode-15.3%2B-147EFB?logo=xcode&logoColor=white)
@@ -51,9 +38,6 @@ A polished, accessible, **local-first** 2048 puzzle shipped as **three independe
 ![Supertest](https://img.shields.io/badge/API%20tests-Supertest-0E8A16)
 ![Husky and pre-commit](https://img.shields.io/badge/Git%20hooks-Husky%20%C2%B7%20pre--commit-F05032?logo=git&logoColor=white)
 ![Make, Bash, ShellCheck](https://img.shields.io/badge/Automation-Make%20%C2%B7%20Bash%20%C2%B7%20ShellCheck-4EAA25?logo=gnubash&logoColor=white)
-
-**Delivery**
-
 ![npm](https://img.shields.io/badge/npm-package%20scripts-CB3837?logo=npm&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-multi--stage-2496ED?logo=docker&logoColor=white)
 ![Dev Containers](https://img.shields.io/badge/Dev%20Containers-ready-007ACC?logo=docker&logoColor=white)
