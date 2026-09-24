@@ -17,7 +17,7 @@ This is a free, open-source project maintained in spare time. There is no paid s
 A few minutes here usually saves a round trip:
 
 1. **Search existing issues**, including closed ones. Parity bugs in particular tend to recur under different descriptions.
-2. **Check [Troubleshooting](README.md#troubleshooting)** in the README — it covers the common build and toolchain failures (missing Chromium, no simulator, `ANDROID_HOME` unset, port 8080 in use).
+2. **Check [Troubleshooting](../README.md#troubleshooting)** in the README — it covers the common build and toolchain failures (missing Chromium, no simulator, `ANDROID_HOME` unset, port 8080 in use).
 3. **Run `make doctor`** if the problem is environmental. Its output tells you and us which toolchains are actually present.
 4. **Confirm which client is affected.** The web, iOS, and Android apps share no runtime code, so "2048 is broken" is three different investigations.
 

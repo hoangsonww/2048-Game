@@ -8,6 +8,14 @@ thing everywhere. See [docs/releasing.md](docs/releasing.md).
 
 ## Unreleased
 
+- Allow the deployed Netlify client through the Cloud API's production CORS
+  policy, with regression coverage for the login preflight.
+- Publish a patch release automatically after every pull request merged into
+  `main`, while retaining manual minor/major releases and dry runs.
+- Move the primary README to the repository root and replace the undifferentiated
+  badge wall with a grouped overview of the client, API, quality, and delivery
+  stack.
+
 ## 2.1.0 — 2026-09-19
 
 Optional Cloud API and client accounts. Play stays local-first; an account adds

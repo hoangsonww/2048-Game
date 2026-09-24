@@ -2,6 +2,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 
@@ -14,6 +15,17 @@ test("repository validator succeeds", () => {
     });
     assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
     assert.match(result.stdout, /Repository structure/);
+});
+
+test("a merged pull request automatically cuts a patch release from main", () => {
+    const workflow = fs.readFileSync(path.join(root, ".github/workflows/cut-release.yml"), "utf8");
+
+    assert.match(workflow, /pull_request_target:\n\s+branches: \[main\]\n\s+types: \[closed\]/);
+    assert.match(workflow, /github\.event\.pull_request\.merged == true/);
+    assert.match(workflow, /inputs\.bump \|\| 'patch'/);
+    assert.match(workflow, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
+    assert.match(workflow, /git push origin HEAD:"\$\{\{ github\.event\.repository\.default_branch \}\}"/);
+    assert.match(workflow, /gh workflow run release\.yml --ref "\$\{tag\}"/);
 });
 
 test("local server publishes discoverable files with safe content types", async context => {

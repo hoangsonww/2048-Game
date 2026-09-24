@@ -90,7 +90,7 @@ Run the smallest relevant checks while iterating and the complete affected-platf
 
 ## Documentation and generated artifacts
 
-Keep `.github/README.md`, relevant files in `docs/`, `llms.txt`, and agent guidance accurate when commands or architecture change. Store repeatable utilities in `scripts/`; place local QA output under `output/`. Do not hand-edit generated coverage or build products.
+Keep `README.md`, relevant files in `docs/`, `llms.txt`, and agent guidance accurate when commands or architecture change. Store repeatable utilities in `scripts/`; place local QA output under `output/`. Do not hand-edit generated coverage or build products.
 
 ## Repository-local skills
 

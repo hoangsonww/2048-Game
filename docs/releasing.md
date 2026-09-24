@@ -5,17 +5,22 @@ notes, and stop. Nothing was attached, so there was nothing to download — the
 Android app could only be had by installing a JDK and the Android SDK and
 building it yourself, and the iOS app not at all.
 
-There is now one button. It moves the version, tags, builds all three clients,
-attaches their artifacts, and refuses to report success unless a release with
-those files actually exists.
+There is now one release pipeline. A merged pull request starts it automatically;
+the same workflow remains available as a button for planned minor and major
+releases. It moves the version, tags, builds all three clients, attaches their
+artifacts, and refuses to report success unless a release with those files
+actually exists.
 
 ## Cutting a release
 
-Actions → **Cut release** → Run workflow. Choose `patch`, `minor`, or `major`.
-Leave `dry_run` off to publish; turn it on to see what would happen without
-tagging or pushing anything.
+Merging a pull request into `main` automatically cuts the next patch release.
+The workflow bumps the shared version, updates the changelog, tags the release,
+builds all three clients, and verifies the downloadable artifacts.
 
-That is the whole procedure. Do not tag by hand.
+For a planned minor or major release, use Actions → **Cut release** → Run
+workflow and choose the corresponding bump. Leave `dry_run` off to publish;
+turn it on to see what would happen without tagging or pushing anything. Do
+not tag by hand.
 
 ## The version
 
@@ -61,9 +66,9 @@ Store distribution stays a manual step outside this pipeline.
 ## How it fits together
 
 ```
-Cut release (workflow_dispatch)
+Cut release (merged PR, or workflow_dispatch)
   ├─ version.sh check          the tree must agree with itself first
-  ├─ bump VERSION, propagate, open the changelog section
+  ├─ bump VERSION (patch after a merge), propagate, open the changelog section
   ├─ commit + tag vX.Y.Z + push
   ├─ dispatch Release at the tag
   └─ wait, then confirm a release exists with its artifacts attached

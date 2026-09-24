@@ -2,53 +2,67 @@
 
 A polished, accessible, **local-first** 2048 puzzle shipped as **three independent native clients** — a dependency-free progressive web app, a SwiftUI iOS app, and a Jetpack Compose Android app — plus an optional Cloud API for accounts, cross-device save sync, and leaderboards. The clients share no runtime code, yet every one of them is held to the same documented set of behavioral invariants and verified by continuous integration. A move never requires the network.
 
-![Server-Driven UI](https://img.shields.io/badge/Server--Driven%20UI-5A0FC8?style=for-the-badge&logo=json&logoColor=white)
-![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
-![Swift](https://img.shields.io/badge/Swift-F05138?style=for-the-badge&logo=swift&logoColor=white)
-![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)
-![Java](https://img.shields.io/badge/Java%2017-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
-![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
-![CSS](https://img.shields.io/badge/CSS-663399?style=for-the-badge&logo=css&logoColor=white)
-![Bash](https://img.shields.io/badge/Bash-4EAA25?style=for-the-badge&logo=gnubash&logoColor=white)
-![YAML](https://img.shields.io/badge/YAML-CB171E?style=for-the-badge&logo=yaml&logoColor=white)
-![JSON](https://img.shields.io/badge/JSON-000000?style=for-the-badge&logo=json&logoColor=white)
-![XML](https://img.shields.io/badge/XML-005FAD?style=for-the-badge&logo=xml&logoColor=white)
-![Markdown](https://img.shields.io/badge/Markdown-000000?style=for-the-badge&logo=markdown&logoColor=white)
-![Node.js](https://img.shields.io/badge/Node.js%2022-5FA04E?style=for-the-badge&logo=nodedotjs&logoColor=white)
-![npm](https://img.shields.io/badge/npm-CB3837?style=for-the-badge&logo=npm&logoColor=white)
-![PWA](https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)
-![SVG](https://img.shields.io/badge/SVG-FFB13B?style=for-the-badge&logo=svg&logoColor=black)
-![Google Fonts](https://img.shields.io/badge/Google%20Fonts-4285F4?style=for-the-badge&logo=googlefonts&logoColor=white)
-![Schema.org](https://img.shields.io/badge/Schema.org%20JSON--LD-000000?style=for-the-badge&logo=json&logoColor=white)
-![Lighthouse](https://img.shields.io/badge/Lighthouse-F44B21?style=for-the-badge&logo=lighthouse&logoColor=white)
-![Google Chrome](https://img.shields.io/badge/Chromium-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)
-![SwiftUI](https://img.shields.io/badge/SwiftUI-0071E3?style=for-the-badge&logo=swift&logoColor=white)
-![Xcode](https://img.shields.io/badge/Xcode-147EFB?style=for-the-badge&logo=xcode&logoColor=white)
-![XCTest](https://img.shields.io/badge/XCTest%20%2F%20XCUITest-1B6AC6?style=for-the-badge&logo=swift&logoColor=white)
-![iOS](https://img.shields.io/badge/iOS%2017.4%2B-000000?style=for-the-badge&logo=ios&logoColor=white)
-![SF Symbols](https://img.shields.io/badge/SF%20Symbols-000000?style=for-the-badge&logo=apple&logoColor=white)
-![Android](https://img.shields.io/badge/Android%20SDK%2034-3DDC84?style=for-the-badge&logo=android&logoColor=white)
-![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)
-![Material Design 3](https://img.shields.io/badge/Material%20Design%203-757575?style=for-the-badge&logo=materialdesign&logoColor=white)
-![Gradle](https://img.shields.io/badge/Gradle%208.13-02303A?style=for-the-badge&logo=gradle&logoColor=white)
-![JUnit](https://img.shields.io/badge/JUnit-25A162?style=for-the-badge&logo=junit5&logoColor=white)
-![Espresso](https://img.shields.io/badge/Espresso-8BC34A?style=for-the-badge&logo=android&logoColor=white)
-![Android Studio](https://img.shields.io/badge/Android%20Studio-3DDC84?style=for-the-badge&logo=androidstudio&logoColor=white)
-![Playwright](https://img.shields.io/badge/Playwright-2EAD33?style=for-the-badge&logo=googlechrome&logoColor=white)
-![c8](https://img.shields.io/badge/c8%20Coverage-4B8BF5?style=for-the-badge&logo=v8&logoColor=white)
-![Husky](https://img.shields.io/badge/Husky-F05032?style=for-the-badge&logo=git&logoColor=white)
-![ShellCheck](https://img.shields.io/badge/ShellCheck-4EAA25?style=for-the-badge&logo=gnubash&logoColor=white)
-![pre-commit](https://img.shields.io/badge/pre--commit-FAB040?style=for-the-badge&logo=precommit&logoColor=black)
-![EditorConfig](https://img.shields.io/badge/EditorConfig-E0EFEF?style=for-the-badge&logo=editorconfig&logoColor=black)
-![GNU Make](https://img.shields.io/badge/GNU%20Make-6D00CC?style=for-the-badge&logo=make&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-![Dev Containers](https://img.shields.io/badge/Dev%20Containers-007ACC?style=for-the-badge&logo=docker&logoColor=white)
-![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)
-![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-222222?style=for-the-badge&logo=githubpages&logoColor=white)
-![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)
-![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)
+[![Cross-platform CI](https://github.com/hoangsonww/2048-Game/actions/workflows/ci.yml/badge.svg)](https://github.com/hoangsonww/2048-Game/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/hoangsonww/2048-Game?display_name=tag&sort=semver)](https://github.com/hoangsonww/2048-Game/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Play online](https://img.shields.io/badge/Play-online-0E8A16)](https://the-2048.netlify.app)
 
-**[▶ Play the web version](https://hoangsonww.github.io/2048-Game/)** · [Download the apps](https://github.com/hoangsonww/2048-Game/releases/latest) · [Cloud API docs](https://game-2048-cloud-api.vercel.app/docs) · [Rules and strategy](https://hoangsonww.github.io/2048-Game/Web-Version/about.html) · [Report an issue](https://github.com/hoangsonww/2048-Game/issues) · [Contributing](CONTRIBUTING.md) · [Security policy](SECURITY.md)
+**Clients**
+
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black)
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
+![CSS](https://img.shields.io/badge/CSS-663399?logo=css&logoColor=white)
+![PWA](https://img.shields.io/badge/PWA-5A0FC8?logo=pwa&logoColor=white)
+![Swift](https://img.shields.io/badge/Swift-F05138?logo=swift&logoColor=white)
+![SwiftUI](https://img.shields.io/badge/SwiftUI-0071E3?logo=swift&logoColor=white)
+![iOS](https://img.shields.io/badge/iOS-17.4%2B-000000?logo=ios&logoColor=white)
+![SF Symbols](https://img.shields.io/badge/SF%20Symbols-native-000000?logo=apple&logoColor=white)
+![Kotlin](https://img.shields.io/badge/Kotlin-1.9-7F52FF?logo=kotlin&logoColor=white)
+![Android](https://img.shields.io/badge/Android-SDK%2034-3DDC84?logo=android&logoColor=white)
+![AndroidX](https://img.shields.io/badge/AndroidX-Core%20%2B%20Lifecycle-3DDC84?logo=android&logoColor=white)
+![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-4285F4?logo=jetpackcompose&logoColor=white)
+![Material Design 3](https://img.shields.io/badge/Material%20Design-3-757575?logo=materialdesign&logoColor=white)
+![Server-driven UI](https://img.shields.io/badge/Server--driven%20UI-iOS%20%2B%20Android-5A0FC8)
+
+**Cloud API**
+
+![Node.js](https://img.shields.io/badge/Node.js-22%2B-5FA04E?logo=nodedotjs&logoColor=white)
+![Express](https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?logo=mongodb&logoColor=white)
+![Mongoose](https://img.shields.io/badge/Mongoose-8-880000?logo=mongoose&logoColor=white)
+![JSON Web Tokens](https://img.shields.io/badge/Auth-JWT-000000?logo=jsonwebtokens&logoColor=white)
+![bcryptjs](https://img.shields.io/badge/Passwords-bcryptjs-3381A2)
+![Zod](https://img.shields.io/badge/Validation-Zod-3E67B1?logo=zod&logoColor=white)
+![Helmet, CORS, rate limits, compression](https://img.shields.io/badge/HTTP-Helmet%20%C2%B7%20CORS%20%C2%B7%20rate%20limits%20%C2%B7%20compression-5A29E4)
+![OpenAPI](https://img.shields.io/badge/OpenAPI-3.1-6BA539?logo=openapiinitiative&logoColor=white)
+![API reference](https://img.shields.io/badge/API%20docs-js--yaml%20%C2%B7%20Swagger%20UI%20%C2%B7%20Redoc%20%C2%B7%20Scalar-85EA2D?logo=swagger&logoColor=black)
+
+**Build and quality**
+
+![Playwright](https://img.shields.io/badge/Playwright-Chromium-2EAD33?logo=playwright&logoColor=white)
+![c8](https://img.shields.io/badge/Web%20coverage-c8-4B8BF5?logo=v8&logoColor=white)
+![Xcode](https://img.shields.io/badge/Xcode-15.3%2B-147EFB?logo=xcode&logoColor=white)
+![XCTest](https://img.shields.io/badge/XCTest-XCUITest-1B6AC6?logo=swift&logoColor=white)
+![Gradle](https://img.shields.io/badge/Gradle-8.13-02303A?logo=gradle&logoColor=white)
+![Java](https://img.shields.io/badge/Build%20JDK-17-ED8B00?logo=openjdk&logoColor=white)
+![JUnit](https://img.shields.io/badge/JUnit-4-25A162?logo=junit5&logoColor=white)
+![Android UI tests](https://img.shields.io/badge/Android%20tests-Espresso%20%C2%B7%20Compose%20UI-3DDC84?logo=android&logoColor=white)
+![JaCoCo](https://img.shields.io/badge/Android%20coverage-JaCoCo-CB3F37)
+![Supertest](https://img.shields.io/badge/API%20tests-Supertest-0E8A16)
+![Husky and pre-commit](https://img.shields.io/badge/Git%20hooks-Husky%20%C2%B7%20pre--commit-F05032?logo=git&logoColor=white)
+![Make, Bash, ShellCheck](https://img.shields.io/badge/Automation-Make%20%C2%B7%20Bash%20%C2%B7%20ShellCheck-4EAA25?logo=gnubash&logoColor=white)
+
+**Delivery**
+
+![npm](https://img.shields.io/badge/npm-package%20scripts-CB3837?logo=npm&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-multi--stage-2496ED?logo=docker&logoColor=white)
+![Dev Containers](https://img.shields.io/badge/Dev%20Containers-ready-007ACC?logo=docker&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-CI%20%2B%20releases-2088FF?logo=githubactions&logoColor=white)
+![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-web-222222?logo=githubpages&logoColor=white)
+![Netlify](https://img.shields.io/badge/Netlify-web-00C7B7?logo=netlify&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-Cloud%20API-000000?logo=vercel&logoColor=white)
+
+**[▶ Play the web version](https://the-2048.netlify.app)** · [Download the apps](https://github.com/hoangsonww/2048-Game/releases/latest) · [Cloud API docs](https://game-2048-cloud-api.vercel.app/docs) · [Rules and strategy](https://hoangsonww.github.io/2048-Game/Web-Version/about.html) · [Report an issue](https://github.com/hoangsonww/2048-Game/issues) · [Contributing](.github/CONTRIBUTING.md) · [Security policy](.github/SECURITY.md)
 
 ---
 
@@ -90,7 +104,7 @@ A polished, accessible, **local-first** 2048 puzzle shipped as **three independe
 
 This repository is the worked answer. There is no React Native layer, no Kotlin Multiplatform module, no WebView wrapper. Each client is idiomatic for its platform — vanilla ES modules on the web, SwiftUI with `@Observable`-style view models on iOS, Compose with a `ViewModel` on Android — and parity is maintained by three deliberate mechanisms instead:
 
-1. **A written invariant contract.** [`ARCHITECTURE.md`](../ARCHITECTURE.md), [`AGENTS.md`](../AGENTS.md), and [`docs/architecture.md`](../docs/architecture.md) define the exact rules every client must satisfy, down to edge cases like "an ineffective move must not spawn a tile."
+1. **A written invariant contract.** [`ARCHITECTURE.md`](ARCHITECTURE.md), [`AGENTS.md`](AGENTS.md), and [`docs/architecture.md`](docs/architecture.md) define the exact rules every client must satisfy, down to edge cases like "an ineffective move must not spawn a tile."
 2. **Per-client deterministic rules tests.** Each platform independently proves the same behavior list against its own engine, with randomness injected so results are reproducible.
 3. **A CI pipeline that runs all three toolchains on every pull request.** A parity regression in any one client fails the build.
 
@@ -104,17 +118,17 @@ The same experience on all three clients. `make screenshots-web` captures the br
 
 | Web | iOS | Android |
 | :---: | :---: | :---: |
-| ![2048 web app with guest invite, Sign in, leaderboard control, and 4×4 board](../images/web-version-UI.png) | ![2048 SwiftUI app on iPhone with Sign in, leaderboard, help, and guest sync banner](../images/IOS-UI.png) | ![2048 Jetpack Compose app on Pixel with Sign in, leaderboard, and guest account banner](../images/android-ui.png) |
+| ![2048 web app with guest invite, Sign in, leaderboard control, and 4×4 board](images/web-version-UI.png) | ![2048 SwiftUI app on iPhone with Sign in, leaderboard, help, and guest sync banner](images/IOS-UI.png) | ![2048 Jetpack Compose app on Pixel with Sign in, leaderboard, and guest account banner](images/android-ui.png) |
 
 ### Web states
 
 | Mobile layout | Win | Game over |
 | :---: | :---: | :---: |
-| ![The web game at a 390px mobile width with on-screen direction controls](../images/web-mobile-gameplay.png) | ![The win overlay after reaching 2048, offering a new game or continued play](../images/web-win.png) | ![The game-over overlay on a full board with no available merges](../images/web-loss.png) |
+| ![The web game at a 390px mobile width with on-screen direction controls](images/web-mobile-gameplay.png) | ![The win overlay after reaching 2048, offering a new game or continued play](images/web-win.png) | ![The game-over overlay on a full board with no available merges](images/web-loss.png) |
 
 | New-game confirmation | Rules and strategy |
 | :---: | :---: |
-| ![The restart confirmation dialog warning that the current round will be replaced](../images/web-restart-dialog.png) | ![The About page describing the rules, strategy, and project details](../images/web-about.png) |
+| ![The restart confirmation dialog warning that the current round will be replaced](images/web-restart-dialog.png) | ![The About page describing the rules, strategy, and project details](images/web-about.png) |
 
 ### Optional cloud surfaces
 
@@ -122,31 +136,31 @@ Guest play, auth, sync, and leaderboards — local-first; an account is never re
 
 | Guest invite (desktop) | Create account | Sign in |
 | :---: | :---: | :---: |
-| ![Guest banner inviting account creation above the board](../images/web-cloud-guest.png) | ![Create-account dialog with username, email, and password](../images/web-cloud-signup.png) | ![Sign-in dialog with username-or-email and password](../images/web-cloud-signin.png) |
+| ![Guest banner inviting account creation above the board](images/web-cloud-guest.png) | ![Create-account dialog with username, email, and password](images/web-cloud-signup.png) | ![Sign-in dialog with username-or-email and password](images/web-cloud-signin.png) |
 
 | Handover warning | Reset password | |
 | :---: | :---: | :---: |
-| ![Dialog warning that signing in sets the current round aside](../images/web-cloud-handover.png) | ![Reset dialog asking for username, email, and a new password twice](../images/web-cloud-reset.png) | |
+| ![Dialog warning that signing in sets the current round aside](images/web-cloud-handover.png) | ![Reset dialog asking for username, email, and a new password twice](images/web-cloud-reset.png) | |
 
 | Signed in | Leaderboard | Account panel |
 | :---: | :---: | :---: |
-| ![Signed-in header and cloud sync status under the board](../images/web-cloud-signed-in.png) | ![Leaderboard dialog with Today / This week / All time periods](../images/web-cloud-leaderboard.png) | ![Account panel with profile summary, sync time, and sign out](../images/web-cloud-account.png) |
+| ![Signed-in header and cloud sync status under the board](images/web-cloud-signed-in.png) | ![Leaderboard dialog with Today / This week / All time periods](images/web-cloud-leaderboard.png) | ![Account panel with profile summary, sync time, and sign out](images/web-cloud-account.png) |
 
 | Mobile guest | Mobile create account | Android create account |
 | :---: | :---: | :---: |
-| ![Mobile layout with guest invite and on-screen controls](../images/web-cloud-mobile-guest.png) | ![Mobile create-account dialog](../images/web-cloud-mobile-signup.png) | ![Android Compose create-account bottom sheet](../images/android-cloud-signup.png) |
+| ![Mobile layout with guest invite and on-screen controls](images/web-cloud-mobile-guest.png) | ![Mobile create-account dialog](images/web-cloud-mobile-signup.png) | ![Android Compose create-account bottom sheet](images/android-cloud-signup.png) |
 
 | Android guest | Android leaderboard | Android sign in |
 | :---: | :---: | :---: |
-| ![Android guest banner above the board](../images/android-cloud-guest.png) | ![Android leaderboard bottom sheet](../images/android-cloud-leaderboard.png) | ![Android sign-in bottom sheet](../images/android-cloud-signin.png) |
+| ![Android guest banner above the board](images/android-cloud-guest.png) | ![Android leaderboard bottom sheet](images/android-cloud-leaderboard.png) | ![Android sign-in bottom sheet](images/android-cloud-signin.png) |
 
 | iOS create account | iOS handover warning | iOS password reset |
 | :---: | :---: | :---: |
-| ![iOS create-account sheet with password confirmation](../images/ios-cloud-signup.png) | ![iOS warning that the guest round will be set aside](../images/ios-cloud-handover.png) | ![iOS password-reset sheet](../images/ios-cloud-reset.png) |
+| ![iOS create-account sheet with password confirmation](images/ios-cloud-signup.png) | ![iOS warning that the guest round will be set aside](images/ios-cloud-handover.png) | ![iOS password-reset sheet](images/ios-cloud-reset.png) |
 
 | Android handover warning | Android password reset | iOS leaderboard |
 | :---: | :---: | :---: |
-| ![Android warning that the guest round will be set aside](../images/android-cloud-handover.png) | ![Android password-reset bottom sheet](../images/android-cloud-reset.png) | ![iOS leaderboard sheet](../images/ios-cloud-leaderboard.png) |
+| ![Android warning that the guest round will be set aside](images/android-cloud-handover.png) | ![Android password-reset bottom sheet](images/android-cloud-reset.png) | ![iOS leaderboard sheet](images/ios-cloud-leaderboard.png) |
 
 QA-only output without promotion: `make screenshots-web-qa` writes `output/playwright/latest/`; `make screenshots-mobile-qa` writes `output/mobile/`.
 
@@ -235,7 +249,7 @@ These are the contract. Every client must satisfy all of them, and each one is c
 
 ## Architecture
 
-Three clients, three runtimes, one contract. There is no shared rules library. Play is local-first: a move never requires the network. An optional Cloud API (`server/`) adds accounts, cross-device sync, and leaderboards — see [docs/backend.md](../docs/backend.md).
+Three clients, three runtimes, one contract. There is no shared rules library. Play is local-first: a move never requires the network. An optional Cloud API (`server/`) adds accounts, cross-device sync, and leaderboards — see [docs/backend.md](docs/backend.md).
 
 | Concern | Web | iOS | Android |
 | --- | --- | --- | --- |
@@ -260,7 +274,7 @@ Three clients, three runtimes, one contract. There is no shared rules library. P
 
 **Web delivery** is static files served from `/2048-Game/` on GitHub Pages. Canonical URLs, manifest scope, sitemap entries, and crawler discovery links must all keep that base path. The local development server deliberately disables caching so UI edits reload predictably.
 
-Deeper detail lives in [`ARCHITECTURE.md`](../ARCHITECTURE.md) for the whole system, and [`docs/architecture.md`](../docs/architecture.md) for per-client specifics.
+Deeper detail lives in [`ARCHITECTURE.md`](ARCHITECTURE.md) for the whole system, and [`docs/architecture.md`](docs/architecture.md) for per-client specifics.
 
 ---
 
@@ -275,7 +289,7 @@ Optional Express + MongoDB Atlas service for accounts, JWT auth, cross-device sa
 | Scalar | [/reference](https://game-2048-cloud-api.vercel.app/reference) |
 | OpenAPI JSON | [/openapi.json](https://game-2048-cloud-api.vercel.app/openapi.json) |
 
-Play stays local-first: declining an account leaves the board unchanged. Full contract, sync rules, and local run notes: [`docs/backend.md`](../docs/backend.md). Privacy: [`docs/privacy.md`](../docs/privacy.md).
+Play stays local-first: declining an account leaves the board unchanged. Full contract, sync rules, and local run notes: [`docs/backend.md`](docs/backend.md). Privacy: [`docs/privacy.md`](docs/privacy.md).
 
 ---
 
@@ -300,7 +314,7 @@ Every surface has a hand-written native fallback. Missing, unreadable, schema to
 
 The iOS and Android payloads are byte-identical and a test asserts they stay that way, for the same reason the rules have three parallel suites: two clients drifting apart is the failure mode this repository exists to prevent.
 
-Full detail in [`ARCHITECTURE.md`](../ARCHITECTURE.md#server-driven-surfaces).
+Full detail in [`ARCHITECTURE.md`](ARCHITECTURE.md#server-driven-surfaces).
 
 ## Repository map
 
@@ -350,7 +364,7 @@ Full detail in [`ARCHITECTURE.md`](../ARCHITECTURE.md#server-driven-surfaces).
 ├── .github/
 │   ├── workflows/                      CI, dependency review, labeler
 │   ├── ISSUE_TEMPLATE/                 Bug and feature forms
-│   └── README.md · CONTRIBUTING.md · SECURITY.md · SUPPORT.md · CODE_OF_CONDUCT.md
+│   └── CONTRIBUTING.md · SECURITY.md · SUPPORT.md · CODE_OF_CONDUCT.md
 ├── .agents/skills/                     Canonical coding-agent workflows
 ├── .claude/skills/                     Claude Code adapters
 └── .devcontainer/                      Node 22, JDK 17, Android SDK 34 container
@@ -596,13 +610,13 @@ make test-android # JDK 17 + SDK 34
 make test         # everything this host supports
 ```
 
-More detail, including how to diagnose flaky device runs, is in [`docs/testing.md`](../docs/testing.md).
+More detail, including how to diagnose flaky device runs, is in [`docs/testing.md`](docs/testing.md).
 
 ---
 
 ## Continuous integration
 
-[Cross-platform CI](workflows/ci.yml) runs on every push to `main`, every pull request, and on manual dispatch. It is split into six independently visible jobs so a failure points straight at the responsible platform:
+[Cross-platform CI](.github/workflows/ci.yml) runs on every push to `main`, every pull request, and on manual dispatch. It is split into six independently visible jobs so a failure points straight at the responsible platform:
 
 | Job | Runner | Covers |
 | --- | --- | --- |
@@ -691,7 +705,7 @@ changelog section, commits, tags, dispatches the builds at that tag, and then
 confirms a release exists with its artifacts attached before reporting success.
 `dry_run` shows what would happen without pushing anything.
 
-Releasing by hand is no longer a supported path. [`docs/releasing.md`](../docs/releasing.md)
+Releasing by hand is no longer a supported path. [`docs/releasing.md`](docs/releasing.md)
 covers the pipeline, the three non-obvious constraints it works around, and what
 to do when a stage fails.
 
@@ -718,7 +732,7 @@ Accessibility is treated as a behavioral requirement, not a finishing touch, and
 - Game state lives in `localStorage` on web, `UserDefaults` on iOS, and `SharedPreferences` on Android — removable by clearing site data or deleting the app.
 - The only non-game outbound request the web client may make is Google Fonts for the display typeface; the app remains fully playable if that request is blocked.
 
-**Optional account.** Creating an account enables cross-device save sync, scores, and leaderboards against the Cloud API. Declining the invitation leaves play unchanged. Details: [docs/privacy.md](../docs/privacy.md) and [docs/backend.md](../docs/backend.md).
+**Optional account.** Creating an account enables cross-device save sync, scores, and leaderboards against the Cloud API. Declining the invitation leaves play unchanged. Details: [docs/privacy.md](docs/privacy.md) and [docs/backend.md](docs/backend.md).
 
 ---
 
@@ -732,9 +746,9 @@ The PWA manifest supplies maskable 192 px and 512 px icons, an SVG favicon with 
 
 ## Agent-ready development
 
-[`AGENTS.md`](../AGENTS.md) is the shared source of truth for architecture, behavioral invariants, commands, and change discipline. Repository-local skills in `.agents/skills/` provide focused workflows for web, iOS, Android, cross-platform parity, and release readiness, and thin adapters keep Claude Code, GitHub Copilot, Cursor, Gemini CLI, Windsurf, and Codex-compatible harnesses aligned on the same instructions rather than drifting apart.
+[`AGENTS.md`](AGENTS.md) is the shared source of truth for architecture, behavioral invariants, commands, and change discipline. Repository-local skills in `.agents/skills/` provide focused workflows for web, iOS, Android, cross-platform parity, and release readiness, and thin adapters keep Claude Code, GitHub Copilot, Cursor, Gemini CLI, Windsurf, and Codex-compatible harnesses aligned on the same instructions rather than drifting apart.
 
-Skills are task routers, not blanket permission — an agent must still respect the requested scope and preserve unrelated working-tree changes. See [`docs/agent-harness.md`](../docs/agent-harness.md) for the recommended sequence.
+Skills are task routers, not blanket permission — an agent must still respect the requested scope and preserve unrelated working-tree changes. See [`docs/agent-harness.md`](docs/agent-harness.md) for the recommended sequence.
 
 ---
 
@@ -759,30 +773,30 @@ Skills are task routers, not blanket permission — an agent must still respect 
 
 Small, focused pull requests are very welcome. Before opening one:
 
-1. Read [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`AGENTS.md`](../AGENTS.md).
+1. Read [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md) and [`AGENTS.md`](AGENTS.md).
 2. Keep the game rules consistent across all three clients, or explicitly document an intentional platform difference.
 3. Use platform-native vector icons — never text glyphs.
 4. Add a test for behavior changes, or include a clear manual verification note describing exactly what you checked.
 5. Run `make check` plus the full suite for every platform you touched, and attach screenshots for UI changes.
 
-Issue forms for [bug reports](https://github.com/hoangsonww/2048-Game/issues/new?template=bug_report.yml) and [feature requests](https://github.com/hoangsonww/2048-Game/issues/new?template=feature_request.yml) are available. Participation is governed by the [Code of Conduct](CODE_OF_CONDUCT.md), and [`SUPPORT.md`](SUPPORT.md) explains where to ask questions.
+Issue forms for [bug reports](https://github.com/hoangsonww/2048-Game/issues/new?template=bug_report.yml) and [feature requests](https://github.com/hoangsonww/2048-Game/issues/new?template=feature_request.yml) are available. Participation is governed by the [Code of Conduct](.github/CODE_OF_CONDUCT.md), and [`.github/SUPPORT.md`](.github/SUPPORT.md) explains where to ask questions.
 
 ---
 
 ## Security
 
-The clients are local-first and play without an account. The optional Cloud API adds auth and sync — see [`SECURITY.md`](SECURITY.md) for the disclosure process. Do not open a public issue for a suspected vulnerability.
+The clients are local-first and play without an account. The optional Cloud API adds auth and sync — see [`.github/SECURITY.md`](.github/SECURITY.md) for the disclosure process. Do not open a public issue for a suspected vulnerability.
 
 ---
 
 ## Citation
 
-If this project is useful in academic work or you want to reference its cross-platform parity approach, citation metadata is provided in [`CITATION.cff`](../CITATION.cff). GitHub renders a ready-to-copy APA and BibTeX citation from that file via the **Cite this repository** button on the repository sidebar.
+If this project is useful in academic work or you want to reference its cross-platform parity approach, citation metadata is provided in [`CITATION.cff`](CITATION.cff). GitHub renders a ready-to-copy APA and BibTeX citation from that file via the **Cite this repository** button on the repository sidebar.
 
 ---
 
 ## License and credits
 
-Released under the [MIT License](../LICENSE).
+Released under the [MIT License](LICENSE).
 
 Created and maintained by [Son Nguyen](https://github.com/hoangsonww). The original 2048 concept is by Gabriele Cirulli; this is an independent implementation and is not affiliated with or endorsed by the original author.
