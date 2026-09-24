@@ -16,6 +16,9 @@ actually exists.
 Merging a pull request into `main` automatically cuts the next patch release.
 The workflow bumps the shared version, updates the changelog, tags the release,
 builds all three clients, and verifies the downloadable artifacts.
+It listens for the resulting push to `main`; the release commit it creates does
+not recurse because GitHub suppresses workflow events produced by
+`GITHUB_TOKEN`.
 
 For a planned minor or major release, use Actions → **Cut release** → Run
 workflow and choose the corresponding bump. Leave `dry_run` off to publish;

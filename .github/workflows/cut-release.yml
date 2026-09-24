@@ -21,12 +21,11 @@ name: Cut release
 #     with files attached.
 
 on:
-  # Runs in the base repository's trusted context so the release token keeps
-  # write access even when the merged pull request came from a fork. The job
-  # checks out only the merged default branch, never the contributor's head.
-  pull_request_target:
+  # A merge updates main, so this catches every merged pull request without the
+  # elevated pull_request_target event. GitHub does not create a second workflow
+  # run for the release commit pushed below with GITHUB_TOKEN.
+  push:
     branches: [main]
-    types: [closed]
   workflow_dispatch:
     inputs:
       bump:
@@ -53,15 +52,14 @@ concurrency:
 
 jobs:
   cut:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true }}
     name: Cut ${{ github.event_name == 'workflow_dispatch' && inputs.bump || 'patch' }} release
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
-          # A closed-PR event otherwise checks out the PR merge ref. Releases
-          # always advance the repository's default branch.
+          # A queued run may begin after another merge or release has advanced
+          # main, so always base the next version on the current default branch.
           ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 0
 
