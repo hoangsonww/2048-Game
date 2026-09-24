@@ -44,77 +44,150 @@ jobs:
           version="$(./scripts/version.sh)"
           ./scripts/publish-version-tag.sh "${version}"
 
-      - name: Start the release build
-        if: ${{ steps.tag.outputs.should_release == 'true' }}
+      - name: Check for a complete release
+        id: release_status
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
           set -Eeuo pipefail
-          tag="${{ steps.tag.outputs.tag }}"
+          if release="$(gh release view "${TAG}" --json assets 2>/dev/null)"; then
+            assets="$(jq -r '.assets | length' <<< "${release}")"
+          else
+            release='{"assets":[]}'
+            assets=0
+          fi
+          complete=true
+          if (( assets < 3 )); then
+            complete=false
+          fi
+          for expected in \
+            "2048-${TAG}-debug.apk" \
+            "2048-${TAG}-ios-unsigned.zip" \
+            "2048-${TAG}-web.zip"; do
+            if ! jq -e --arg name "${expected}" 'any(.assets[]; .name == $name)' <<< "${release}" >/dev/null; then
+              complete=false
+            fi
+          done
+          if [[ "${complete}" == true ]]; then
+            echo "complete=true" >> "${GITHUB_OUTPUT}"
+            echo "Release ${TAG} already has ${assets} assets."
+          else
+            echo "complete=false" >> "${GITHUB_OUTPUT}"
+            echo "Release ${TAG} is absent or incomplete (${assets} assets)."
+          fi
+
+      - name: Start the release build
+        id: dispatch
+        if: ${{ steps.release_status.outputs.complete != 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          set -Eeuo pipefail
+          before_ids="$(gh run list --workflow release.yml --branch "${TAG}" --limit 100 \
+            --json databaseId --jq '.[].databaseId')"
+
           # A GITHUB_TOKEN tag push intentionally starts no second workflow, so
           # dispatch release.yml explicitly. Ref resolution can lag the push.
+          dispatched=false
           for attempt in 1 2 3 4 5 6; do
-            if gh workflow run release.yml --ref "${tag}" -f "tag=${tag}"; then
-              echo "dispatched release.yml for ${tag} on attempt ${attempt}"
-              exit 0
+            if gh workflow run release.yml --ref "${TAG}" -f "tag=${TAG}"; then
+              echo "dispatched release.yml for ${TAG} on attempt ${attempt}"
+              dispatched=true
+              break
             fi
             echo "dispatch attempt ${attempt} failed; the tag may not be visible yet"
             sleep 10
           done
-          echo "::error::Could not dispatch release.yml for ${tag}."
-          echo "::error::The tag exists. Re-run Release manually with tag=${tag}."
-          exit 1
+          if [[ "${dispatched}" != true ]]; then
+            echo "::error::Could not dispatch release.yml for ${TAG}."
+            echo "::error::The tag exists. Re-run Release manually with tag=${TAG}."
+            exit 1
+          fi
+
+          # Capture the run created by this dispatch. Historical failures for
+          # the same tag must not poison a successful retry.
+          run_id=""
+          deadline=$(( SECONDS + 120 ))
+          while (( SECONDS < deadline )); do
+            while IFS= read -r candidate; do
+              [[ -n "${candidate}" ]] || continue
+              if ! grep -Fqx -- "${candidate}" <<< "${before_ids}"; then
+                run_id="${candidate}"
+                break
+              fi
+            done < <(gh run list --workflow release.yml --branch "${TAG}" --limit 100 \
+              --json databaseId --jq '.[].databaseId')
+            [[ -n "${run_id}" ]] && break
+            sleep 5
+          done
+          if [[ -z "${run_id}" ]]; then
+            echo "::error::Could not find the Release run dispatched for ${TAG}."
+            exit 1
+          fi
+          echo "run_id=${run_id}" >> "${GITHUB_OUTPUT}"
 
       - name: Verify a release was actually produced
-        if: ${{ steps.tag.outputs.should_release == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ steps.dispatch.outputs.run_id }}
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
           set -Eeuo pipefail
-          tag="${{ steps.tag.outputs.tag }}"
-
-          echo "Waiting for the release build at ${tag}..."
-          runs='[]'
-          deadline=$(( SECONDS + 2400 ))
-          while (( SECONDS < deadline )); do
-            runs="$(gh run list --workflow release.yml --limit 10 \
-              --json status,conclusion,headBranch \
-              --jq "[.[] | select(.headBranch == \"${tag}\")]")"
-            total="$(jq -r 'length' <<< "${runs}")"
-            finished="$(jq -r '[.[] | select(.status == "completed")] | length' <<< "${runs}")"
-            if (( total >= 1 && finished == total )); then
-              break
+          if [[ -n "${RUN_ID}" ]]; then
+            echo "Waiting for Release run ${RUN_ID} at ${TAG}..."
+            run='{}'
+            deadline=$(( SECONDS + 2400 ))
+            while (( SECONDS < deadline )); do
+              run="$(gh run view "${RUN_ID}" --json status,conclusion)"
+              [[ "$(jq -r '.status' <<< "${run}")" == completed ]] && break
+              sleep 30
+            done
+            status="$(jq -r '.status' <<< "${run}")"
+            conclusion="$(jq -r '.conclusion // ""' <<< "${run}")"
+            if [[ "${status}" != completed || "${conclusion}" != success ]]; then
+              echo "::error::Release run ${RUN_ID} ended as ${conclusion:-${status}} for ${TAG}."
+              exit 1
             fi
-            sleep 30
-          done
-
-          jq -r '.[] | "  \(.conclusion // .status)"' <<< "${runs}"
-          if [[ "$(jq -r '[.[] | select(.conclusion != "success")] | length' <<< "${runs}")" != "0" ]]; then
-            echo "::error::The release build did not succeed at ${tag}."
-            exit 1
           fi
 
-          if ! gh release view "${tag}" >/dev/null 2>&1; then
-            echo "::error::No GitHub Release exists for ${tag}, despite the build succeeding."
+          if ! gh release view "${TAG}" >/dev/null 2>&1; then
+            echo "::error::No GitHub Release exists for ${TAG}, despite the build succeeding."
             exit 1
           fi
-          assets="$(gh release view "${tag}" --json assets --jq '.assets | length')"
+          release="$(gh release view "${TAG}" --json assets)"
+          assets="$(jq -r '.assets | length' <<< "${release}")"
           if [[ "${assets}" -lt 3 ]]; then
-            echo "::error::Release ${tag} has ${assets} file(s); expected the Android, iOS and web artifacts."
-            gh release view "${tag}" --json assets --jq '.assets[].name'
+            echo "::error::Release ${TAG} has ${assets} file(s); expected the Android, iOS and web artifacts."
             exit 1
           fi
-          echo "Release ${tag} is published with ${assets} file(s):"
-          gh release view "${tag}" --json assets --jq '.assets[] | "  \(.name)"'
+          for expected in \
+            "2048-${TAG}-debug.apk" \
+            "2048-${TAG}-ios-unsigned.zip" \
+            "2048-${TAG}-web.zip"; do
+            if ! jq -e --arg name "${expected}" 'any(.assets[]; .name == $name)' <<< "${release}" >/dev/null; then
+              echo "::error::${expected} is missing from release ${TAG}."
+              exit 1
+            fi
+          done
+          echo "Release ${TAG} is published with ${assets} file(s):"
+          jq -r '.assets[] | "  \(.name)"' <<< "${release}"
 
       - name: Summary
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+          TAG_CREATED: ${{ steps.tag.outputs.should_release }}
+          WAS_COMPLETE: ${{ steps.release_status.outputs.complete }}
         run: |
           {
-            echo "### ${{ steps.tag.outputs.tag }}"
+            echo "### ${TAG}"
             echo
-            if [[ "${{ steps.tag.outputs.should_release }}" == true ]]; then
+            if [[ "${WAS_COMPLETE}" == true ]]; then
+              echo "The existing release was already complete; no build was needed."
+            elif [[ "${TAG_CREATED}" == true ]]; then
               echo "Tagged the reviewed main commit and verified its release artifacts."
             else
-              echo "This version is already tagged; no release was needed."
+              echo "Rebuilt the incomplete tagged release and verified its artifacts."
             fi
           } >> "${GITHUB_STEP_SUMMARY}"

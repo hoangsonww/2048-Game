@@ -687,8 +687,8 @@ Prepare the version and changelog in a pull request with
 `scripts/version.sh bump patch` (or `minor` / `major`). After required CI passes
 and that pull request merges, **Cut release** tags the already-reviewed `main`
 commit, dispatches the builds at that tag, and confirms a release exists with
-its artifacts attached. Merges whose version is already tagged are successful
-no-ops.
+its artifacts attached. Merges whose version already has a complete release are
+successful no-ops; an existing but incomplete release is rebuilt and verified.
 
 Releasing by hand is no longer a supported path. [`docs/releasing.md`](docs/releasing.md)
 covers the pipeline, the three non-obvious constraints it works around, and what

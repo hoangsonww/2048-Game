@@ -46,13 +46,24 @@ done
         run("git", ["push", "origin", "v2.1.0"], { cwd: work });
     }
 
+    run("git", ["config", "--unset", "user.name"], { cwd: work });
+    run("git", ["config", "--unset", "user.email"], { cwd: work });
+
+    const environment = {
+        ...process.env,
+        GITHUB_OUTPUT: output,
+        GIT_CONFIG_GLOBAL: "/dev/null",
+        GIT_CONFIG_SYSTEM: "/dev/null"
+    };
+    delete environment.GIT_AUTHOR_NAME;
+    delete environment.GIT_AUTHOR_EMAIL;
+    delete environment.GIT_COMMITTER_NAME;
+    delete environment.GIT_COMMITTER_EMAIL;
+
     const result = spawnSync("bash", [path.join(root, "scripts/publish-version-tag.sh"), "2.1.0"], {
         cwd: work,
         encoding: "utf8",
-        env: {
-            ...process.env,
-            GITHUB_OUTPUT: output
-        }
+        env: environment
     });
 
     return { mainSha, output, remote, result, temporary };
@@ -77,7 +88,15 @@ test("a merged version pull request publishes the version already on main", () =
     assert.doesNotMatch(workflow, /version\.sh bump/);
     assert.doesNotMatch(workflow, /push-validated-release/);
     assert.doesNotMatch(workflow, /git push origin HEAD:"\$\{\{ github\.event\.repository\.default_branch \}\}"/);
-    assert.match(workflow, /gh workflow run release\.yml --ref "\$\{tag\}"/);
+    assert.match(workflow, /name: Check for a complete release\n\s+id: release_status/);
+    assert.match(workflow, /assets < 3/);
+    assert.match(workflow, /2048-\$\{TAG\}-debug\.apk/);
+    assert.match(workflow, /2048-\$\{TAG\}-ios-unsigned\.zip/);
+    assert.match(workflow, /2048-\$\{TAG\}-web\.zip/);
+    assert.match(workflow, /name: Start the release build\n\s+id: dispatch\n\s+if: \$\{\{ steps\.release_status\.outputs\.complete != 'true' \}\}/);
+    assert.match(workflow, /RUN_ID: \$\{\{ steps\.dispatch\.outputs\.run_id \}\}/);
+    assert.doesNotMatch(workflow, /name: Verify a release was actually produced\n\s+if:/);
+    assert.match(workflow, /gh workflow run release\.yml --ref "\$\{TAG\}"/);
 });
 
 test("an unpublished version is tagged without updating protected main", context => {
@@ -90,7 +109,7 @@ test("an unpublished version is tagged without updating protected main", context
     assert.match(fs.readFileSync(fixture.output, "utf8"), /^tag=v2\.1\.0\nshould_release=true\n$/);
 });
 
-test("an already tagged version skips release without moving the tag", context => {
+test("an already tagged version does not move the tag", context => {
     const fixture = versionTagRepository(true);
     context.after(() => fs.rmSync(fixture.temporary, { recursive: true, force: true }));
 

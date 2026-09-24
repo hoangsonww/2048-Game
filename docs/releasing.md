@@ -22,9 +22,10 @@ Prepare a release in a pull request:
 
 The push to `main` starts **Cut release**. If `vX.Y.Z` does not exist, it tags
 the merge commit, dispatches **Release**, and verifies the downloadable
-artifacts. If the tag already exists, the run exits successfully without
-publishing another release. **Cut release** can also be dispatched manually to
-retry this tag-or-skip decision. Do not tag by hand.
+artifacts. If the tag and all required artifacts already exist, the run exits
+successfully without publishing another release. A tag with a missing or
+incomplete release is rebuilt and verified. **Cut release** can also be
+dispatched manually to retry this tag-or-resume decision. Do not tag by hand.
 
 This ordering is required by branch protection. GitHub does not count checks
 from a `workflow_dispatch` run toward a protected-branch update, so release
@@ -82,7 +83,7 @@ Version pull request
         └─ Cut release (main push, or workflow_dispatch)
              ├─ version.sh check          the tree must agree with itself first
              ├─ tag the reviewed main commit when vX.Y.Z is absent
-             ├─ dispatch Release at the tag
+             ├─ skip a complete release; otherwise dispatch Release at the tag
              └─ wait, then confirm a release exists with its artifacts attached
                    │
                    └─ Release
@@ -119,8 +120,8 @@ than a half-published release.
 
 - **`version.sh check` fails at the start** — the tree disagrees with itself.
   Run `make version-sync`, commit, and cut again. Nothing was pushed.
-- **The tag already exists** — `Cut release` reports a successful no-op. Open a
-  pull request with the next version if a new release is intended.
+- **The tag and complete release already exist** — `Cut release` reports a
+  successful no-op. An incomplete release is dispatched again instead.
 - **A build job fails** — the release exists with fewer artifacts, and `verify`
   fails naming the missing file. Fix the build, then re-run `Release` via
   `workflow_dispatch` with that tag; uploads use `--clobber`, so re-running is

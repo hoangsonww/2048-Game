@@ -1864,8 +1864,9 @@ fields aligned. After required CI passes and the pull request merges, **Cut
 release**:
 
 1. Verifies the tree is internally consistent.
-2. Skips successfully when `vX.Y.Z` already exists.
-3. Otherwise tags the reviewed `main` commit and pushes the tag.
+2. Skips successfully when `vX.Y.Z` already has all required release artifacts.
+3. Otherwise tags the reviewed `main` commit when needed, or resumes its
+   incomplete release.
 4. **Dispatches** the Release workflow by name (a tag pushed with `GITHUB_TOKEN` does not start workflows — GitHub suppresses that loop).
 5. Waits and confirms a GitHub Release exists with the expected artifacts attached.
 
