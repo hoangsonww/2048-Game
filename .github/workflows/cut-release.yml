@@ -79,6 +79,11 @@ jobs:
             exit 0
           fi
 
+          # Capture first so a GitHub API failure is the assignment's exit
+          # status and `set -e` fails closed instead of iterating an empty list.
+          published_tags="$(gh release list --limit 100 --json isDraft,tagName \
+            --jq '.[] | select(.isDraft == false) | .tagName')"
+
           while IFS= read -r tag; do
             [[ -n "${tag}" ]] || continue
             if git merge-base --is-ancestor "${TRIGGER_SHA}" "refs/tags/${tag}"; then
@@ -86,8 +91,7 @@ jobs:
               echo "should_release=false" >> "${GITHUB_OUTPUT}"
               exit 0
             fi
-          done < <(gh release list --limit 100 --json isDraft,tagName \
-            --jq '.[] | select(.isDraft == false) | .tagName')
+          done <<< "${published_tags}"
 
           echo "should_release=true" >> "${GITHUB_OUTPUT}"
 
