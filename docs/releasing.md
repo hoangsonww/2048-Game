@@ -5,32 +5,31 @@ notes, and stop. Nothing was attached, so there was nothing to download — the
 Android app could only be had by installing a JDK and the Android SDK and
 building it yourself, and the iOS app not at all.
 
-There is now one release pipeline. A merged pull request starts it automatically;
-the same workflow remains available as a button for planned minor and major
-releases. It moves the version, tags, builds all three clients, attaches their
+There is now one release pipeline. A version change reaches `main` through an
+ordinary reviewed pull request; the merge-triggered **Cut release** workflow
+tags that already-validated commit, builds all three clients, attaches their
 artifacts, and refuses to report success unless a release with those files
 actually exists.
 
 ## Cutting a release
 
-Merging a pull request into `main` automatically cuts the next patch release.
-The workflow bumps the shared version, updates the changelog, tags the release,
-builds all three clients, and verifies the downloadable artifacts.
-Before the release commit can advance protected `main`, the workflow pushes
-that exact commit to a temporary branch and dispatches Cross-platform CI for
-it. Only a successful run satisfies the four required checks; the workflow
-then updates `main`, removes the temporary branch, and creates the tag.
-It listens for the resulting push to `main`; the release commit it creates does
-not recurse because GitHub suppresses workflow events produced by
-`GITHUB_TOKEN`.
-If closely spaced merges are already included in an earlier queued run's
-published release, their later runs stop before bumping instead of creating an
-empty patch release.
+Prepare a release in a pull request:
 
-For a planned minor or major release, use Actions → **Cut release** → Run
-workflow and choose the corresponding bump. Leave `dry_run` off to publish;
-turn it on to see what would happen without tagging or pushing anything. Do
-not tag by hand.
+1. Run `scripts/version.sh bump patch` (or `minor` / `major`). This changes
+   `VERSION` and every derived client field together.
+2. Move the relevant notes below a dated `## X.Y.Z` heading in `CHANGELOG.md`.
+3. Let the normal required CI checks pass and merge the pull request.
+
+The push to `main` starts **Cut release**. If `vX.Y.Z` does not exist, it tags
+the merge commit, dispatches **Release**, and verifies the downloadable
+artifacts. If the tag already exists, the run exits successfully without
+publishing another release. **Cut release** can also be dispatched manually to
+retry this tag-or-skip decision. Do not tag by hand.
+
+This ordering is required by branch protection. GitHub does not count checks
+from a `workflow_dispatch` run toward a protected-branch update, so release
+automation must not create a new commit after the reviewed pull request has
+merged. The version and changelog therefore belong in the pull request itself.
 
 ## The version
 
@@ -76,20 +75,22 @@ Store distribution stays a manual step outside this pipeline.
 ## How it fits together
 
 ```
-Cut release (merged PR, or workflow_dispatch)
-  ├─ version.sh check          the tree must agree with itself first
-  ├─ bump VERSION (patch after a merge), propagate, open the changelog section
-  ├─ commit, validate that SHA on a temporary branch, then update protected main
-  ├─ tag vX.Y.Z + push
-  ├─ dispatch Release at the tag
-  └─ wait, then confirm a release exists with its artifacts attached
+Version pull request
+  ├─ bump VERSION, propagate derived fields, update CHANGELOG
+  └─ required Cross-platform CI → merge to protected main
         │
-        └─ Release
-             ├─ prepare       resolve the tag, check it matches VERSION, create the release
-             ├─ android-apk   ─┐
-             ├─ ios-app        ├─ build, then upload into the existing release
-             ├─ web-bundle    ─┘
-             └─ verify        every expected file is attached, or the run fails
+        └─ Cut release (main push, or workflow_dispatch)
+             ├─ version.sh check          the tree must agree with itself first
+             ├─ tag the reviewed main commit when vX.Y.Z is absent
+             ├─ dispatch Release at the tag
+             └─ wait, then confirm a release exists with its artifacts attached
+                   │
+                   └─ Release
+                        ├─ prepare       resolve the tag, check it matches VERSION, create the release
+                        ├─ android-apk   ─┐
+                        ├─ ios-app        ├─ build, then upload into the existing release
+                        ├─ web-bundle    ─┘
+                        └─ verify        every expected file is attached, or the run fails
 ```
 
 Three details in there are not decoration:
@@ -118,11 +119,8 @@ than a half-published release.
 
 - **`version.sh check` fails at the start** — the tree disagrees with itself.
   Run `make version-sync`, commit, and cut again. Nothing was pushed.
-- **The tag already exists** — `Cut release` refuses rather than moving it.
-  Bump past it.
-- **Release-candidate CI fails** — protected `main` remains unchanged and the
-  temporary branch is removed. Fix the reported platform failure and rerun
-  `Cut release`; no tag was created.
+- **The tag already exists** — `Cut release` reports a successful no-op. Open a
+  pull request with the next version if a new release is intended.
 - **A build job fails** — the release exists with fewer artifacts, and `verify`
   fails naming the missing file. Fix the build, then re-run `Release` via
   `workflow_dispatch` with that tag; uploads use `--clobber`, so re-running is
@@ -132,7 +130,7 @@ than a half-published release.
 - **The dispatch cannot find the tag** — retried six times over a minute, since
   the tag was pushed seconds earlier and the API resolving `--ref` can lag its
   own push. If all six fail the job says so and names the tag to re-dispatch by
-  hand; the bump itself is already committed, so do not cut again.
+  hand; the version is already merged and tagged, so do not bump it again.
 
 Re-running `Release` at an existing tag is always safe. It rebuilds from the
 tag, so it produces the same artifacts, and replaces rather than duplicates
