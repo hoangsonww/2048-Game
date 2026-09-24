@@ -1828,7 +1828,7 @@ Companion workflows (not part of Cross-platform CI):
 | --- | --- | --- |
 | Dependency review | `pull_request` | Flags newly introduced vulnerable or disallowed deps |
 | Pull request labels | `pull_request_target` | Applies path-based labels |
-| Cut release | `workflow_dispatch` | Bumps `VERSION`, tags, dispatches Release |
+| Cut release | push to `main` / `workflow_dispatch` | Tags an untagged `VERSION` already merged through a PR, then dispatches Release |
 | Release | tag / dispatch | Builds and attaches APK, unsigned iOS app, web zip |
 
 Server OpenAPI and unit tests are exercised via `make server-check` / `server-test` and should be run when `server/` changes; they are part of the Cloud API's own quality bar even when not every PR touches that tree.
@@ -1849,7 +1849,7 @@ Server OpenAPI and unit tests are exercised via `make server-check` / `server-te
 
 ```mermaid
 flowchart TD
-    Human[Edit VERSION or Cut release] --> Sync[scripts/version.sh]
+    Human[Edit VERSION in a release PR] --> Sync[scripts/version.sh]
     Sync --> Pkg[package.json]
     Sync --> And[Gradle versionName/Code]
     Sync --> Xcode[MARKETING_VERSION · CURRENT_PROJECT_VERSION]
@@ -1858,11 +1858,15 @@ flowchart TD
     Agree -->|yes| Ship[Cut release → Release workflow]
 ```
 
-**Do not tag by hand.** The ship path is Actions → **Cut release** → choose `patch` / `minor` / `major`. That workflow:
+**Do not tag by hand.** Prepare the version and changelog in a pull request,
+using `scripts/version.sh bump patch` (or `minor` / `major`) to keep derived
+fields aligned. After required CI passes and the pull request merges, **Cut
+release**:
 
 1. Verifies the tree is internally consistent.
-2. Bumps `VERSION`, propagates derived fields, opens the changelog section.
-3. Commits, tags `vX.Y.Z`, and pushes.
+2. Skips successfully when `vX.Y.Z` already has all required release artifacts.
+3. Otherwise tags the reviewed `main` commit when needed, or resumes its
+   incomplete release.
 4. **Dispatches** the Release workflow by name (a tag pushed with `GITHUB_TOKEN` does not start workflows — GitHub suppresses that loop).
 5. Waits and confirms a GitHub Release exists with the expected artifacts attached.
 
@@ -2149,7 +2153,7 @@ The vocabulary used consistently across the three clients, the tests, and this d
 | **Determinism seam** | An injection point that lets a test pin otherwise-random behaviour |
 | **Parity** | The three clients behaving identically for the same inputs |
 | **Contract** | The list of behaviours every client must satisfy — see [Three clients, one contract](#three-clients-one-contract) |
-| **Cut release** | The only supported path to bump `VERSION`, tag, and attach artifacts |
+| **Cut release** | The only supported path to tag a reviewed version and attach artifacts |
 
 ## Further reading
 

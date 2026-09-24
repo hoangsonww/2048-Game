@@ -1,48 +1,18 @@
 name: Cut release
 
-# One entry point for releasing. Every merged pull request gets a patch release;
-# a maintainer can still dispatch the workflow to choose a minor or major bump,
-# or to run the same process without publishing. The workflow verifies the tree,
-# moves VERSION, propagates it to every client, opens a changelog section, tags,
-# pushes, and then makes sure a release with artifacts actually exists.
-#
-# Everything below encodes something that went wrong in the sibling repository's
-# pipeline. They are cheap here and expensive to rediscover:
-#
-#   * A tag pushed by a workflow starts nothing. GitHub suppresses triggers from
-#     events raised by GITHUB_TOKEN, so `release.yml` has to be dispatched by
-#     name rather than left to notice the tag.
-#   * Dispatching needs `actions: write`. Without it every dispatch is refused
-#     with "HTTP 403: Resource not accessible by integration".
-#   * `release.yml` takes the tag as a required input on dispatch. Omitting it
-#     fails with "Required input 'tag' not provided".
-#   * A green run is not a release. This job once reported success having
-#     produced nothing at all, so it now ends by checking the release exists
-#     with files attached.
+# A release is cut only from a version that has already reached protected main
+# through a reviewed pull request. The workflow never creates or pushes a new
+# commit: it tags the checked-out main commit when v<VERSION> does not exist,
+# dispatches the artifact build, and verifies the published result.
 
 on:
-  # A merge updates main, so this catches every merged pull request without the
-  # elevated pull_request_target event. GitHub does not create a second workflow
-  # run for the release commit pushed below with GITHUB_TOKEN.
   push:
     branches: [main]
   workflow_dispatch:
-    inputs:
-      bump:
-        description: "Which part of the version to increase"
-        required: true
-        default: patch
-        type: choice
-        options: [patch, minor, major]
-      dry_run:
-        description: "Work it out and report, but do not tag or push"
-        required: false
-        default: false
-        type: boolean
 
 permissions:
-  # contents: commit the bump and push the tag.
-  # actions: dispatch release.yml. Read access is not enough to start a run.
+  # contents: push the version tag and inspect the resulting release.
+  # actions: dispatch release.yml. Read access cannot start a workflow run.
   contents: write
   actions: write
 
@@ -51,256 +21,173 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  release_guard:
-    name: Check whether this push is already released
-    runs-on: ubuntu-latest
-    outputs:
-      should_release: ${{ steps.guard.outputs.should_release }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.repository.default_branch }}
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Check published releases for the triggering commit
-        id: guard
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          GH_TOKEN: ${{ github.token }}
-          TRIGGER_SHA: ${{ github.sha }}
-        run: |
-          set -Eeuo pipefail
-
-          # Manual releases are intentional even when the selected ref is
-          # already present in an older release.
-          if [[ "${EVENT_NAME}" != "push" ]]; then
-            echo "should_release=true" >> "${GITHUB_OUTPUT}"
-            exit 0
-          fi
-
-          # Capture first so a GitHub API failure is the assignment's exit
-          # status and `set -e` fails closed instead of iterating an empty list.
-          published_tags="$(gh release list --limit 100 --json isDraft,tagName \
-            --jq '.[] | select(.isDraft == false) | .tagName')"
-
-          while IFS= read -r tag; do
-            [[ -n "${tag}" ]] || continue
-            if git merge-base --is-ancestor "${TRIGGER_SHA}" "refs/tags/${tag}"; then
-              echo "${TRIGGER_SHA} is already included in published release ${tag}; skipping."
-              echo "should_release=false" >> "${GITHUB_OUTPUT}"
-              exit 0
-            fi
-          done <<< "${published_tags}"
-
-          echo "should_release=true" >> "${GITHUB_OUTPUT}"
-
   cut:
-    needs: release_guard
-    if: ${{ needs.release_guard.outputs.should_release == 'true' }}
-    name: Cut ${{ github.event_name == 'workflow_dispatch' && inputs.bump || 'patch' }} release
+    name: Publish the version on main
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
         with:
-          # A queued run may begin after another merge or release has advanced
-          # main, so always base the next version on the current default branch.
           ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 0
 
-      # A release must not be cut from a tree that disagrees with itself.
       - name: Verify the current version is consistent
         run: ./scripts/version.sh check
 
-      - name: Work out the next version
-        id: next
+      # VERSION and every derived client version must be changed in the pull
+      # request. Tags are not protected-branch updates, so publishing the
+      # already-reviewed commit works without bypassing branch protection.
+      - name: Publish the version tag when needed
+        id: tag
         run: |
           set -Eeuo pipefail
-          bump="${{ github.event_name == 'workflow_dispatch' && inputs.bump || 'patch' }}"
-          current="$(./scripts/version.sh)"
-          ./scripts/version.sh bump "${bump}" >/dev/null
-          next="$(./scripts/version.sh)"
-          # Leave the tree alone for now; the real bump happens once the tag has
-          # been checked for collisions.
-          git checkout -- .
-          {
-            echo "current=${current}"
-            echo "next=${next}"
-            echo "tag=v${next}"
-          } >> "$GITHUB_OUTPUT"
-          echo "${current} -> ${next} (v${next})"
+          version="$(./scripts/version.sh)"
+          ./scripts/publish-version-tag.sh "${version}"
 
-      - name: Refuse to reuse a tag
-        run: |
-          if git rev-parse -q --verify "refs/tags/${{ steps.next.outputs.tag }}" >/dev/null; then
-            echo "::error::${{ steps.next.outputs.tag }} already exists."
-            exit 1
-          fi
-          echo "${{ steps.next.outputs.tag }} is free."
-
-      - name: Apply the bump
-        run: |
-          set -Eeuo pipefail
-          ./scripts/version.sh set "${{ steps.next.outputs.next }}"
-          ./scripts/version.sh check
-
-      - name: Open the changelog section
-        run: |
-          python3 - "${{ steps.next.outputs.next }}" <<'PY'
-          import datetime
-          import pathlib
-          import sys
-
-          version = sys.argv[1]
-          path = pathlib.Path("CHANGELOG.md")
-          today = datetime.date.today().isoformat()
-          entry = f"## {version} — {today}\n"
-
-          if not path.exists():
-              path.write_text(
-                  "# Changelog\n\nAll notable changes to this project are documented here.\n\n"
-                  f"## Unreleased\n\n{entry}",
-                  encoding="utf-8",
-              )
-              print(f"Created CHANGELOG.md and opened {version}")
-              raise SystemExit
-
-          text = path.read_text(encoding="utf-8")
-          if "## Unreleased" in text:
-              text = text.replace("## Unreleased", f"## Unreleased\n\n{entry}".rstrip(), 1)
-          else:
-              # No Unreleased heading to promote; insert the section after the title.
-              lines = text.splitlines(keepends=True)
-              at = next((i for i, line in enumerate(lines) if line.startswith("## ")), len(lines))
-              lines.insert(at, f"{entry}\n")
-              text = "".join(lines)
-          path.write_text(text, encoding="utf-8")
-          print(f"Opened {version} — {today}")
-          PY
-
-      - name: Commit the release candidate
-        if: ${{ github.event_name != 'workflow_dispatch' || !inputs.dry_run }}
-        run: |
-          set -Eeuo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # Stage by change rather than by name: a named list goes stale the
-          # moment version.sh learns about another file.
-          git add -u
-          git add CHANGELOG.md
-          git commit -m "Release ${{ steps.next.outputs.tag }}
-
-          Version moved from ${{ steps.next.outputs.current }} to ${{ steps.next.outputs.next }}
-          across VERSION, package.json, the Android manifest, and the Xcode
-          project, and the changelog section was opened.
-
-          Cut by the Cut release workflow."
-
-      # The release commit is a new SHA, so the checks that passed on the
-      # merged PR do not satisfy branch protection for it. Validate that exact
-      # commit on a temporary branch before advancing protected main.
-      - name: Validate the release commit and update the protected branch
-        if: ${{ github.event_name != 'workflow_dispatch' || !inputs.dry_run }}
+      - name: Check for a complete release
+        id: release_status
         env:
           GH_TOKEN: ${{ github.token }}
-        run: ./scripts/push-validated-release.sh "${{ github.event.repository.default_branch }}"
-
-      - name: Tag the validated release
-        if: ${{ github.event_name != 'workflow_dispatch' || !inputs.dry_run }}
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
           set -Eeuo pipefail
-          git tag -a "${{ steps.next.outputs.tag }}" -m "2048 ${{ steps.next.outputs.next }}"
-          git push origin "${{ steps.next.outputs.tag }}"
+          if release="$(gh release view "${TAG}" --json assets 2>/dev/null)"; then
+            assets="$(jq -r '.assets | length' <<< "${release}")"
+          else
+            release='{"assets":[]}'
+            assets=0
+          fi
+          complete=true
+          if (( assets < 3 )); then
+            complete=false
+          fi
+          for expected in \
+            "2048-${TAG}-debug.apk" \
+            "2048-${TAG}-ios-unsigned.zip" \
+            "2048-${TAG}-web.zip"; do
+            if ! jq -e --arg name "${expected}" 'any(.assets[]; .name == $name)' <<< "${release}" >/dev/null; then
+              complete=false
+            fi
+          done
+          if [[ "${complete}" == true ]]; then
+            echo "complete=true" >> "${GITHUB_OUTPUT}"
+            echo "Release ${TAG} already has ${assets} assets."
+          else
+            echo "complete=false" >> "${GITHUB_OUTPUT}"
+            echo "Release ${TAG} is absent or incomplete (${assets} assets)."
+          fi
 
       - name: Start the release build
-        if: ${{ github.event_name != 'workflow_dispatch' || !inputs.dry_run }}
+        id: dispatch
+        if: ${{ steps.release_status.outputs.complete != 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
           set -Eeuo pipefail
-          tag="${{ steps.next.outputs.tag }}"
-          # release.yml reads the tag from its input, not from the ref, so it
-          # must be passed explicitly.
-          #
-          # Retried because the tag was pushed seconds ago and the API that
-          # resolves --ref can still answer "No ref found for: <tag>" while it
-          # catches up. That is a timing artefact of this job's own push, not a
-          # problem with the release, and re-running the whole cut to get past
-          # it would mean bumping the version a second time.
+          before_ids="$(gh run list --workflow release.yml --branch "${TAG}" --limit 100 \
+            --json databaseId --jq '.[].databaseId')"
+
+          # A GITHUB_TOKEN tag push intentionally starts no second workflow, so
+          # dispatch release.yml explicitly. Ref resolution can lag the push.
+          dispatched=false
           for attempt in 1 2 3 4 5 6; do
-            if gh workflow run release.yml --ref "${tag}" -f "tag=${tag}"; then
-              echo "dispatched release.yml for ${tag} on attempt ${attempt}"
-              exit 0
+            if gh workflow run release.yml --ref "${TAG}" -f "tag=${TAG}"; then
+              echo "dispatched release.yml for ${TAG} on attempt ${attempt}"
+              dispatched=true
+              break
             fi
             echo "dispatch attempt ${attempt} failed; the tag may not be visible yet"
             sleep 10
           done
-          echo "::error::Could not dispatch release.yml for ${tag}."
-          echo "::error::The tag and the bump are pushed. Re-run Release manually with tag=${tag}."
-          exit 1
+          if [[ "${dispatched}" != true ]]; then
+            echo "::error::Could not dispatch release.yml for ${TAG}."
+            echo "::error::The tag exists. Re-run Release manually with tag=${TAG}."
+            exit 1
+          fi
+
+          # Capture the run created by this dispatch. Historical failures for
+          # the same tag must not poison a successful retry.
+          run_id=""
+          deadline=$(( SECONDS + 120 ))
+          while (( SECONDS < deadline )); do
+            while IFS= read -r candidate; do
+              [[ -n "${candidate}" ]] || continue
+              if ! grep -Fqx -- "${candidate}" <<< "${before_ids}"; then
+                run_id="${candidate}"
+                break
+              fi
+            done < <(gh run list --workflow release.yml --branch "${TAG}" --limit 100 \
+              --json databaseId --jq '.[].databaseId')
+            [[ -n "${run_id}" ]] && break
+            sleep 5
+          done
+          if [[ -z "${run_id}" ]]; then
+            echo "::error::Could not find the Release run dispatched for ${TAG}."
+            exit 1
+          fi
+          echo "run_id=${run_id}" >> "${GITHUB_OUTPUT}"
 
       - name: Verify a release was actually produced
-        if: ${{ github.event_name != 'workflow_dispatch' || !inputs.dry_run }}
         env:
           GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ steps.dispatch.outputs.run_id }}
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
           set -Eeuo pipefail
-          tag="${{ steps.next.outputs.tag }}"
-
-          echo "Waiting for the release build at ${tag}..."
-          runs='[]'
-          deadline=$(( SECONDS + 2400 ))
-          while (( SECONDS < deadline )); do
-            runs="$(gh run list --workflow release.yml --limit 10 \
-              --json status,conclusion,headBranch \
-              --jq "[.[] | select(.headBranch == \"${tag}\")]")"
-            total="$(jq -r 'length' <<< "${runs}")"
-            finished="$(jq -r '[.[] | select(.status == "completed")] | length' <<< "${runs}")"
-            if (( total >= 1 && finished == total )); then
-              break
+          if [[ -n "${RUN_ID}" ]]; then
+            echo "Waiting for Release run ${RUN_ID} at ${TAG}..."
+            run='{}'
+            deadline=$(( SECONDS + 2400 ))
+            while (( SECONDS < deadline )); do
+              run="$(gh run view "${RUN_ID}" --json status,conclusion)"
+              [[ "$(jq -r '.status' <<< "${run}")" == completed ]] && break
+              sleep 30
+            done
+            status="$(jq -r '.status' <<< "${run}")"
+            conclusion="$(jq -r '.conclusion // ""' <<< "${run}")"
+            if [[ "${status}" != completed || "${conclusion}" != success ]]; then
+              echo "::error::Release run ${RUN_ID} ended as ${conclusion:-${status}} for ${TAG}."
+              exit 1
             fi
-            sleep 30
-          done
-
-          jq -r '.[] | "  \(.conclusion // .status)"' <<< "${runs}"
-          if [[ "$(jq -r '[.[] | select(.conclusion != "success")] | length' <<< "${runs}")" != "0" ]]; then
-            echo "::error::The release build did not succeed at ${tag}."
-            exit 1
           fi
 
-          # Builds passing and a release existing are different claims.
-          if ! gh release view "${tag}" >/dev/null 2>&1; then
-            echo "::error::No GitHub Release exists for ${tag}, despite the build succeeding."
+          if ! gh release view "${TAG}" >/dev/null 2>&1; then
+            echo "::error::No GitHub Release exists for ${TAG}, despite the build succeeding."
             exit 1
           fi
-          assets="$(gh release view "${tag}" --json assets --jq '.assets | length')"
+          release="$(gh release view "${TAG}" --json assets)"
+          assets="$(jq -r '.assets | length' <<< "${release}")"
           if [[ "${assets}" -lt 3 ]]; then
-            echo "::error::Release ${tag} has ${assets} file(s); expected the Android, iOS and web artifacts."
-            gh release view "${tag}" --json assets --jq '.assets[].name'
+            echo "::error::Release ${TAG} has ${assets} file(s); expected the Android, iOS and web artifacts."
             exit 1
           fi
-          echo "Release ${tag} is published with ${assets} file(s):"
-          gh release view "${tag}" --json assets --jq '.assets[] | "  \(.name)"'
+          for expected in \
+            "2048-${TAG}-debug.apk" \
+            "2048-${TAG}-ios-unsigned.zip" \
+            "2048-${TAG}-web.zip"; do
+            if ! jq -e --arg name "${expected}" 'any(.assets[]; .name == $name)' <<< "${release}" >/dev/null; then
+              echo "::error::${expected} is missing from release ${TAG}."
+              exit 1
+            fi
+          done
+          echo "Release ${TAG} is published with ${assets} file(s):"
+          jq -r '.assets[] | "  \(.name)"' <<< "${release}"
 
       - name: Summary
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+          TAG_CREATED: ${{ steps.tag.outputs.should_release }}
+          WAS_COMPLETE: ${{ steps.release_status.outputs.complete }}
         run: |
-          bump="${{ github.event_name == 'workflow_dispatch' && inputs.bump || 'patch' }}"
-          dry_run="${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || false }}"
           {
-            echo "### ${{ steps.next.outputs.tag }}"
+            echo "### ${TAG}"
             echo
-            echo "| | |"
-            echo "| --- | --- |"
-            echo "| From | ${{ steps.next.outputs.current }} |"
-            echo "| To | ${{ steps.next.outputs.next }} |"
-            echo "| Trigger | ${{ github.event_name }} |"
-            echo "| Bump | ${bump} |"
-            echo "| Dry run | ${dry_run} |"
-            echo
-            if [ "${dry_run}" = "true" ]; then
-              echo "Nothing was pushed. Rerun with dry run off to cut it."
+            if [[ "${WAS_COMPLETE}" == true ]]; then
+              echo "The existing release was already complete; no build was needed."
+            elif [[ "${TAG_CREATED}" == true ]]; then
+              echo "Tagged the reviewed main commit and verified its release artifacts."
             else
-              echo "Tagged, built, and verified published with artifacts."
+              echo "Rebuilt the incomplete tagged release and verified its artifacts."
             fi
-          } >> "$GITHUB_STEP_SUMMARY"
+          } >> "${GITHUB_STEP_SUMMARY}"
