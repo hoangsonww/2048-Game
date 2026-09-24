@@ -204,7 +204,7 @@ flowchart TD
     Root --> Server["server/<br/>Cloud API · Express + Atlas"]
     Root --> Tests["tests/<br/>web + tooling suites"]
     Root --> Scripts["scripts/<br/>toolchain-resolving entry points"]
-    Root --> Docs["docs/ · .github/README.md"]
+    Root --> Docs["README.md · docs/"]
     Root --> Agents[".agents/skills/ · AGENTS.md<br/>agent guidance"]
     Root --> CI[".github/workflows/"]
 ```
@@ -2158,7 +2158,7 @@ The vocabulary used consistently across the three clients, the tests, and this d
 - [`docs/privacy.md`](docs/privacy.md) — what is stored where; token placement trade-offs
 - [`docs/testing.md`](docs/testing.md) — suite placement, gates, flaky-device diagnosis, profile/sound test notes
 - [`docs/releasing.md`](docs/releasing.md) — `VERSION`, Cut release, artifact verification
-- [`.github/README.md`](.github/README.md) — product overview, features, and screenshots
+- [`README.md`](README.md) — product overview, features, and screenshots
 - [`AGENTS.md`](AGENTS.md) — the source of truth for coding agents
 - [`.agents/skills/`](.agents/skills/) — per-area workflows, including cross-platform parity
 - [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md) — contribution and testing requirements

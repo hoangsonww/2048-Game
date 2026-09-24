@@ -1,9 +1,10 @@
 name: Cut release
 
-# One entry point for releasing. Choose a bump; this verifies the tree is
-# releasable, moves VERSION, propagates it to package.json, the Android
-# manifest, and the Xcode project, opens a changelog section, tags, pushes, and
-# then makes sure a release with artifacts actually exists.
+# One entry point for releasing. Every merged pull request gets a patch release;
+# a maintainer can still dispatch the workflow to choose a minor or major bump,
+# or to run the same process without publishing. The workflow verifies the tree,
+# moves VERSION, propagates it to every client, opens a changelog section, tags,
+# pushes, and then makes sure a release with artifacts actually exists.
 #
 # Everything below encodes something that went wrong in the sibling repository's
 # pipeline. They are cheap here and expensive to rediscover:
@@ -20,6 +21,11 @@ name: Cut release
 #     with files attached.
 
 on:
+  # A merge updates main, so this catches every merged pull request without the
+  # elevated pull_request_target event. GitHub does not create a second workflow
+  # run for the release commit pushed below with GITHUB_TOKEN.
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       bump:
@@ -45,13 +51,62 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  release_guard:
+    name: Check whether this push is already released
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.guard.outputs.should_release }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check published releases for the triggering commit
+        id: guard
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          GH_TOKEN: ${{ github.token }}
+          TRIGGER_SHA: ${{ github.sha }}
+        run: |
+          set -Eeuo pipefail
+
+          # Manual releases are intentional even when the selected ref is
+          # already present in an older release.
+          if [[ "${EVENT_NAME}" != "push" ]]; then
+            echo "should_release=true" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          # Capture first so a GitHub API failure is the assignment's exit
+          # status and `set -e` fails closed instead of iterating an empty list.
+          published_tags="$(gh release list --limit 100 --json isDraft,tagName \
+            --jq '.[] | select(.isDraft == false) | .tagName')"
+
+          while IFS= read -r tag; do
+            [[ -n "${tag}" ]] || continue
+            if git merge-base --is-ancestor "${TRIGGER_SHA}" "refs/tags/${tag}"; then
+              echo "${TRIGGER_SHA} is already included in published release ${tag}; skipping."
+              echo "should_release=false" >> "${GITHUB_OUTPUT}"
+              exit 0
+            fi
+          done <<< "${published_tags}"
+
+          echo "should_release=true" >> "${GITHUB_OUTPUT}"
+
   cut:
-    name: Cut ${{ inputs.bump }} release
+    needs: release_guard
+    if: ${{ needs.release_guard.outputs.should_release == 'true' }}
+    name: Cut ${{ github.event_name == 'workflow_dispatch' && inputs.bump || 'patch' }} release
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
+          # A queued run may begin after another merge or release has advanced
+          # main, so always base the next version on the current default branch.
+          ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 0
 
       # A release must not be cut from a tree that disagrees with itself.
@@ -62,8 +117,9 @@ jobs:
         id: next
         run: |
           set -Eeuo pipefail
+          bump="${{ github.event_name == 'workflow_dispatch' && inputs.bump || 'patch' }}"
           current="$(./scripts/version.sh)"
-          ./scripts/version.sh bump "${{ inputs.bump }}" >/dev/null
+          ./scripts/version.sh bump "${bump}" >/dev/null
           next="$(./scripts/version.sh)"
           # Leave the tree alone for now; the real bump happens once the tag has
           # been checked for collisions.
@@ -124,7 +180,7 @@ jobs:
           PY
 
       - name: Commit, tag and push
-        if: ${{ !inputs.dry_run }}
+        if: ${{ github.event_name != 'workflow_dispatch' || !inputs.dry_run }}
         run: |
           set -Eeuo pipefail
           git config user.name "github-actions[bot]"
@@ -141,11 +197,11 @@ jobs:
 
           Cut by the Cut release workflow."
           git tag -a "${{ steps.next.outputs.tag }}" -m "2048 ${{ steps.next.outputs.next }}"
-          git push origin HEAD:"${GITHUB_REF_NAME}"
+          git push origin HEAD:"${{ github.event.repository.default_branch }}"
           git push origin "${{ steps.next.outputs.tag }}"
 
       - name: Start the release build
-        if: ${{ !inputs.dry_run }}
+        if: ${{ github.event_name != 'workflow_dispatch' || !inputs.dry_run }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -172,7 +228,7 @@ jobs:
           exit 1
 
       - name: Verify a release was actually produced
-        if: ${{ !inputs.dry_run }}
+        if: ${{ github.event_name != 'workflow_dispatch' || !inputs.dry_run }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -216,6 +272,8 @@ jobs:
 
       - name: Summary
         run: |
+          bump="${{ github.event_name == 'workflow_dispatch' && inputs.bump || 'patch' }}"
+          dry_run="${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || false }}"
           {
             echo "### ${{ steps.next.outputs.tag }}"
             echo
@@ -223,10 +281,11 @@ jobs:
             echo "| --- | --- |"
             echo "| From | ${{ steps.next.outputs.current }} |"
             echo "| To | ${{ steps.next.outputs.next }} |"
-            echo "| Bump | ${{ inputs.bump }} |"
-            echo "| Dry run | ${{ inputs.dry_run }} |"
+            echo "| Trigger | ${{ github.event_name }} |"
+            echo "| Bump | ${bump} |"
+            echo "| Dry run | ${dry_run} |"
             echo
-            if [ "${{ inputs.dry_run }}" = "true" ]; then
+            if [ "${dry_run}" = "true" ]; then
               echo "Nothing was pushed. Rerun with dry run off to cut it."
             else
               echo "Tagged, built, and verified published with artifacts."

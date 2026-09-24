@@ -2,6 +2,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 
@@ -14,6 +15,23 @@ test("repository validator succeeds", () => {
     });
     assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
     assert.match(result.stdout, /Repository structure/);
+});
+
+test("a merged pull request automatically cuts a patch release from main", () => {
+    const workflow = fs.readFileSync(path.join(root, ".github/workflows/cut-release.yml"), "utf8");
+
+    assert.match(workflow, /push:\n\s+branches: \[main\]/);
+    assert.doesNotMatch(workflow, /pull_request_target:/);
+    assert.match(workflow, /TRIGGER_SHA: \$\{\{ github\.sha \}\}/);
+    assert.match(workflow, /published_tags="\$\(gh release list --limit 100 --json isDraft,tagName/);
+    assert.match(workflow, /done <<< "\$\{published_tags\}"/);
+    assert.doesNotMatch(workflow, /done < <\(gh release list/);
+    assert.match(workflow, /git merge-base --is-ancestor "\$\{TRIGGER_SHA\}" "refs\/tags\/\$\{tag\}"/);
+    assert.match(workflow, /needs\.release_guard\.outputs\.should_release == 'true'/);
+    assert.match(workflow, /inputs\.bump \|\| 'patch'/);
+    assert.match(workflow, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
+    assert.match(workflow, /git push origin HEAD:"\$\{\{ github\.event\.repository\.default_branch \}\}"/);
+    assert.match(workflow, /gh workflow run release\.yml --ref "\$\{tag\}"/);
 });
 
 test("local server publishes discoverable files with safe content types", async context => {
