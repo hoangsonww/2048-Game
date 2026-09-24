@@ -16,6 +16,10 @@ actually exists.
 Merging a pull request into `main` automatically cuts the next patch release.
 The workflow bumps the shared version, updates the changelog, tags the release,
 builds all three clients, and verifies the downloadable artifacts.
+Before the release commit can advance protected `main`, the workflow pushes
+that exact commit to a temporary branch and dispatches Cross-platform CI for
+it. Only a successful run satisfies the four required checks; the workflow
+then updates `main`, removes the temporary branch, and creates the tag.
 It listens for the resulting push to `main`; the release commit it creates does
 not recurse because GitHub suppresses workflow events produced by
 `GITHUB_TOKEN`.
@@ -75,7 +79,8 @@ Store distribution stays a manual step outside this pipeline.
 Cut release (merged PR, or workflow_dispatch)
   ├─ version.sh check          the tree must agree with itself first
   ├─ bump VERSION (patch after a merge), propagate, open the changelog section
-  ├─ commit + tag vX.Y.Z + push
+  ├─ commit, validate that SHA on a temporary branch, then update protected main
+  ├─ tag vX.Y.Z + push
   ├─ dispatch Release at the tag
   └─ wait, then confirm a release exists with its artifacts attached
         │
@@ -115,6 +120,9 @@ than a half-published release.
   Run `make version-sync`, commit, and cut again. Nothing was pushed.
 - **The tag already exists** — `Cut release` refuses rather than moving it.
   Bump past it.
+- **Release-candidate CI fails** — protected `main` remains unchanged and the
+  temporary branch is removed. Fix the reported platform failure and rerun
+  `Cut release`; no tag was created.
 - **A build job fails** — the release exists with fewer artifacts, and `verify`
   fails naming the missing file. Fix the build, then re-run `Release` via
   `workflow_dispatch` with that tag; uploads use `--clobber`, so re-running is
