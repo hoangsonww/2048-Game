@@ -16,9 +16,16 @@ const app = createApp();
 
 test("the deployed Netlify client is allowed to call the API", async () => {
     const origin = "https://the-2048.netlify.app";
-    const response = await request(app).get("/health").set("Origin", origin).expect(200);
+    const response = await request(app)
+        .options("/api/v1/auth/login")
+        .set("Origin", origin)
+        .set("Access-Control-Request-Method", "POST")
+        .set("Access-Control-Request-Headers", "content-type")
+        .expect(204);
 
     assert.equal(response.headers["access-control-allow-origin"], origin);
+    assert.match(response.headers["access-control-allow-methods"], /POST/);
+    assert.match(response.headers["access-control-allow-headers"], /content-type/i);
 });
 
 test("an unknown production origin is not granted CORS access", async () => {
